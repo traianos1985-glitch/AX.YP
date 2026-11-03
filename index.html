@@ -80,7 +80,7 @@ dd{margin:2px 0 0}
 .profile-actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
 .forms-toolbar{margin:14px 0}
 .forms-list{display:grid;gap:14px}
-.section-heading{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.case-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.file-button{border:1px solid var(--line);background:var(--surface);color:var(--brand);border-radius:8px;padding:8px 12px;cursor:pointer}.case-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}.case-form label{display:flex;flex-direction:column;gap:5px;font-weight:700;font-size:.9rem}.case-form input,.case-form select,.case-form textarea{border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);padding:10px;font:inherit}.case-wide{grid-column:1/-1}.case-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:22px}.subheading{font:700 1.15rem Georgia,serif}.cases-list{display:grid;gap:8px}.case-card{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:12px;cursor:pointer}.case-card span,.case-card small{color:var(--muted)}.case-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}.case-detail-title{font-weight:700;color:var(--brand)}.snapshot{display:flex;flex-direction:column;border-top:1px solid var(--line);padding:9px 0}.snapshot span{color:var(--muted);font-size:.85rem}.form-card h3{margin:0 0 5px;font:700 1.12rem Georgia,serif;color:var(--brand)}
+.section-heading{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.case-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.file-button{border:1px solid var(--line);background:var(--surface);color:var(--brand);border-radius:8px;padding:8px 12px;cursor:pointer}.case-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}.case-form label{display:flex;flex-direction:column;gap:5px;font-weight:700;font-size:.9rem}.case-form input,.case-form select,.case-form textarea{border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);padding:10px;font:inherit}.case-wide{grid-column:1/-1}.case-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:22px}.subheading{font:700 1.15rem Georgia,serif}.cases-list{display:grid;gap:8px}.case-card{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:12px;cursor:pointer}.case-card span,.case-card small{color:var(--muted)}.case-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}.case-detail-title{font-weight:700;color:var(--brand)}.snapshot{display:flex;flex-direction:column;border-top:1px solid var(--line);padding:9px 0}.snapshot span{color:var(--muted);font-size:.85rem}.template-catalog{display:grid;gap:14px}.template-card{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--surface)}.template-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.template-card h3{margin:3px 0 5px;font:700 1.2rem Georgia,serif}.mapping-status{white-space:nowrap;color:var(--brand);font-size:.85rem;font-weight:700}.field-mapping{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.field-chip{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:99px;padding:7px 10px;font-size:.85rem}.field-chip input{accent-color:var(--accent)}.template-source,.source-link{color:var(--brand);font-weight:700;font-size:.9rem}.form-card h3{margin:0 0 5px;font:700 1.12rem Georgia,serif;color:var(--brand)}
 .form-fields{color:var(--muted);font-size:.9rem}
 .docs-body{color:var(--ink)}
 .docs-body h2{font:700 1.2rem Georgia,serif;color:var(--brand);margin:22px 0 8px}
@@ -125,6 +125,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
   <button id="wizard-mode" aria-pressed="false" type="button">Καθοδηγούμενος έλεγχος</button>
   <button id="forms-mode" aria-pressed="false" type="button">Κέντρο εντύπων</button>
   <button id="cases-mode" aria-pressed="false" type="button">Υποθέσεις</button>
+  <button id="templates-mode" aria-pressed="false" type="button">Πρότυπα Word</button>
 </nav>
 
 <section id="search-panel">
@@ -217,6 +218,11 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
   <div class="case-layout"><section><h2 class="subheading">Αποθηκευμένες υποθέσεις</h2><div id="cases-list" class="cases-list"></div></section><aside class="panel case-detail"><h2>Εκδόσεις και πρότυπα</h2><p id="case-detail-empty" class="muted">Επίλεξε υπόθεση για να δεις το ιστορικό της.</p><div id="case-detail-content" hidden><p id="case-detail-title" class="case-detail-title"></p><div id="case-snapshots"></div><button id="case-snapshot" type="button">Αποθήκευση snapshot</button></div></aside></div>
 </section>
 
+<section id="templates-panel" class="panel templates-panel" hidden>
+  <div class="section-heading"><div><p class="eyebrow">Πρότυπα εκθέσεων</p><h2>Κατάλογος και αντιστοίχιση πεδίων</h2><p class="muted">Τα πρότυπα παραμένουν συνδεδεμένα με την αρχική πηγή. Η αντιστοίχιση αποθηκεύεται τοπικά και θα τροφοδοτεί την παραγωγή Word.</p></div><a class="source-link" href="https://proanakrisi.gr/" target="_blank" rel="noreferrer">Άνοιγμα πηγής</a></div>
+  <div id="template-catalog" class="template-catalog"></div>
+</section>
+
 <section id="docs-panel" hidden>
   <div class="row"><button id="docs-close" type="button">← Επιστροφή στην αναζήτηση</button></div>
   <h2 id="docs-title" tabindex="-1"></h2>
@@ -237,6 +243,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
 <script type="module" src="docx-export.js"></script>
 <script type="module" src="forms-view.js"></script>
 <script type="module" src="hypotheses.js"></script>
+<script type="module" src="templates.js"></script>
 <script type="module" src="docs-view.js"></script>
 <script type="module" src="app.js"></script>
 </body>
