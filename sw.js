@@ -1,4 +1,5 @@
-const CACHE_NAME = "axyp-v2";
+// Bump this name whenever the app shell or bundled source content changes.
+const CACHE_NAME = "axyp-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -13,7 +14,10 @@ const APP_SHELL = [
   "./icon-512.svg",
   "./icon-maskable.svg",
   "./CHANGELOG.md",
-  "./PENDING.md"
+  "./PENDING.md",
+  "./sources/kodikas-odikis-kykloforias.md",
+  "./sources/kodikas-poinikis-dikonomias.md",
+  "./sources/poinikos-kodikas.md"
 ];
 
 self.addEventListener("install", (event) => {
