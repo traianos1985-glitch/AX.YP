@@ -9,6 +9,18 @@
   var message = null;
   var privacyOn = function () { return false; };
 
+  function storageGet(storage, key) {
+    try { return storage.getItem(key); } catch (e) { return null; }
+  }
+
+  function storageSet(storage, key, value) {
+    try { storage.setItem(key, value); } catch (e) { /* Storage may be blocked. */ }
+  }
+
+  function storageRemove(storage, key) {
+    try { storage.removeItem(key); } catch (e) { /* Storage may be blocked. */ }
+  }
+
   function fieldById(id) {
     return FORMS_DATA.commonFields.filter(function (field) { return field.id === id; })[0];
   }
@@ -16,8 +28,8 @@
   function readProfile() {
     var local = {};
     var session = {};
-    try { local = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}'); } catch (e) { local = {}; }
-    try { session = JSON.parse(sessionStorage.getItem(PROFILE_KEY) || '{}'); } catch (e) { session = {}; }
+    try { local = JSON.parse(storageGet(localStorage, PROFILE_KEY) || '{}'); } catch (e) { local = {}; }
+    try { session = JSON.parse(storageGet(sessionStorage, PROFILE_KEY) || '{}'); } catch (e) { session = {}; }
     FORMS_DATA.commonFields.forEach(function (field) {
       if (field.sensitive && Object.prototype.hasOwnProperty.call(local, field.id)) delete local[field.id];
     });
@@ -37,14 +49,18 @@
     FORMS_DATA.commonFields.forEach(function (field) {
       if (field.sensitive) delete local[field.id];
     });
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(local));
-    sessionStorage.setItem(PROFILE_KEY, JSON.stringify(session));
+    storageSet(localStorage, PROFILE_KEY, JSON.stringify(local));
+    storageSet(sessionStorage, PROFILE_KEY, JSON.stringify(session));
   }
 
   function clearProfile() {
-    localStorage.removeItem(PROFILE_KEY);
-    sessionStorage.removeItem(PROFILE_KEY);
+    storageRemove(localStorage, PROFILE_KEY);
+    storageRemove(sessionStorage, PROFILE_KEY);
     renderProfileFields();
+  }
+
+  function clearFields() {
+    form.reset();
   }
 
   function renderProfileFields() {
@@ -170,8 +186,9 @@
       queryInput.oninput = renderForms;
     },
     clearAll: function () {
-      localStorage.removeItem(PROFILE_KEY);
-      sessionStorage.removeItem(PROFILE_KEY);
+      storageRemove(localStorage, PROFILE_KEY);
+      storageRemove(sessionStorage, PROFILE_KEY);
+      clearFields();
     },
     refresh: renderForms
   };

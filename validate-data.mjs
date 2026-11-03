@@ -4,10 +4,10 @@ import vm from 'node:vm';
 const MIN_ENTRIES = 30;
 
 const source = fs.readFileSync(new URL('./data.js', import.meta.url), 'utf8');
-const context = {};
+const context = { window: {} };
 vm.createContext(context);
 try {
-  vm.runInContext(`${source}\nthis.DATA = DATA;`, context);
+  vm.runInContext(`${source}\nthis.DATA = window.DATA;`, context);
 } catch (error) {
   console.error(`data.js: could not load the database (${error.message})`);
   process.exit(1);
@@ -38,6 +38,7 @@ for (const module of data.modules) {
     ids.add(item.id);
     if (!['ok', 'partial'].includes(item.status)) errors.push(`${item.id}: invalid status`);
     if (!date.test(item.verified) || Number.isNaN(Date.parse(item.verified))) errors.push(`${item.id}: invalid verified date`);
+    if (date.test(item.verified) && Date.parse(item.verified) > Date.now()) errors.push(`${item.id}: verified date is in the future`);
     try {
       new URL(item.source);
       if (item.status === 'ok' && !isOfficial(item.source)) errors.push(`${item.id}: ok entry needs an official source (et.gr or gov.gr)`);
@@ -46,6 +47,10 @@ for (const module of data.modules) {
     }
   }
 }
+const staleOkEntries = data.modules.flatMap((module) => module.items || []).filter((item) => {
+  if (item.status !== 'ok' || !date.test(item.verified)) return false;
+  return Math.floor((Date.now() - Date.parse(`${item.verified}T00:00:00`)) / 864e5) > 90;
+});
 if (ids.size < MIN_ENTRIES) {
   errors.push(`database has ${ids.size} entries, expected at least ${MIN_ENTRIES}: check that data.js was not truncated`);
 }
@@ -54,3 +59,6 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(`Validated ${ids.size} entries in ${data.modules.length} modules.`);
+if (staleOkEntries.length) {
+  console.warn(`Warning: ${staleOkEntries.length} verified entries are older than 90 days: ${staleOkEntries.map((item) => item.id).join(', ')}`);
+}

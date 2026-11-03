@@ -33,6 +33,12 @@
     return fetch(file, { cache: 'no-cache' }).then(function (response) {
       if (!response.ok) throw new Error('HTTP ' + response.status);
       return response.text();
+    }).catch(function () {
+      if (!('caches' in window)) throw new Error('Document unavailable');
+      return caches.match(file).then(function (response) {
+        if (!response) throw new Error('Document unavailable');
+        return response.text();
+      });
     }).then(function (text) {
       cache[file] = text;
       return text;
