@@ -2,7 +2,21 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { defineConfig } from 'vite';
 
-const files = ['data.js', 'forms.js', 'sw.js', 'manifest.json', 'icon-192.svg', 'icon-512.svg', 'CHANGELOG.md', 'PENDING.md'];
+const files = [
+  'data.js',
+  'forms.js',
+  'docx-export.js',
+  'forms-view.js',
+  'docs-view.js',
+  'app.js',
+  'sw.js',
+  'manifest.json',
+  'icon-192.svg',
+  'icon-512.svg',
+  'icon-maskable.svg',
+  'CHANGELOG.md',
+  'PENDING.md'
+];
 
 function copyStaticFiles() {
   return {
