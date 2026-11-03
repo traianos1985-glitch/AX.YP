@@ -80,7 +80,7 @@ dd{margin:2px 0 0}
 .profile-actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
 .forms-toolbar{margin:14px 0}
 .forms-list{display:grid;gap:14px}
-.form-card h3{margin:0 0 5px;font:700 1.12rem Georgia,serif;color:var(--brand)}
+.section-heading{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.case-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.file-button{border:1px solid var(--line);background:var(--surface);color:var(--brand);border-radius:8px;padding:8px 12px;cursor:pointer}.case-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}.case-form label{display:flex;flex-direction:column;gap:5px;font-weight:700;font-size:.9rem}.case-form input,.case-form select,.case-form textarea{border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);padding:10px;font:inherit}.case-wide{grid-column:1/-1}.case-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:22px}.subheading{font:700 1.15rem Georgia,serif}.cases-list{display:grid;gap:8px}.case-card{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:12px;cursor:pointer}.case-card span,.case-card small{color:var(--muted)}.case-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}.case-detail-title{font-weight:700;color:var(--brand)}.snapshot{display:flex;flex-direction:column;border-top:1px solid var(--line);padding:9px 0}.snapshot span{color:var(--muted);font-size:.85rem}.form-card h3{margin:0 0 5px;font:700 1.12rem Georgia,serif;color:var(--brand)}
 .form-fields{color:var(--muted);font-size:.9rem}
 .docs-body{color:var(--ink)}
 .docs-body h2{font:700 1.2rem Georgia,serif;color:var(--brand);margin:22px 0 8px}
@@ -94,7 +94,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
 .foot-links a,.foot-links button{color:var(--brand);background:none;border:0;padding:0;font:inherit;text-decoration:underline;cursor:pointer}
 .print-only{display:none}
 :focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:2px}
-@media(max-width:650px){.wizard-grid,.profile-grid{grid-template-columns:1fr}.toolbar{align-items:stretch}.tabs{width:100%;order:2}.actions{width:100%}.actions button{flex:1}.favorite{margin-left:0}}
+@media(max-width:650px){.wizard-grid,.profile-grid,.case-form,.case-layout{grid-template-columns:1fr}.toolbar{align-items:stretch}.tabs{width:100%;order:2}.actions{width:100%}.actions button{flex:1}.favorite{margin-left:0}.section-heading{flex-direction:column}.case-actions{justify-content:flex-start}.case-wide{grid-column:auto}}
 @media print{
   body{background:#fff;color:#111}
   main{max-width:none;padding:0}
@@ -124,6 +124,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
   <button id="search-mode" aria-pressed="true" type="button">Αναζήτηση</button>
   <button id="wizard-mode" aria-pressed="false" type="button">Καθοδηγούμενος έλεγχος</button>
   <button id="forms-mode" aria-pressed="false" type="button">Κέντρο εντύπων</button>
+  <button id="cases-mode" aria-pressed="false" type="button">Υποθέσεις</button>
 </nav>
 
 <section id="search-panel">
@@ -198,6 +199,24 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
   <div id="forms-list" class="forms-list"></div>
 </section>
 
+<section id="cases-panel" class="cases-panel" hidden>
+  <div class="panel">
+    <div class="section-heading"><div><p class="eyebrow">Local-first workspace</p><h2>Κέντρο υποθέσεων</h2><p class="muted">Δημιούργησε υπόθεση, σύνδεσε προφίλ και πρότυπα και κράτησε εκδόσεις τοπικά στη συσκευή.</p></div><div class="case-actions"><button id="case-export" type="button">Εξαγωγή JSON</button><label class="file-button">Εισαγωγή JSON<input id="case-import" type="file" accept="application/json" hidden></label></div></div>
+    <div class="forms-notice" role="note"><strong>Ιδιωτικότητα:</strong> Τα δεδομένα παραμένουν στον browser. Μην αποθηκεύεις προσωπικά ή ευαίσθητα στοιχεία αν δεν είναι απαραίτητο.</div>
+    <form id="case-form" class="case-form">
+      <input id="case-id" type="hidden">
+      <label>Τίτλος υπόθεσης<input id="case-title" required placeholder="π.χ. Έλεγχος περιστατικού"></label>
+      <label>Είδος αδικήματος<input id="case-offence" placeholder="π.χ. Κακοποίηση ζώου"></label>
+      <label>Κατάσταση<select id="case-status"><option>Νέα</option><option>Σε εξέλιξη</option><option>Ολοκληρωμένη</option></select></label>
+      <label>Ημερομηνία<input id="case-date" type="date"></label>
+      <label class="case-wide">Σημειώσεις<textarea id="case-notes" rows="3" placeholder="Σύντομες υπηρεσιακές σημειώσεις χωρίς περιττά προσωπικά δεδομένα"></textarea></label>
+      <div class="profile-actions case-wide"><button class="mini-button" type="submit">Αποθήκευση υπόθεσης</button><button id="case-reset" class="mini-button" type="button">Νέα υπόθεση</button></div>
+    </form>
+    <p id="case-flash" class="flash" role="status"></p>
+  </div>
+  <div class="case-layout"><section><h2 class="subheading">Αποθηκευμένες υποθέσεις</h2><div id="cases-list" class="cases-list"></div></section><aside class="panel case-detail"><h2>Εκδόσεις και πρότυπα</h2><p id="case-detail-empty" class="muted">Επίλεξε υπόθεση για να δεις το ιστορικό της.</p><div id="case-detail-content" hidden><p id="case-detail-title" class="case-detail-title"></p><div id="case-snapshots"></div><button id="case-snapshot" type="button">Αποθήκευση snapshot</button></div></aside></div>
+</section>
+
 <section id="docs-panel" hidden>
   <div class="row"><button id="docs-close" type="button">← Επιστροφή στην αναζήτηση</button></div>
   <h2 id="docs-title" tabindex="-1"></h2>
@@ -217,6 +236,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
 <script type="module" src="forms.js"></script>
 <script type="module" src="docx-export.js"></script>
 <script type="module" src="forms-view.js"></script>
+<script type="module" src="hypotheses.js"></script>
 <script type="module" src="docs-view.js"></script>
 <script type="module" src="app.js"></script>
 </body>
