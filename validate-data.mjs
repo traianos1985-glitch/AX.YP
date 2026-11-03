@@ -1,11 +1,22 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 
+const MIN_ENTRIES = 30;
+
 const source = fs.readFileSync(new URL('./data.js', import.meta.url), 'utf8');
 const context = {};
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.DATA = DATA;`, context);
+try {
+  vm.runInContext(`${source}\nthis.DATA = DATA;`, context);
+} catch (error) {
+  console.error(`data.js: could not load the database (${error.message})`);
+  process.exit(1);
+}
 const data = context.DATA;
+if (!data || !Array.isArray(data.modules) || data.modules.length === 0) {
+  console.error('data.js: DATA.modules is missing or empty');
+  process.exit(1);
+}
 const errors = [];
 const date = /^\d{4}-\d{2}-\d{2}$/;
 const ids = new Set();
@@ -34,6 +45,9 @@ for (const module of data.modules) {
       errors.push(`${item.id}: invalid source URL`);
     }
   }
+}
+if (ids.size < MIN_ENTRIES) {
+  errors.push(`database has ${ids.size} entries, expected at least ${MIN_ENTRIES}: check that data.js was not truncated`);
 }
 if (errors.length) {
   console.error(errors.join('\n'));
