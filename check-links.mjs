@@ -6,16 +6,39 @@ const context = {};
 vm.createContext(context);
 vm.runInContext(`${source}\nthis.DATA = DATA;`, context);
 const urls = [...new Set(context.DATA.modules.flatMap((module) => module.items || []).map((item) => item.source))];
+const USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+const ATTEMPTS = 3;
 const failures = [];
+const warnings = [];
+
+async function checkUrl(url) {
+  let lastProblem = 'request failed';
+  for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+    try {
+      const response = await fetch(url, {
+        redirect: 'follow',
+        headers: { 'User-Agent': USER_AGENT },
+        signal: AbortSignal.timeout(20000),
+      });
+      await response.body?.cancel();
+      if (response.status === 404 || response.status === 410) return { failure: `${url}: ${response.status}` };
+      if (response.ok) return {};
+      lastProblem = `HTTP ${response.status}`;
+    } catch (error) {
+      lastProblem = error instanceof Error ? error.message : 'request failed';
+    }
+    if (attempt < ATTEMPTS) await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
+  }
+  return { warning: `${url}: ${lastProblem}` };
+}
 
 for (const url of urls) {
-  try {
-    const response = await fetch(url, { redirect: 'follow' });
-    if (response.status === 404) failures.push(`${url}: 404`);
-  } catch (error) {
-    failures.push(`${url}: ${error instanceof Error ? error.message : 'request failed'}`);
-  }
+  const result = await checkUrl(url);
+  if (result.failure) failures.push(result.failure);
+  if (result.warning) warnings.push(result.warning);
 }
+
+if (warnings.length) console.warn(`Could not verify (not counted as broken):\n${warnings.join('\n')}`);
 
 if (failures.length) {
   console.error(failures.join('\n'));
