@@ -1,117 +1,44 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="el">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Βοηθός Αξιωματικού Υπηρεσίας (δοκιμαστική έκδοση)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#102a43">
+<meta name="description" content="Τοπικός βοηθός αναζήτησης διατάξεων για αξιωματικούς υπηρεσίας.">
+<link rel="manifest" href="manifest.json">
+<title>Βοηθός Αξιωματικού Υπηρεσίας</title>
 <style>
-:root{--bg:#f4f6f8;--card:#fff;--ink:#14202e;--mute:#53606e;--line:#cfd6dd;--navy:#173a5e;--ok:#17653f;--okbg:#e3f3ea;--wait:#8a4b05;--waitbg:#fdf0dc;--bad:#9b1c1c;--badbg:#fbe5e5}
-@media(prefers-color-scheme:dark){:root{--bg:#10161d;--card:#18212b;--ink:#e6ebf0;--mute:#a1adb9;--line:#2e3a47;--navy:#7fb2e6;--ok:#6fd09b;--okbg:#17352a;--wait:#f0b560;--waitbg:#3a2a11;--bad:#f19a9a;--badbg:#3b1a1a}}
-*{box-sizing:border-box}
-html{padding-top:env(safe-area-inset-top,0)}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,"Segoe UI",Roboto,sans-serif}
-main{max-width:860px;margin:0 auto;padding:16px 16px 48px}
-h1{font:700 1.45rem/1.25 Georgia,"Times New Roman",serif;margin:8px 0 4px;color:var(--navy)}
-.sub{color:var(--mute);margin:0 0 6px;font-size:.93rem}
-.warn{background:var(--badbg);color:var(--bad);border-left:3px solid var(--bad);padding:5px 9px;border-radius:4px;margin:8px 0;font-size:.78rem;line-height:1.4}.sr{position:absolute;left:-9999px}
-.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin:14px 0 10px}
-.tabs button{flex:none;padding:8px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;font:inherit;cursor:pointer}
-.tabs button[aria-pressed=true]{background:var(--navy);color:var(--bg);border-color:var(--navy)}
-:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
-textarea{width:100%;min-height:84px;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);font:inherit;resize:vertical}
-.hint{font-size:.88rem;color:var(--mute);margin:6px 0 14px}
-article{background:var(--card);border:1px solid var(--line);border-radius:6px;margin:0 0 12px;padding:14px 16px}
-article h2{font:600 1.08rem/1.35 Georgia,serif;margin:0 0 8px}
-.badge{display:inline-block;font-size:.8rem;padding:2px 8px;border-radius:4px;margin:0 6px 8px 0}
-.b-ok{background:var(--okbg);color:var(--ok)}.b-wait{background:var(--waitbg);color:var(--wait)}.b-old{background:var(--badbg);color:var(--bad)}
-dl{margin:0}dt{font-weight:600;margin-top:8px}dd{margin:2px 0 0}
-.notes{color:var(--mute);font-size:.92rem}
-.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:.9rem;align-items:center}
-.row button,.row a{padding:6px 11px;border:1px solid var(--line);background:none;color:var(--navy);border-radius:5px;font:inherit;cursor:pointer;text-decoration:none}
-.empty{padding:16px;border:1px dashed var(--line);border-radius:6px;color:var(--mute)}
-footer{margin-top:24px;color:var(--mute);font-size:.85rem}
+:root{color-scheme:light;--bg:#f3f6f8;--surface:#fff;--ink:#132238;--muted:#5e6c7a;--line:#d6dee6;--brand:#123b5d;--brand-2:#0b6e69;--ok:#176b46;--ok-bg:#e7f5ed;--wait:#8a5007;--wait-bg:#fff3dd;--old:#a32626;--old-bg:#fde9e9;--shadow:0 10px 30px #173a5e12}
+@media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0d151d;--surface:#17232e;--ink:#edf3f7;--muted:#a8b5c1;--line:#30404d;--brand:#87bfe9;--brand-2:#65d0c0;--ok:#7bd6a5;--ok-bg:#17372b;--wait:#f4c374;--wait-bg:#3d2d13;--old:#ff9e9e;--old-bg:#421d22;--shadow:none}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:960px;margin:0 auto;padding:clamp(18px,4vw,42px) 16px 56px}header{border-bottom:1px solid var(--line);padding-bottom:18px}h1{font:700 clamp(1.6rem,4vw,2.25rem)/1.15 Georgia,serif;color:var(--brand);margin:0 0 8px}.eyebrow{color:var(--brand-2);font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin:0 0 8px}.sub{color:var(--muted);margin:0;max-width:60ch}.notice{display:flex;gap:10px;align-items:flex-start;background:var(--old-bg);color:var(--old);border:1px solid color-mix(in srgb,var(--old) 35%,transparent);border-left:4px solid var(--old);border-radius:10px;padding:12px 14px;margin:18px 0;font-size:.9rem}.notice strong{display:block}.toolbar{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:18px 0 10px}.tabs{display:flex;gap:7px;overflow-x:auto;padding:3px 1px 7px;margin:0;scrollbar-width:thin}.tabs button,.toolbar button,.row button,.row a{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:9px 12px;font:inherit;cursor:pointer;text-decoration:none}.tabs button{white-space:nowrap}.tabs button[aria-pressed=true]{background:var(--brand);border-color:var(--brand);color:var(--bg);font-weight:700}.actions{display:flex;gap:8px}.actions button{color:var(--brand)}.search{position:relative}.search label{display:block;font-weight:700;margin:14px 0 6px}.search textarea{display:block;width:100%;min-height:96px;resize:vertical;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:12px 14px;font:inherit;box-shadow:var(--shadow)}textarea:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--brand-2);outline-offset:2px}.hint{color:var(--muted);font-size:.9rem;margin:8px 0 16px}.results{min-height:120px}article{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin:0 0 14px;padding:16px;box-shadow:var(--shadow)}article h2{font:700 1.12rem/1.35 Georgia,serif;margin:0 0 10px}.badge{display:inline-block;font-size:.78rem;font-weight:700;padding:3px 8px;border-radius:999px;margin:0 6px 10px 0}.b-ok{background:var(--ok-bg);color:var(--ok)}.b-wait{background:var(--wait-bg);color:var(--wait)}.b-old{background:var(--old-bg);color:var(--old)}dl{margin:0}dt{font-weight:750;margin-top:10px}dd{margin:2px 0 0}.notes{color:var(--muted);font-size:.92rem}.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.row button,.row a{color:var(--brand);padding:7px 10px;font-size:.9rem}.empty{background:var(--surface);border:1px dashed var(--line);border-radius:10px;color:var(--muted);padding:18px}.empty strong{color:var(--ink)}footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:var(--muted);font-size:.86rem}.foot-links{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}.foot-links a{color:var(--brand)}@media(max-width:600px){.toolbar{align-items:stretch}.tabs{order:2;width:100%}.actions{width:100%}.actions button{flex:1}}
 </style>
 </head>
 <body>
 <main>
-<h1>Βοηθός Αξιωματικού Υπηρεσίας</h1>
-<p class="sub">Δοκιμαστική έκδοση. Αναζήτηση σε επαληθευμένες διατάξεις.</p>
-<div class="warn">Βοηθητικό εργαλείο: έλεγξε κάθε διάταξη στην πηγή. Η αναζήτηση γίνεται στη συσκευή σου, χωρίς αποστολή δεδομένων. Μην γράφεις προσωπικά στοιχεία.</div>
-<div class="tabs" id="tabs" role="group" aria-label="Ενότητες"></div>
-<label for="q" class="sr">Περιγραφή περιστατικού</label>
-<textarea id="q" placeholder="Περίγραψε το περιστατικό ή γράψε λέξεις-κλειδιά (π.χ. σκύλος δεμένος χτυπήθηκε από τον ιδιοκτήτη)"></textarea>
-<p class="hint" id="hint"></p>
-<section id="out" aria-live="polite"></section>
-<footer id="foot"></footer>
+<header><p class="eyebrow">Τοπική εφαρμογή · δοκιμαστική έκδοση</p><h1>Βοηθός Αξιωματικού Υπηρεσίας</h1><p class="sub">Γρήγορη αναζήτηση σε καταχωρισμένες διατάξεις και διαδικασίες. Η τελική κρίση ανήκει στον αξιωματικό και απαιτεί έλεγχο στην επίσημη πηγή.</p></header>
+<div class="notice" role="note"><div><strong>Σημαντική προειδοποίηση</strong>Το εργαλείο είναι βοηθητικό και δεν αντικαθιστά το ισχύον ΦΕΚ, την επίσημη κωδικοποίηση ή τις υπηρεσιακές οδηγίες. Μην καταχωρίζεις ονόματα, ΑΦΜ ή στοιχεία πραγματικών υποθέσεων. Η αναζήτηση γίνεται μόνο στη συσκευή σου.</div></div>
+<div class="toolbar"><div class="tabs" id="tabs" role="group" aria-label="Ενότητες"></div><div class="actions"><button id="theme" type="button" aria-pressed="false">Θέμα: συστήματος</button><button id="clear" type="button">Καθαρισμός</button></div></div>
+<section class="search" aria-labelledby="search-label"><label id="search-label" for="q">Περιγραφή περιστατικού ή λέξεις-κλειδιά</label><textarea id="q" autocomplete="off" placeholder="π.χ. σκύλος δεμένος χτυπήθηκε από τον ιδιοκτήτη"></textarea><p class="hint" id="hint" aria-live="polite"></p></section>
+<section class="results" id="out" aria-live="polite"></section>
+<footer><div id="foot"></div><nav class="foot-links" aria-label="Βοηθητικοί σύνδεσμοι"><a href="CHANGELOG.md">Αρχείο αλλαγών</a><a href="https://github.com/traianos1985-glitch/AX.YP/issues/new" target="_blank" rel="noopener">Αναφορά ζητήματος στο GitHub</a></nav></footer>
 </main>
 <script src="data.js"></script>
 <script>
 (function(){
-  var STALE_DAYS = 90;
-  var mod = DATA.modules[0].id;
-  var tabs = document.getElementById('tabs'), q = document.getElementById('q'),
-      out = document.getElementById('out'), hint = document.getElementById('hint');
-
-  function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ς/g,'σ');}
-  function stems(s){var w=norm(s).split(/[^a-zα-ω0-9]+/).filter(function(x){return x.length>=3});return w.map(function(x){return x.slice(0,5)});}
-  function ageDays(d){return Math.floor((Date.now()-new Date(d).getTime())/864e5);}
-  function el(t,c,txt){var e=document.createElement(t);if(c)e.className=c;if(txt!==undefined)e.textContent=txt;return e;}
-
-  function tabsRender(){
-    tabs.textContent='';
-    DATA.modules.forEach(function(m){
-      var b=el('button','',m.title+(m.pending?' (σύντομα)':''));
-      b.setAttribute('aria-pressed',m.id===mod);
-      b.onclick=function(){mod=m.id;tabsRender();render();};
-      tabs.appendChild(b);
-    });
-  }
-
-  function field(dl,label,text){if(!text)return;dl.appendChild(el('dt','',label));dl.appendChild(el('dd','',text));}
-
-  function card(it){
-    var a=el('article'), age=ageDays(it.verified);
-    a.appendChild(el('h2','',it.title));
-    a.appendChild(el('span','badge '+(it.status==='ok'?'b-ok':'b-wait'),it.status==='ok'?'Επαληθευμένη':'Μερική επαλήθευση'));
-    a.appendChild(el('span','badge '+(age>STALE_DAYS?'b-old':'b-ok'),'Έλεγχος: '+it.verified+(age>STALE_DAYS?' (να επαληθευτεί ξανά)':'')));
-    var dl=el('dl');
-    field(dl,'Διάταξη',it.law);field(dl,'Ποινή ή πρόστιμο',it.penalty);
-    field(dl,'Διαδικασία',it.procedure);
-    if(it.notes){dl.appendChild(el('dt','','Σημειώσεις'));dl.appendChild(el('dd','notes',it.notes));}
-    a.appendChild(dl);
-    var r=el('div','row');
-    var s=el('a','','Πηγή');s.href=it.source;s.target='_blank';s.rel='noopener';r.appendChild(s);
-    var c=el('button','','Αντιγραφή για αναφορά λάθους');
-    c.onclick=function(){
-      var t='Εγγραφή '+it.id+' ('+it.title+') – πιθανό λάθος ή αλλαγή νομοθεσίας: ';
-      (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){c.textContent='Αντιγράφηκε';},function(){window.prompt('Αντίγραψε:',t);});
-    };
-    r.appendChild(c);a.appendChild(r);return a;
-  }
-
-  function render(){
-    var m=DATA.modules.filter(function(x){return x.id===mod})[0];
-    out.textContent='';
-    if(m.pending){
-      hint.textContent='';
-      out.appendChild(el('div','empty','Η ενότητα «'+m.title+'» δεν έχει περιεχόμενο ακόμη. '+m.needed));return;
-    }
-    var qs=stems(q.value), list=m.items.map(function(it){
-      var h=stems(it.title+' '+it.keywords+' '+it.law), n=0;
-      qs.forEach(function(s){if(h.indexOf(s)>-1)n++;});
-      return {it:it,n:n};
-    });
-    if(qs.length){
-      list=list.filter(function(x){return x.n>0}).sort(function(a,b){return b.n-a.n});
-      hint.textContent=list.length?list.length+' σχετικές εγγραφές, από την πιο σχετική.':'';
-      if(!list.length){out.appendChild(el('div','empty','Καμία εγγραφή δεν ταιριάζει. Δοκίμασε άλλες λέξεις. Αν το περιστατικό δεν καλύπτεται, η εγγραφή δεν έχει καταχωριστεί ακόμη.'));return;}
-    } else hint.textContent='Εμφανίζονται όλες οι εγγραφές της ενότητας ('+list.length+').';
-    list.forEach(function(x){out.appendChild(card(x.it));});
-  }
-
-  q.addEventListener('input',render);
-  document.getElementById('foot').textContent='Τελευταία ενημέρωση βάσης: '+DATA.updated+'. Εγγραφές παλαιότερες από '+STALE_DAYS+' ημέρες επισημαίνονται για νέο έλεγχο.';
-  tabsRender();render();
+  var STALE_DAYS=90, mod=DATA.modules[0].id, themeKey='axyp-theme';
+  var tabs=document.getElementById('tabs'),q=document.getElementById('q'),out=document.getElementById('out'),hint=document.getElementById('hint'),theme=document.getElementById('theme');
+  function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ς/g,'σ')}
+  function stems(s){return norm(s).split(/[^a-zα-ω0-9]+/).filter(function(x){return x.length>=3}).map(function(x){return x.slice(0,5)})}
+  function ageDays(d){var t=new Date(d+'T00:00:00').getTime();return isNaN(t)?Infinity:Math.floor((Date.now()-t)/864e5)}
+  function el(t,c,txt){var e=document.createElement(t);if(c)e.className=c;if(txt!==undefined)e.textContent=txt;return e}
+  function tabsRender(){tabs.textContent='';DATA.modules.forEach(function(m){var b=el('button','',m.title+(m.pending?' (εκκρεμεί)':''));b.type='button';b.setAttribute('aria-pressed',m.id===mod);b.onclick=function(){mod=m.id;tabsRender();render()};tabs.appendChild(b)})}
+  function field(dl,label,text){if(text){dl.appendChild(el('dt','',label));dl.appendChild(el('dd','',text))}}
+  function card(it){var a=el('article'),age=ageDays(it.verified);a.appendChild(el('h2','',it.title));a.appendChild(el('span','badge '+(it.status==='ok'?'b-ok':'b-wait'),it.status==='ok'?'Επαληθευμένη':'Μερική επαλήθευση'));a.appendChild(el('span','badge '+(age>STALE_DAYS?'b-old':'b-ok'),'Έλεγχος: '+it.verified+(age>STALE_DAYS?' · χρειάζεται νέο έλεγχο':'')));var dl=el('dl');field(dl,'Διάταξη',it.law);field(dl,'Ποινή ή πρόστιμο',it.penalty);field(dl,'Διαδικασία',it.procedure);if(it.notes)field(dl,'Σημειώσεις',it.notes);a.appendChild(dl);var r=el('div','row'),s=el('a','', 'Άνοιγμα πηγής');s.href=it.source;s.target='_blank';s.rel='noopener';r.appendChild(s);var c=el('button','', 'Αντιγραφή αναφοράς');c.type='button';c.onclick=function(){var t='Εγγραφή '+it.id+' ('+it.title+') – πιθανό λάθος ή αλλαγή νομοθεσίας: ';var done=function(){c.textContent='Αντιγράφηκε';setTimeout(function(){c.textContent='Αντιγραφή αναφοράς'},2200)};if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){window.prompt('Αντέγραψε το κείμενο:',t)})}else window.prompt('Αντέγραψε το κείμενο:',t)};r.appendChild(c);a.appendChild(r);return a}
+  function render(){var m=DATA.modules.filter(function(x){return x.id===mod})[0];out.textContent='';if(m.pending){hint.textContent='';var e=el('div','empty');e.appendChild(el('strong','', 'Η ενότητα «'+m.title+'» δεν έχει περιεχόμενο ακόμη. '));e.appendChild(document.createTextNode(m.needed));out.appendChild(e);return}var qs=stems(q.value),list=m.items.map(function(it){var h=stems(it.title+' '+it.keywords+' '+it.law),n=0;qs.forEach(function(s){if(h.indexOf(s)>-1)n++});return{it:it,n:n}});if(qs.length){list=list.filter(function(x){return x.n>0}).sort(function(a,b){return b.n-a.n});hint.textContent=list.length?list.length+' σχετικές εγγραφές.':'Δεν βρέθηκε καταχωρισμένη εγγραφή· ίσως δεν έχει προστεθεί ακόμη.';if(!list.length){out.appendChild(el('div','empty','Δοκίμασε διαφορετικές λέξεις-κλειδιά ή επίλεξε άλλη ενότητα.'));return}}else hint.textContent='Εμφανίζονται όλες οι '+list.length+' καταχωρισμένες εγγραφές της ενότητας.';list.forEach(function(x){out.appendChild(card(x.it))})}
+  function applyTheme(value){document.documentElement.dataset.theme=value;theme.textContent='Θέμα: '+(value==='light'?'ανοιχτό':'σκούρο');theme.setAttribute('aria-pressed',value==='dark');if(value==='light')document.documentElement.style.colorScheme='light';else if(value==='dark')document.documentElement.style.colorScheme='dark';else document.documentElement.style.colorScheme=''}
+  var saved=localStorage.getItem(themeKey);if(saved==='light'||saved==='dark')applyTheme(saved);else theme.textContent='Θέμα: συστήματος';
+  theme.onclick=function(){var next=document.documentElement.dataset.theme==='dark'?'light':'dark';applyTheme(next);localStorage.setItem(themeKey,next)};document.getElementById('clear').onclick=function(){q.value='';q.focus();render()};q.addEventListener('input',render);document.getElementById('foot').textContent='Τελευταία ενημέρωση βάσης: '+DATA.updated+'. Εγγραφές παλαιότερες από '+STALE_DAYS+' ημέρες επισημαίνονται για νέο έλεγχο.';tabsRender();render();
+  if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});
 })();
 </script>
 </body>
