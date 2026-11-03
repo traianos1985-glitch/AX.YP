@@ -35,7 +35,7 @@
   var wizardSearch = document.getElementById('wizard-search');
   var wizardNote = document.getElementById('wizard-note');
   var docsPanel = document.getElementById('docs-panel');
-  var modes = { search: document.getElementById('search-panel'), wizard: document.getElementById('wizard-panel'), forms: document.getElementById('forms-panel'), docs: docsPanel };
+  var modes = { search: document.getElementById('search-panel'), wizard: document.getElementById('wizard-panel'), forms: document.getElementById('forms-panel'), cases: document.getElementById('cases-panel'), docs: docsPanel };
 
   var activeModule = DATA.modules[0].id;
   var scopeAll = false;
@@ -353,7 +353,7 @@
 
   function showMode(name) {
     Object.keys(modes).forEach(function (key) { modes[key].hidden = key !== name; });
-    ['search', 'wizard', 'forms'].forEach(function (key) {
+    ['search', 'wizard', 'forms', 'cases'].forEach(function (key) {
       document.getElementById(key + '-mode').setAttribute('aria-pressed', String(key === name));
     });
     if (name === 'search') renderResults();
@@ -425,6 +425,7 @@
     document.getElementById('search-mode').onclick = function () { showMode('search'); };
     document.getElementById('wizard-mode').onclick = function () { showMode('wizard'); };
     document.getElementById('forms-mode').onclick = function () { showMode('forms'); };
+    document.getElementById('cases-mode').onclick = function () { showMode('cases'); HypothesesView.refresh(); };
     document.getElementById('docs-changelog').onclick = function () { showDocs('CHANGELOG.md', 'Αρχείο αλλαγών'); };
     document.getElementById('docs-pending').onclick = function () { showDocs('PENDING.md', 'Εκκρεμότητες περιεχομένου'); };
     document.getElementById('docs-close').onclick = function () { showMode('search'); };
