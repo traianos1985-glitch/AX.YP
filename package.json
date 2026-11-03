@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "validate": "node validate-data.mjs",
-    "check-links": "node check-links.mjs"
+    "check-links": "node check-links.mjs",
+    "test": "node tests/smoke.mjs"
   },
   "devDependencies": {
     "vite": "^7.0.0"

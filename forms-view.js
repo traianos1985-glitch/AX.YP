@@ -18,6 +18,9 @@
     var session = {};
     try { local = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}'); } catch (e) { local = {}; }
     try { session = JSON.parse(sessionStorage.getItem(PROFILE_KEY) || '{}'); } catch (e) { session = {}; }
+    FORMS_DATA.commonFields.forEach(function (field) {
+      if (field.sensitive && Object.prototype.hasOwnProperty.call(local, field.id)) delete local[field.id];
+    });
     return Object.assign({}, local, session);
   }
 
@@ -30,6 +33,9 @@
       if (field && field.sensitive) session[key] = value;
       else if (privacyOn()) session[key] = value;
       else local[key] = value;
+    });
+    FORMS_DATA.commonFields.forEach(function (field) {
+      if (field.sensitive) delete local[field.id];
     });
     localStorage.setItem(PROFILE_KEY, JSON.stringify(local));
     sessionStorage.setItem(PROFILE_KEY, JSON.stringify(session));
