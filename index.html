@@ -12,8 +12,8 @@ html{padding-top:env(safe-area-inset-top,0)}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,"Segoe UI",Roboto,sans-serif}
 main{max-width:860px;margin:0 auto;padding:16px 16px 48px}
 h1{font:700 1.45rem/1.25 Georgia,"Times New Roman",serif;margin:8px 0 4px;color:var(--navy)}
-.sub{color:var(--mute);margin:0 0 14px}
-.warn{background:var(--badbg);color:var(--bad);border-left:4px solid var(--bad);padding:10px 12px;border-radius:4px;margin:12px 0;font-size:.93rem}
+.sub{color:var(--mute);margin:0 0 6px;font-size:.93rem}
+.warn{background:var(--badbg);color:var(--bad);border-left:3px solid var(--bad);padding:5px 9px;border-radius:4px;margin:8px 0;font-size:.78rem;line-height:1.4}.sr{position:absolute;left:-9999px}
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin:14px 0 10px}
 .tabs button{flex:none;padding:8px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;font:inherit;cursor:pointer}
 .tabs button[aria-pressed=true]{background:var(--navy);color:var(--bg);border-color:var(--navy)}
@@ -36,7 +36,7 @@ footer{margin-top:24px;color:var(--mute);font-size:.85rem}
 <main>
 <h1>Βοηθός Αξιωματικού Υπηρεσίας</h1>
 <p class="sub">Δοκιμαστική έκδοση. Αναζήτηση σε επαληθευμένες διατάξεις.</p>
-<div class="warn">Το εργαλείο βοηθά αλλά δεν αντικαθιστά την κρίση σου. Έλεγξε κάθε διάταξη, ποινή και ενέργεια στην πηγή πριν τη χρησιμοποιήσεις. Η αναζήτηση γίνεται μέσα στη συσκευή σου και τίποτα από όσα γράφεις δεν αποστέλλεται πουθενά. Μην γράφεις προσωπικά στοιχεία.</div>
+<div class="warn">Βοηθητικό εργαλείο: έλεγξε κάθε διάταξη στην πηγή. Η αναζήτηση γίνεται στη συσκευή σου, χωρίς αποστολή δεδομένων. Μην γράφεις προσωπικά στοιχεία.</div>
 <div class="tabs" id="tabs" role="group" aria-label="Ενότητες"></div>
 <label for="q" class="sr">Περιγραφή περιστατικού</label>
 <textarea id="q" placeholder="Περίγραψε το περιστατικό ή γράψε λέξεις-κλειδιά (π.χ. σκύλος δεμένος χτυπήθηκε από τον ιδιοκτήτη)"></textarea>
