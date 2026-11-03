@@ -78,7 +78,7 @@
     if (!matches.length) {
       var empty = document.createElement('div');
       empty.className = 'empty';
-      empty.textContent = 'Δεν βρέθηκε έντυπο με αυτή τη αναζήτηση.';
+      empty.textContent = 'Δεν βρέθηκε έντυπο με αυτή την αναζήτηση.';
       list.appendChild(empty);
     }
   }
@@ -136,7 +136,7 @@
     button.onclick = function () {
       DocxExport.download({
         title: item.title,
-        notice: 'ΠΡΟΣΧΕΔΙΟ: έλεγξε και επεξεργάσου τα στοιχεία στο Word πριν απο την εκτύπωση.',
+        notice: 'ΠΡΟΣΧΕΔΙΟ: έλεγξε και επεξεργάσου τα στοιχεία στο Word πριν από την εκτύπωση.',
         rows: fieldValues(item).map(function (entry) { return [entry.label, entry.value]; }),
         source: item.source,
         fileName: item.id + '-proschedio.docx'
