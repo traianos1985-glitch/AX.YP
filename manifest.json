@@ -3,9 +3,13 @@
   "short_name": "Αξιωματικός",
   "lang": "el",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f3f6f8",
-  "theme_color": "#102a43",
+  "theme_color": "#123b5d",
   "description": "Τοπικός βοηθός αναζήτησης διατάξεων.",
-  "icons": []
+  "icons": [
+    { "src": "icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
 }
