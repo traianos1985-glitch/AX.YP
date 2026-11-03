@@ -40,8 +40,20 @@
   var activeModule = DATA.modules[0].id;
   var scopeAll = false;
   var debounceTimer = null;
-  var privacyOn = localStorage.getItem(PRIVACY_KEY) === '1';
+  var privacyOn = storageGet(localStorage, PRIVACY_KEY) === '1';
   var indexCache = {};
+
+  function storageGet(storage, key) {
+    try { return storage.getItem(key); } catch (e) { return null; }
+  }
+
+  function storageSet(storage, key, value) {
+    try { storage.setItem(key, value); } catch (e) { /* Storage may be blocked. */ }
+  }
+
+  function storageRemove(storage, key) {
+    try { storage.removeItem(key); } catch (e) { /* Storage may be blocked. */ }
+  }
 
   function norm(value) {
     return String(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ς/g, 'σ');
@@ -103,7 +115,7 @@
   }
 
   function readJson(key, fallback) {
-    try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (e) { return fallback; }
+    try { return JSON.parse(storageGet(localStorage, key) || '') || fallback; } catch (e) { return fallback; }
   }
 
   function favorites() {
@@ -115,7 +127,7 @@
     var index = list.indexOf(id);
     if (index > -1) list.splice(index, 1);
     else list.push(id);
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(list));
+    storageSet(localStorage, FAVORITES_KEY, JSON.stringify(list));
     return index === -1;
   }
 
@@ -164,13 +176,22 @@
   }
 
   function highlight(parent, text, rawQuery) {
-    var words = rawQuery.split(/[^\p{L}\p{N}]+/u).filter(function (word) { return word.length >= 2; });
+    var words = tokens(rawQuery);
     if (!words.length) { parent.textContent = text; return; }
-    var pattern = new RegExp('(' + words.map(function (word) { return word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')', 'gi');
-    text.split(pattern).forEach(function (part, index) {
-      if (index % 2 === 1) parent.appendChild(el('mark', '', part));
-      else if (part) parent.appendChild(document.createTextNode(part));
-    });
+    var matcher = /[\p{L}\p{N}]+/gu;
+    var cursor = 0;
+    var match;
+    while ((match = matcher.exec(text))) {
+      if (match.index > cursor) parent.appendChild(document.createTextNode(text.slice(cursor, match.index)));
+      var token = norm(match[0]);
+      var matches = words.some(function (word) {
+        var stem = word.slice(0, Math.max(4, word.length - 2));
+        return token === word || (word.length >= 4 && token.indexOf(stem) === 0);
+      });
+      parent.appendChild(matches ? el('mark', '', match[0]) : document.createTextNode(match[0]));
+      cursor = match.index + match[0].length;
+    }
+    if (cursor < text.length) parent.appendChild(document.createTextNode(text.slice(cursor)));
   }
 
   function checksFor(key) {
@@ -179,7 +200,7 @@
   }
 
   function saveChecks(key, values) {
-    localStorage.setItem(key, JSON.stringify(values));
+    storageSet(localStorage, key, JSON.stringify(values));
   }
 
   function checklistNode(key, onChange) {
@@ -342,6 +363,7 @@
   function showDocs(file, title) {
     document.getElementById('docs-title').textContent = title;
     showMode('docs');
+    document.getElementById('docs-title').focus();
     DocsView.show(file);
   }
 
@@ -355,7 +377,7 @@
     privacyOn = on;
     privacyButton.setAttribute('aria-pressed', String(on));
     privacyButton.textContent = 'Privacy mode: ' + (on ? 'ενεργό' : 'ανενεργό');
-    localStorage.setItem(PRIVACY_KEY, on ? '1' : '0');
+    storageSet(localStorage, PRIVACY_KEY, on ? '1' : '0');
   }
 
   function setConnection(online) {
@@ -370,8 +392,8 @@
       var order = ['system', 'light', 'dark'];
       var current = document.documentElement.getAttribute('data-theme') || 'system';
       var next = order[(order.indexOf(current) + 1) % order.length];
-      if (next === 'system') localStorage.removeItem(THEME_KEY);
-      else localStorage.setItem(THEME_KEY, next);
+      if (next === 'system') storageRemove(localStorage, THEME_KEY);
+      else storageSet(localStorage, THEME_KEY, next);
       applyTheme(next);
     };
     privacyButton.onclick = function () { applyPrivacy(!privacyOn); };
@@ -431,7 +453,7 @@
   function start() {
     document.getElementById('version').textContent = DATA.updated;
     document.getElementById('foot').textContent = 'Τελευταία ενημέρωση βάσης: ' + DATA.updated + '. Εγγραφές χωρίς επαλήθευση από επίσημη πηγή επισημαίνονται.';
-    var savedTheme = localStorage.getItem(THEME_KEY);
+    var savedTheme = storageGet(localStorage, THEME_KEY);
     applyTheme(savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'system');
     applyPrivacy(privacyOn);
     setConnection(navigator.onLine);

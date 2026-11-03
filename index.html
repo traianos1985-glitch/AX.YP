@@ -157,7 +157,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
     <button id="favorites-only" type="button" aria-pressed="false">Μόνο αποθηκευμένες</button>
     <button id="print" type="button">Εκτύπωση αποτελεσμάτων</button>
   </section>
-  <section id="out" class="results"></section>
+  <section id="out" class="results" aria-live="polite" aria-atomic="false"></section>
 </section>
 
 <section id="wizard-panel" class="panel wizard" hidden>
@@ -200,7 +200,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
 
 <section id="docs-panel" hidden>
   <div class="row"><button id="docs-close" type="button">← Επιστροφή στην αναζήτηση</button></div>
-  <h2 id="docs-title"></h2>
+  <h2 id="docs-title" tabindex="-1"></h2>
   <div id="docs-content" class="docs-body panel"></div>
 </section>
 
@@ -213,11 +213,11 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
   </nav>
 </footer>
 </main>
-<script src="data.js"></script>
-<script src="forms.js"></script>
-<script src="docx-export.js"></script>
-<script src="forms-view.js"></script>
-<script src="docs-view.js"></script>
-<script src="app.js"></script>
+<script type="module" src="data.js"></script>
+<script type="module" src="forms.js"></script>
+<script type="module" src="docx-export.js"></script>
+<script type="module" src="forms-view.js"></script>
+<script type="module" src="docs-view.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

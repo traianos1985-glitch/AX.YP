@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const source = fs.readFileSync(new URL('./data.js', import.meta.url), 'utf8');
-const context = {};
+const context = { window: {} };
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.DATA = DATA;`, context);
+vm.runInContext(`${source}\nthis.DATA = window.DATA;`, context);
 const urls = [...new Set(context.DATA.modules.flatMap((module) => module.items || []).map((item) => item.source))];
 const USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 const ATTEMPTS = 3;

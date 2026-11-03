@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import vm from 'node:vm'
 import { readFile } from 'node:fs/promises'
 
 const [manifest, serviceWorker, docxExporter, app] = await Promise.all([
@@ -12,7 +13,7 @@ const parsedManifest = JSON.parse(manifest)
 assert.equal(parsedManifest.start_url, './')
 assert.equal(parsedManifest.scope, './')
 assert.ok(parsedManifest.icons.every((icon) => icon.src.startsWith('./')))
-assert.match(serviceWorker, /CACHE_NAME = "axyp-v3"/)
+assert.match(serviceWorker, /CACHE_NAME = "axyp-v4"/)
 assert.match(serviceWorker, /\.\/sources\/poinikos-kodikas\.md/)
 assert.match(docxExporter, /word\/styles\.xml/)
 assert.match(docxExporter, /styleId="Heading1"/)
@@ -22,4 +23,40 @@ assert.equal(normalizeGreek('ΚΑΙ'), normalizeGreek('καί'))
 assert.match(app, /'κινητο': \['τηλεφωνο'\]/)
 assert.match(app, /'τηλεφωνο': \['κινητο'\]/)
 
-console.log('Smoke tests passed: manifest, offline cache, DOCX styles, and Greek search normalization.')
+let generatedBlob
+const context = {
+  Blob,
+  TextEncoder,
+  Uint8Array,
+  Uint32Array,
+  DataView,
+  ArrayBuffer,
+  setTimeout,
+  URL: { createObjectURL: () => 'blob:test', revokeObjectURL: () => {} },
+  document: {
+    body: { appendChild: () => {} },
+    createElement: () => ({ click: () => {}, remove: () => {} })
+  },
+  window: {}
+}
+const originalBlob = context.Blob
+context.Blob = class extends originalBlob {
+  constructor(parts, options) {
+    super(parts, options)
+    generatedBlob = this
+  }
+}
+vm.runInNewContext(docxExporter, context)
+context.window.DocxExport.download({
+  title: 'Έλεγχος',
+  notice: 'ΠΡΟΣΧΕΔΙΟ',
+  rows: [['Πεδίο', 'Τιμή']],
+  source: 'https://example.gov.gr/source',
+  fileName: 'test.docx'
+})
+const zipText = new TextDecoder().decode(await generatedBlob.arrayBuffer())
+assert.match(zipText, /word\/document\.xml/)
+assert.match(zipText, /word\/styles\.xml/)
+assert.match(zipText, /Heading1/)
+
+console.log('Smoke tests passed: manifest, offline cache, DOCX archive, and Greek search normalization.')
