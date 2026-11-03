@@ -15,7 +15,7 @@ const FORMS_DATA = {
     { id: "officer", label: "Συντάκτης / υπάλληλος", type: "text" }
   ],
   categories: [
-    { id: "series-d", title: "Έντυπα – Υποδείγματα Σειράς Δ΄", description: "Υποδείγματα που εμφανίζονται στη σχετική ενότητα του site.", countLabel: "100+ υποδείγματα", source: "https://proanakrisi.gr/", fields: ["personName", "incidentDate", "incidentTime", "location", "service", "officer"] },
+    { id: "series-d", title: "Έντυπα – Υποδείγματα Σειράς Δ΄", description: "Υποδείγματα που εμφανίζονται στη σχετική ενότητα του site.", countLabel: "Συλλογή υποδειγμάτων", source: "https://proanakrisi.gr/", fields: ["personName", "incidentDate", "incidentTime", "location", "service", "officer"] },
     { id: "preliminary", title: "Έντυπα προανάκρισης", description: "Βασικός κορμός για εκθέσεις, καταθέσεις, βεβαιώσεις και διαβιβάσεις.", countLabel: "Συλλογή εντύπων", source: "https://proanakrisi.gr/", fields: ["personName", "fatherName", "idNumber", "incidentDate", "location", "service", "officer"] },
     { id: "security-bodies", title: "Σώματα ασφαλείας", description: "Έντυπα και υποδείγματα ανά υπηρεσιακό σώμα και αρμοδιότητα.", countLabel: "Θεματική συλλογή", source: "https://proanakrisi.gr/", fields: ["personName", "idNumber", "incidentDate", "service", "officer"] },
     { id: "cooperation", title: "Συνεργασία υπηρεσιών", description: "Έγγραφα επικοινωνίας, αιτήματα, διαβιβαστικά και απαντήσεις.", countLabel: "Θεματική συλλογή", source: "https://proanakrisi.gr/", fields: ["personName", "incidentDate", "service", "officer"] },
