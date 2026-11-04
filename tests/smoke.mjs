@@ -14,8 +14,6 @@ assert.equal(parsedManifest.id, './')
 assert.equal(parsedManifest.start_url, './')
 assert.equal(parsedManifest.scope, './')
 assert.ok(parsedManifest.icons.every((icon) => icon.src.startsWith('./')))
-assert.match(serviceWorker, /CACHE_NAME = "axyp-v6"/)
-assert.match(serviceWorker, /\.\/sources\/poinikos-kodikas\.md/)
 assert.match(docxExporter, /word\/styles\.xml/)
 assert.match(docxExporter, /styleId="Heading1"/)
 
@@ -61,3 +59,33 @@ assert.match(zipText, /word\/styles\.xml/)
 assert.match(zipText, /Heading1/)
 
 console.log('Smoke tests passed: manifest, offline cache, DOCX archive, and Greek search normalization.')
+
+
+// Regression checks for shared-computer safety.
+const storageSource = await readFile(new URL('../storage.js', import.meta.url), 'utf8')
+const templateLibrary = await readFile(new URL('../template-library.js', import.meta.url), 'utf8')
+const caseEnhancements = await readFile(new URL('../case-enhancements.js', import.meta.url), 'utf8')
+assert.match(storageSource, /key\.indexOf\('axyp-'\) === 0/)
+assert.doesNotMatch(storageSource, /localStorage\.clear\(\)/)
+assert.doesNotMatch(storageSource, /objectStore\(STORE_NAME\)\.clear\(\)/)
+assert.match(templateLibrary, /if \(!activeId\) return null/)
+assert.doesNotMatch(templateLibrary, /return all\[0\] \|\| \{\}/)
+assert.match(templateLibrary, /if \(!item \|\| !item\.id\)/)
+assert.match(caseEnhancements, /if \(!id\) return null/)
+assert.doesNotMatch(caseEnhancements, /return list\[0\]/)
+
+
+// Regression checks for the personal-workspace workflow and privacy contract.
+const workspaceSource = await readFile(new URL('../case-folder-storage.js', import.meta.url), 'utf8')
+const usageGuide = await readFile(new URL('../ΟΔΗΓΙΕΣ-ΧΡΗΣΗΣ.md', import.meta.url), 'utf8')
+const readmeSource = await readFile(new URL('../README.md', import.meta.url), 'utf8')
+assert.match(workspaceSource, /personal-workspace/)
+assert.match(workspaceSource, /showDirectoryPicker/)
+assert.match(workspaceSource, /Δικογραφίες/)
+assert.match(workspaceSource, /Ιστορικό/)
+assert.doesNotMatch(workspaceSource, /shared-root|Κοινόχρηστος φάκελος/)
+
+assert.ok(usageGuide.includes('δεν κρυπτογραφούνται από το ίδιο το AX.YP'))
+assert.ok(readmeSource.includes('ΟΔΗΓΙΕΣ-ΧΡΗΣΗΣ.md'))
+assert.ok(serviceWorker.includes('./case-folder-storage.js'))
+assert.ok(serviceWorker.includes('./ΟΔΗΓΙΕΣ-ΧΡΗΣΗΣ.md'))

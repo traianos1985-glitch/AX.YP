@@ -13,11 +13,8 @@ import { zipSync } from './vendor/fflate.js';
       list = JSON.parse(storage().getItem('axyp-hypotheses') || '[]');
     } catch (e) {}
     var id = $('case-id').value;
-    if (id) {
-      var match = list.filter(function (item) { return item.id === id; })[0];
-      if (match) return match;
-    }
-    return list[0];
+    if (!id) return null;
+    return list.filter(function (item) { return item.id === id; })[0] || null;
   }
 
   function selectedChecks() {
@@ -81,7 +78,7 @@ import { zipSync } from './vendor/fflate.js';
     });
   }
 
-  function downloadWord() {
+  async function downloadWord() {
     syncExtraFields();
     var item = current();
     if (!item) {
@@ -114,15 +111,29 @@ import { zipSync } from './vendor/fflate.js';
       ['Έλεγχοι πληρότητας', item.checks && item.checks.length === 3 ? 'Ολοκληρώθηκαν' : 'Εκκρεμούν στοιχεία']
     ];
 
+    if (window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()) {
+      try {
+        var persisted = await window.AXYP_WORKSPACE.saveCase(item);
+        var allCases = JSON.parse(storage().getItem('axyp-hypotheses') || '[]').map(function (entry) {
+          return entry.id === persisted.id ? persisted : entry;
+        });
+        storage().setItem('axyp-hypotheses', JSON.stringify(allCases));
+        item = persisted;
+      } catch (error) {
+        $('case-flash').textContent = 'Δεν αποθηκεύτηκαν οι τελευταίες αλλαγές στον φάκελο εργασίας: ' + error.message;
+        return;
+      }
+    }
     if (window.DocxExport) {
-      window.DocxExport.download({
+      await window.DocxExport.download({
+        caseId: item.id,
         title: item.title || 'Υπηρεσιακό έγγραφο',
         notice: 'Πρόχειρο εργασίας — απαιτείται υπηρεσιακός έλεγχος πριν από κάθε χρήση.',
         rows: rows,
         source: 'https://proanakrisi.gr/',
         fileName: 'axyp-' + (item.id || 'case') + '.docx'
       });
-      $('case-flash').textContent = 'Το πρόχειρο Word (.docx) κατέβηκε επιτυχώς.';
+      $('case-flash').textContent = window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected() ? 'Το Word αποθηκεύτηκε στα Έγγραφα της δικογραφίας και λήφθηκε.' : 'Το πρόχειρο Word (.docx) κατέβηκε. Επίλεξε προσωπικό φάκελο για να αποθηκεύονται τα έγγραφα και εκεί.';
     }
   }
 
@@ -140,7 +151,7 @@ import { zipSync } from './vendor/fflate.js';
     return String(value || 'dikiografia').replace(/[\\/:*?"<>|]+/g, '-').trim() || 'dikiografia';
   }
 
-  function downloadArchive() {
+  async function downloadArchive() {
     syncExtraFields();
     var item = current();
     if (!item) {
@@ -165,10 +176,18 @@ import { zipSync } from './vendor/fflate.js';
     files['Στοιχεία-υπόθεσης.json'] = new TextEncoder().encode(JSON.stringify({ exportedAt: new Date().toISOString(), case: item }, null, 2));
 
     var blob = new Blob([zipSync(files)], { type: 'application/zip' });
+    var archiveName = safeFileName(item.title) + '.zip';
+    if (window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()) {
+      try {
+        await window.AXYP_WORKSPACE.saveDocument(item.id, archiveName, blob);
+      } catch (error) {
+        $('case-flash').textContent = 'Το ZIP θα ληφθεί, αλλά δεν αποθηκεύτηκε στον φάκελο εργασίας: ' + error.message;
+      }
+    }
     var url = URL.createObjectURL(blob);
     var link = document.createElement('a');
     link.href = url;
-    link.download = safeFileName(item.title) + '.zip';
+    link.download = archiveName;
     document.body.appendChild(link);
     link.click();
     link.remove();

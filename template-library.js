@@ -11,11 +11,8 @@ const getCase = () => {
   try {
     const all = JSON.parse(storage().getItem('axyp-hypotheses') || '[]');
     const activeId = $('case-id')?.value || (window.HypothesesView && window.HypothesesView.getSelectedId && window.HypothesesView.getSelectedId());
-    if (activeId) {
-      const match = all.find((item) => item.id === activeId);
-      if (match) return match;
-    }
-    return all[0] || {};
+    if (!activeId) return null;
+    return all.find((item) => item.id === activeId) || null;
   } catch (_) {
     return {};
   }
@@ -148,7 +145,7 @@ function render() {
       '<div class="template-review-actions"><span class="mapping-result muted"></span><button type="button" class="mini-button save-mapping">Αποθήκευση αντιστοίχισης</button><button type="button" class="mini-button generate" disabled>Συμπλήρωση Word</button></div>';
 
     card.querySelector('strong').textContent = template.name;
-    const caseNote = currentCase.title ? ` (ενεργή υπόθεση: «${currentCase.title}»)` : '';
+    const caseNote = currentCase && currentCase.title ? ` (ενεργή υπόθεση: «${currentCase.title}»)` : ' (δεν έχει επιλεγεί υπόθεση)';
     card.querySelector('p').textContent = `${template.fields.length} placeholders εντοπίστηκαν${caseNote}.`;
 
     const mappingRoot = card.querySelector('.mapping-review');
@@ -233,10 +230,10 @@ function importTemplate(event) {
   });
 }
 
-function generate(template) {
+async function generate(template) {
   const item = getCase();
-  if (!item.id) {
-    window.alert('Επίλεξε ή αποθήκευσε πρώτα μια υπόθεση.');
+  if (!item || !item.id) {
+    window.alert('Επίλεξε ρητά την υπόθεση που αφορά το έγγραφο πριν από τη συμπλήρωση.');
     return;
   }
   const files = Object.fromEntries(Object.entries(template.files).map(([name, data]) => [name, new Uint8Array(data)]));
@@ -252,10 +249,21 @@ function generate(template) {
   const blob = new Blob([zipSync(files)], {
     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
   });
+  const fileName = (item.title ? item.title.replace(/[\\/:*?"<>|]+/g, '-') : 'ypothesi') + '-' + template.name;
+  if (window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()) {
+    try {
+      const persisted = await window.AXYP_WORKSPACE.saveCase(item);
+      const allCases = JSON.parse(storage().getItem('axyp-hypotheses') || '[]').map((entry) => entry.id === persisted.id ? persisted : entry);
+      storage().setItem('axyp-hypotheses', JSON.stringify(allCases));
+      await window.AXYP_WORKSPACE.saveDocument(item.id, fileName, blob);
+    } catch (error) {
+      window.alert('Το έγγραφο θα ληφθεί, αλλά δεν αποθηκεύτηκε στον φάκελο εργασίας: ' + error.message);
+    }
+  }
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${item.title ? item.title.replace(/[\\/:*?"<>|]+/g, '-') : 'ypothesi'}-${template.name}`;
+  link.download = fileName;
   document.body.appendChild(link);
   link.click();
   link.remove();

@@ -105,14 +105,42 @@
   }
 
   function clear() {
-    cache = {};
-    try { localStorage.clear(); } catch (_) {}
-    openDB().then(function (db) {
+    // Διαγράφει αποκλειστικά τα δεδομένα με namespace AX.YP.
+    // Δεν αγγίζει άλλα δεδομένα που ανήκουν σε άλλες εφαρμογές του ίδιου origin.
+    Object.keys(cache).forEach(function (key) {
+      if (key.indexOf('axyp-') === 0) delete cache[key];
+    });
+    try {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var key = localStorage.key(i);
+        if (key && key.indexOf('axyp-') === 0) localStorage.removeItem(key);
+      }
+    } catch (_) {}
+
+    return openDB().then(function (db) {
       if (!db) return;
-      try {
-        var tx = db.transaction(STORE_NAME, 'readwrite');
-        tx.objectStore(STORE_NAME).clear();
-      } catch (_) {}
+      return new Promise(function (resolve) {
+        try {
+          var tx = db.transaction(STORE_NAME, 'readwrite');
+          var store = tx.objectStore(STORE_NAME);
+          if (typeof store.getAllKeys === 'function') {
+            var request = store.getAllKeys();
+            request.onsuccess = function () {
+              (request.result || []).forEach(function (key) {
+                if (typeof key === 'string' && key.indexOf('axyp-') === 0) store.delete(key);
+              });
+            };
+            request.onerror = function () { resolve(); };
+          } else {
+            KNOWN_KEYS.forEach(function (knownKey) { store.delete(knownKey); });
+          }
+          tx.oncomplete = resolve;
+          tx.onerror = resolve;
+          tx.onabort = resolve;
+        } catch (_) {
+          resolve();
+        }
+      });
     });
   }
 
