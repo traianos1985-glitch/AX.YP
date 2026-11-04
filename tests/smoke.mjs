@@ -148,14 +148,14 @@ assert.ok(['special-drugs-20','special-drugs-29','special-weapons-7','special-we
 assert.equal(incidentSearch.classify('βρέθηκε με μικροποσότητα κάνναβης για προσωπική χρήση').id, 'drugs-personal-use');
 assert.equal(incidentSearch.classify('πουλούσε και διέθετε ναρκωτικά σε τρίτους').id, 'drugs-trafficking-indicators');
 assert.equal(incidentSearch.classify('βρέθηκε με ποσότητα ναρκωτικών'), null);
-assert.equal(incidentSearch.classify('δύο άτομα χτύπησαν και τραυμάτισαν έναν πολίτη'), 'penal-bodily-injury');
-assert.equal(incidentSearch.classify('αστυνομικός δέχθηκε χτύπημα κατά την εκτέλεση ελέγχου'), 'penal-violence-against-official');
-assert.equal(incidentSearch.classify('τον απείλησε ότι θα τον χτυπήσει'), 'penal-threat-or-unlawful-coercion');
-assert.equal(incidentSearch.classify('τον εξανάγκασε με απειλή να του δώσει τα χρήματα'), 'penal-threat-or-unlawful-coercion');
-assert.equal(incidentSearch.classify('έκλεψε το κινητό τηλέφωνο από το τραπέζι'), 'penal-theft-or-property-damage');
-assert.equal(incidentSearch.classify('έσπασε το τζάμι του αυτοκινήτου του γείτονα'), 'penal-theft-or-property-damage');
-assert.equal(incidentSearch.classify('εξαπάτησε τον πολίτη και του απέσπασε χρήματα με τραπεζική μεταφορά'), 'penal-fraud');
-assert.equal(incidentSearch.classify('κατήγγειλε εν γνώσει του ψευδώς ότι ο γείτονας έκλεψε'), 'penal-false-accusation-or-report');
+assert.equal(incidentSearch.classify('δύο άτομα χτύπησαν και τραυμάτισαν έναν πολίτη').id, 'penal-bodily-injury');
+assert.equal(incidentSearch.classify('αστυνομικός δέχθηκε χτύπημα κατά την εκτέλεση ελέγχου').id, 'penal-violence-against-official');
+assert.equal(incidentSearch.classify('τον απείλησε ότι θα τον χτυπήσει').id, 'penal-threat-or-unlawful-coercion');
+assert.equal(incidentSearch.classify('τον εξανάγκασε με απειλή να του δώσει τα χρήματα').id, 'penal-threat-or-unlawful-coercion');
+assert.equal(incidentSearch.classify('έκλεψε το κινητό τηλέφωνο από το τραπέζι').id, 'penal-theft-or-property-damage');
+assert.equal(incidentSearch.classify('έσπασε το τζάμι του αυτοκινήτου του γείτονα').id, 'penal-theft-or-property-damage');
+assert.equal(incidentSearch.classify('εξαπάτησε τον πολίτη και του απέσπασε χρήματα με τραπεζική μεταφορά').id, 'penal-fraud');
+assert.equal(incidentSearch.classify('κατήγγειλε εν γνώσει του ψευδώς ότι ο γείτονας έκλεψε').id, 'penal-false-accusation-or-report');
 for (const id of ['pk-5','pk-6','pk-7','pk-8','pk-9','pk-10']) {
   const entry = allLegalItems.find((item) => item.id === id);
   assert.ok(entry, 'Missing Penal Code entry: ' + id);
