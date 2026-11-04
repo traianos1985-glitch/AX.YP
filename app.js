@@ -425,7 +425,7 @@
     document.getElementById('search-mode').onclick = function () { showMode('search'); };
     document.getElementById('wizard-mode').onclick = function () { showMode('wizard'); };
     document.getElementById('forms-mode').onclick = function () { showMode('forms'); };
-    document.getElementById('cases-mode').onclick = function () { showMode('cases'); HypothesesView.refresh(); };
+    document.getElementById('cases-mode').onclick = function () { showMode('cases'); HypothesesView.refresh(); if (window.CaseBundles) CaseBundles.refresh(); };
     document.getElementById('templates-mode').onclick = function () { showMode('templates'); TemplatesView.refresh(); };
     document.getElementById('docs-changelog').onclick = function () { showDocs('CHANGELOG.md', 'Αρχείο αλλαγών'); };
     document.getElementById('docs-pending').onclick = function () { showDocs('PENDING.md', 'Εκκρεμότητες περιεχομένου'); };
