@@ -13,11 +13,8 @@ import { zipSync } from './vendor/fflate.js';
       list = JSON.parse(storage().getItem('axyp-hypotheses') || '[]');
     } catch (e) {}
     var id = $('case-id').value;
-    if (id) {
-      var match = list.filter(function (item) { return item.id === id; })[0];
-      if (match) return match;
-    }
-    return list[0];
+    if (!id) return null;
+    return list.filter(function (item) { return item.id === id; })[0] || null;
   }
 
   function selectedChecks() {
