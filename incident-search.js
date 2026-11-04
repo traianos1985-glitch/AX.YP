@@ -58,5 +58,5 @@
     return matched >= 2 && matched / queryWords.length >= 0.25;
   }
 
-  return { normalize: normalize, tokens: tokens, classify: classify, hasCoverage: hasCoverage };
+  root.AXYPIncidentSearch = { normalize: normalize, tokens: tokens, classify: classify, hasCoverage: hasCoverage };
 })(window);
