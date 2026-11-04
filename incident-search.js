@@ -259,7 +259,7 @@
 
   function startsWithConcept(word, concepts) {
     return concepts.some(function (concept) {
-      return word.indexOf(concept) === 0 || (concept.length >= 5 && concept.indexOf(word) === 0);
+      return word.indexOf(concept) === 0 || (word.length >= 4 && concept.length >= 5 && concept.indexOf(word) === 0);
     });
   }
 
