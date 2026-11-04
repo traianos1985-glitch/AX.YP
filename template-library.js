@@ -230,7 +230,7 @@ function importTemplate(event) {
   });
 }
 
-function generate(template) {
+async function generate(template) {
   const item = getCase();
   if (!item || !item.id) {
     window.alert('Επίλεξε ρητά την υπόθεση που αφορά το έγγραφο πριν από τη συμπλήρωση.');
@@ -249,10 +249,18 @@ function generate(template) {
   const blob = new Blob([zipSync(files)], {
     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
   });
+  const fileName = (item.title ? item.title.replace(/[\\/:*?"<>|]+/g, '-') : 'ypothesi') + '-' + template.name;
+  if (window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()) {
+    try {
+      await window.AXYP_WORKSPACE.saveDocument(item.id, fileName, blob);
+    } catch (error) {
+      window.alert('Το έγγραφο θα ληφθεί, αλλά δεν αποθηκεύτηκε στον φάκελο εργασίας: ' + error.message);
+    }
+  }
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${item.title ? item.title.replace(/[\\/:*?"<>|]+/g, '-') : 'ypothesi'}-${template.name}`;
+  link.download = fileName;
   document.body.appendChild(link);
   link.click();
   link.remove();
