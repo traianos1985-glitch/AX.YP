@@ -241,6 +241,10 @@ assert.match(findLegal('zoa-32').notes, /όχι γενικά τις περ\. δ�
 assert.equal(findLegal('zoa-33').status, 'partial');
 assert.equal(findLegal('zoa-34').status, 'partial');
 assert.match(findLegal('zoa-34').procedure, /συγκεκριμένα στοιχεία/);
+assert.match(findLegal('zoa-34').procedure, /Taxisnet/);
+assert.match(findLegal('zoa-34').procedure, /άρθρο 36 §5 ν\. 5270\/2026/);
+assert.match(findLegal('zoa-34').procedure, /διαπιστωτική πράξη/);
+assert.doesNotMatch(findLegal('zoa-34').procedure, /ψηφιακή εφαρμογή και ιστοσελίδα/);
 assert.match(findLegal('zoa-29').procedure, /επόμενη εργάσιμη ημέρα/);
 assert.match(findLegal('zoa-29').procedure, /αστυνομικής συνδρομής/);
 assert.doesNotMatch(findLegal('zoa-6').notes, /έκθεση σκύλων\/γατών σε pet shops/);
