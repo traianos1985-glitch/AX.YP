@@ -23,6 +23,7 @@
     animalBird: ['πουλερικ','ορνιθ','πτηνο','πουλια','πτηνα','κοκορ','παπια','περιστερ'],
     animalInspection: ['παρεμποδ','αρνηθ','αρνηση','δυσχερ','ελεγχ','επιθεωρ'],
     animalRoad: ['τροχαι','ατυχημ','παρασυρ'],
+    animalPoliceDog: ['αστυνομικ','ελασ','εργασιασ','υπηρεσιακ','k9'],
     animalAbandonment: ['εγκαταλειπ','εγκατελειψ','παρατησ','παρατησε'],
     animalSurrender: ['παρεδωσε','παρεδωσ','παραδωσε','παραδιδ','παραδοση'],
     animalPublicDisplay: ['κληρω','λοταρ','διαγωνισμ','επαθλο','οικονομικοοφελο','υπαιθριαδημοσιαεκθεση'],
@@ -93,6 +94,11 @@
       id: 'animal-inspection-obstruction', label: 'Πιθανή άρνηση ή παρεμπόδιση επίσημου ελέγχου προστασίας ζώων',
       primaryEntryIds: ['zoa-25'], relatedEntryIds: ['zoa-9'],
       notice: 'Εξετάζεται αν πρόκειται για επίσημο έλεγχο αρμόδιας αρχής στους τομείς που καλύπτει ο ν. 4235/2014 και αν υπήρξε συγκεκριμένη παρεμπόδιση.'
+    },
+    animalPoliceDog: {
+      id: 'animal-police-working-dog', label: 'Ειδικό καθεστώς σκύλου εργασίας της Ελληνικής Αστυνομίας',
+      primaryEntryIds: ['zoa-33'], relatedEntryIds: ['zoa-6', 'zoa-22', 'zoa-27'],
+      notice: 'Οι εξαιρέσεις ισχύουν μόνο για επίσημο σκύλο εργασίας της ΕΛ.ΑΣ. και, όπου ο νόμος το ορίζει, μόνο κατά την εκτέλεση υπηρεσίας. Δεν αφορούν ιδιωτικό ζώο αστυνομικού.'
     },
     animalRoad: {
       id: 'animal-road-traffic-injury', label: 'Τραυματισμός ζώου σε τροχαίο ατύχημα',
@@ -226,6 +232,7 @@
 
     if (has('animal')) {
       if (has('animalChipAction') && hasConcept(words, ['τσιπ','μικροτσιπ','σημανσ'])) return RULES.animalChipRemoval;
+      if (has('dog') && has('animalPoliceDog') && hasConcept(words, ['εργασιασ','υπηρεσιακ','k9','ελασ'])) return RULES.animalPoliceDog;
       if (has('animalRoad') && hasConcept(words, ['τραυματ','χτυπ','παρασυρ','τραυματισμ'])) return RULES.animalRoad;
       if (has('animalSurrender') && hasConcept(words, ['δημο'])) return null;
       if (has('animalAbandonment')) return RULES.animalAbandonment;
