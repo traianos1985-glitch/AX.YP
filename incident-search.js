@@ -74,7 +74,15 @@
     nightSearch: ['νυχτεριν','νυχτα','βραδυ'],
     bodilySearch: ['σωματικ','σωμα','ενδυμα','τσεπεσ'],
     digitalEvidence: ['ψηφιακ','ηλεκτρονικ','υπολογιστ','κινητοτηλεφωνο','σκληροδισκο','αποθηκευτικομεσο','cloud','νεφοϋπολογιστικ','δεδομενα'],
-    evidenceSeizureFormal: ['κατασχε','αντιγραφ','ακεραιοτ','αυθεντικοτ','πειστηρ','μεσεγγυηση','ειδικηεκθεση']
+    evidenceSeizureFormal: ['κατασχε','αντιγραφ','ακεραιοτ','αυθεντικοτ','πειστηρ','μεσεγγυηση','ειδικηεκθεση'],
+    seizureHandling: ['φυλαξ','σφραγιδ','αποσφραγ','αρσηκατασχε','αποδοση','καταστροφ','αντιγραφ','φωτογραφ'],
+    reportFormalities: ['εκθεση','υπογραφ','χρονολογ','παρισταμεν','μαρτυρεσ','ακυροτητα'],
+    evidencePrinciples: ['αποδεικτικ','αποδειξη','αμφιβολ','νομιμαστοιχεια','παρανομαστοιχεια'],
+    pretrialMeasures: ['περιοριστικ','προσωρινηκρατηση','προφυλακ','κατ οικον','ηλεκτρονικηεπιτηρηση','βραχιολακι','εγγυηση'],
+    pretrialQuestions: ['προδικαστικ','αστικηδιαφορα','διοικητικηδιαφορα','αναβοληποινικησ'],
+    witnessEvidence: ['μαρτυρα','μαρτυρασ','καταθεση','ειδικεσγνωσεισ','μαρτυρικη'],
+    psychiatricExpertise: ['ψυχιατρικ','διανοητικηυγεια','ψυχικηυγεια','ψυχιατρειο'],
+    appealExecution: ['εφεση','αναιρεση','ενδικομεσο','εκτελεσηποινησ','ποινικομητρωο','επανεξεταση']
   };
 
   var RULES = {
@@ -313,6 +321,46 @@
       primaryEntryIds: ['kpd-24'], relatedEntryIds: ['kpd-20', 'kpd-23'],
       notice: 'Το άρθρο 265 προβλέπει ειδικό εξοπλισμό, ειδική έκθεση και διασφάλιση αυθεντικότητας/ακεραιότητας. Η ρύθμιση για απομακρυσμένα συστήματα δεν καλύπτει αυτομάτως cloud δεδομένα.'
     },
+    kpdSeizureHandling: {
+      id: 'kpd-seized-property-chain-of-custody', label: 'Φύλαξη, σφράγιση, άρση ή απόδοση κατασχεμένων',
+      primaryEntryIds: ['kpd-25'], relatedEntryIds: ['kpd-9', 'kpd-23', 'kpd-24'],
+      notice: 'Η διαχείριση κατασχεμένων διέπεται από ειδικές διατάξεις. Δεν επιτρέπεται αυθαίρετη απόδοση, καταστροφή ή αποσφράγιση.'
+    },
+    kpdPretrialMeasures: {
+      id: 'kpd-restrictive-terms-and-pretrial-detention', label: 'Περιοριστικοί όροι και προσωρινή κράτηση',
+      primaryEntryIds: ['kpd-26'], relatedEntryIds: ['kpd-10'],
+      notice: 'Η προσωρινή κράτηση είναι έσχατο μέτρο. Η εφαρμογή δεν κρίνει συνδρομή προϋποθέσεων και δεν αποφασίζει την επιβολή ή άρση μέτρου.'
+    },
+    kpdReportFormalities: {
+      id: 'kpd-formal-validity-of-procedural-reports', label: 'Νόμιμες διατυπώσεις και εγκυρότητα εκθέσεων',
+      primaryEntryIds: ['kpd-27'], relatedEntryIds: ['kpd-23'],
+      notice: 'Ελέγχονται τόπος, χρόνος, συμπράττοντα πρόσωπα, ακριβής καταγραφή πράξεων/δηλώσεων και απαιτούμενες υπογραφές. Η εφαρμογή δεν αποφαίνεται για ακυρότητα.'
+    },
+    kpdEvidencePrinciples: {
+      id: 'kpd-evidence-and-exclusionary-rule', label: 'Αποδεικτικά μέσα και αρχές απόδειξης',
+      primaryEntryIds: ['kpd-28'], relatedEntryIds: ['kpd-7', 'kpd-24'],
+      notice: 'Εξετάζονται νόμιμος τρόπος κτήσης, επιβαρυντικά και απαλλακτικά στοιχεία. Η εφαρμογή δεν αξιολογεί αξιοπιστία ή επάρκεια αποδείξεων.'
+    },
+    kpdPretrialQuestions: {
+      id: 'kpd-preliminary-issues-and-parallel-proceedings', label: 'Προδικαστικά ζητήματα και παράλληλες δίκες',
+      primaryEntryIds: ['kpd-29'], relatedEntryIds: ['kpd-18'],
+      notice: 'Η αναβολή λόγω άλλης πολιτικής, διοικητικής ή ποινικής υπόθεσης δεν είναι αυτοματοποιημένη· απαιτείται έλεγχος των άρθρων 59–62.'
+    },
+    kpdPsychiatricExpertise: {
+      id: 'kpd-psychiatric-expertise-and-special-knowledge', label: 'Ψυχιατρική πραγματογνωμοσύνη και ειδικές γνώσεις',
+      primaryEntryIds: ['kpd-30'], relatedEntryIds: ['kpd-5'],
+      notice: 'Η αστυνομική αρχή δεν διαγιγνώσκει ψυχική κατάσταση ούτε αποφασίζει παρατήρηση/εγκλεισμό.'
+    },
+    kpdWitnessEvidence: {
+      id: 'kpd-witness-examination', label: 'Εξέταση μαρτύρων και ειδικές εγγυήσεις',
+      primaryEntryIds: ['kpd-31'], relatedEntryIds: ['kpd-5', 'kpd-30'],
+      notice: 'Πριν από την εξέταση ελέγχονται κωλύματα, δικαιώματα άρνησης, νόμιμη κλήτευση και ειδικές εγγυήσεις. Δεν δημιουργείται ειδική διαχείριση μαρτύρων στο AX.YP.'
+    },
+    kpdAppealExecution: {
+      id: 'kpd-appeals-and-enforcement-index', label: 'Ένδικα μέσα, εκτέλεση και ποινικό μητρώο',
+      primaryEntryIds: ['kpd-32'], relatedEntryIds: ['kpd-13', 'kpd-18'],
+      notice: 'Η εγγραφή είναι ευρετήριο. Για κάθε ένδικο μέσο ή ζήτημα εκτέλεσης απαιτείται ανάγνωση της συγκεκριμένης διάταξης και έλεγχος προθεσμιών/αρμοδιότητας.'
+    },
     kpdReporting: {
       id: 'kpd-reporting-duty', label: 'Υποχρέωση ανακοίνωσης ή αναγγελίας αξιόποινης πράξης',
       primaryEntryIds: ['kpd-11'], relatedEntryIds: [],
@@ -440,6 +488,15 @@
       if (unauthorized) return RULES.building;
     }
 
+
+    if (has('seizureHandling') && (hasConcept(words, ['φυλαξ','σφραγιδ','αποσφραγ','αρσηκατασχε','αποδοση','καταστροφ']) || hasConcept(words, ['πειστηρ']) && hasConcept(words, ['κατασχε','αντιγραφ']))) return RULES.kpdSeizureHandling;
+    if (has('pretrialMeasures') && (hasConcept(words, ['προσωρινηκρατηση','προφυλακ','περιοριστικ','ηλεκτρονικηεπιτηρηση']) || hasConcept(words, ['εγγυηση']) && hasConcept(words, ['ανακρι','κατηγορουμ']))) return RULES.kpdPretrialMeasures;
+    if (has('reportFormalities') && hasConcept(words, ['εκθεση']) && hasConcept(words, ['υπογραφ','χρονολογ','παρισταμεν','ακυροτητα','μαρτυρεσ'])) return RULES.kpdReportFormalities;
+    if (has('evidencePrinciples') && (hasConcept(words, ['αποδεικτικ','αποδειξη']) || hasConcept(words, ['παρανομα']) && hasConcept(words, ['στοιχεια']))) return RULES.kpdEvidencePrinciples;
+    if (has('pretrialQuestions') && hasConcept(words, ['προδικαστικ','αστικηδιαφορα','διοικητικηδιαφορα','αναβοληποινικησ'])) return RULES.kpdPretrialQuestions;
+    if (has('psychiatricExpertise') || hasConcept(words, ['ψυχιατρικ','διανοητικηυγεια'])) return RULES.kpdPsychiatricExpertise;
+    if (has('witnessEvidence') && hasConcept(words, ['μαρτυρα','καταθεση','ειδικεσγνωσεισ'])) return RULES.kpdWitnessEvidence;
+    if (has('appealExecution') && hasConcept(words, ['εφεση','αναιρεση','ενδικομεσο','εκτελεσηποινησ','ποινικομητρωο','επανεξεταση'])) return RULES.kpdAppealExecution;
     if (has('digitalEvidence') && (hasConcept(words, ['κατασχε','αντιγραφ','ακεραιοτ','αυθεντικοτ','πειστηρ']) || hasConcept(words, ['ψηφιακ','ηλεκτρονικ']) && hasConcept(words, ['ερευν','δεδομεν']))) return RULES.kpdDigitalEvidence;
     if (has('bodilySearch') && has('searchOperation')) return RULES.kpdBodySearch;
     if (has('searchOperation') && has('residence')) return RULES.kpdSearch;
