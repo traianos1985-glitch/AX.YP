@@ -42,7 +42,15 @@
     transport: ['μεταφερ','μετεφερ','μεταφορε','οδηγ','σκαφο','βαρκα','κρυβ','κρυμ','αποκρυπτ','παραλαμβ','προωθ','διευκολυν'],
     forged: ['πλαστο','νοθευ','παραποιημενο','ψευδεσ'],
     building: ['οικοδομ','κατασκευ','κτισμα','ανεγερ','εργασιεσ','δομησ','αυθαιρετ','αλλαγηχρησησ'],
-    noPermit: ['χωρισ','ανευ','μηαδειοδοτημεν']
+    noPermit: ['χωρισ','ανευ','μηαδειοδοτημεν'],
+    assault: ['χτυπ','γρονθοκοπ','κλωτσ','εδειρ','τραυματ','επιτεθ','επιθεση','σωματικηβλαβη'],
+    threat: ['απειλ','φοβερισ','εκφοβισ'],
+    coercion: ['εξαναγκασ','αναγκασ','παρανομηβια'],
+    theft: ['εκλεψ','κλοπ','αφαιρεσ','αρπαξ'],
+    propertyDamage: ['εσπασε','κατεστρεψ','φθορα','ζημιωσ','κατεστραμ'],
+    fraud: ['απατη','εξαπατ','παραπλαν','ψευδηπαρασταση','phishing','ηλεκτρονικηαπατη'],
+    official: ['αστυνομικ','αστυνομια','υπαλληλ','οργανο','δικαστικο','δημοσιολειτουργ'],
+    falseReport: ['ψευδωσ','ψευδησκαταμηνυσ','ψευδηκαταγγελ','κατηγορησεψευδωσ','ενγνωσειψευδωσ']
   };
 
   var RULES = {
@@ -205,6 +213,36 @@
       id: 'building-without-permit', label: 'Πιθανό περιστατικό οικοδομικών εργασιών/κατασκευής χωρίς άδεια',
       primaryEntryIds: ['building-unauthorized'], relatedEntryIds: ['building-nok'],
       notice: 'Η τεχνική διαπίστωση και ο χαρακτηρισμός αυθαιρεσίας ανήκουν στις αρμόδιες πολεοδομικές/ελεγκτικές αρχές. Δεν αποδίδεται αυτομάτως ποινική ευθύνη ή αστυνομική αρμοδιότητα.'
+    },
+    bodilyInjury: {
+      id: 'penal-bodily-injury', label: 'Πιθανό περιστατικό σωματικής βλάβης',
+      primaryEntryIds: ['pk-5'], relatedEntryIds: [],
+      notice: 'Η βαρύτητα και ο νομικός χαρακτηρισμός δεν προκύπτουν μόνο από τη φράση της περιγραφής· απαιτείται αξιολόγηση των πραγματικών και ιατρικών στοιχείων.'
+    },
+    officialViolence: {
+      id: 'penal-violence-against-official', label: 'Πιθανό περιστατικό βίας κατά υπαλλήλου ή δικαστικού προσώπου',
+      primaryEntryIds: ['pk-6'], relatedEntryIds: [],
+      notice: 'Ελέγχονται η ιδιότητα του προσώπου, η νόμιμη υπηρεσιακή ενέργεια και η συγκεκριμένη μορφή βίας ή απειλής. Η διαφωνία ή η απείθεια δεν ταυτίζεται αυτομάτως με το άρθρο 167.'
+    },
+    threatOrCoercion: {
+      id: 'penal-threat-or-unlawful-coercion', label: 'Πιθανή απειλή ή παράνομη βία',
+      primaryEntryIds: ['pk-7'], relatedEntryIds: [],
+      notice: 'Τα άρθρα 330 και 333 έχουν διαφορετικά στοιχεία. Απαιτείται ακριβής αποτύπωση λόγων, πράξεων και περιστάσεων.'
+    },
+    theft: {
+      id: 'penal-theft-or-property-damage', label: 'Πιθανό περιστατικό κλοπής ή φθοράς ξένης ιδιοκτησίας',
+      primaryEntryIds: ['pk-8'], relatedEntryIds: [],
+      notice: 'Η αφαίρεση, η ιδιοποίηση και η φθορά είναι διαφορετικές συμπεριφορές. Δεν προκύπτει χαρακτηρισμός χωρίς έλεγχο κυριότητας, κατοχής και πρόθεσης.'
+    },
+    fraud: {
+      id: 'penal-fraud', label: 'Πιθανό περιστατικό απάτης',
+      primaryEntryIds: ['pk-9'], relatedEntryIds: [],
+      notice: 'Η απλή αθέτηση συμφωνίας δεν αρκεί. Ελέγχονται τα στοιχεία παραπλάνησης, περιουσιακής διάθεσης, οφέλους και ζημίας.'
+    },
+    falseReport: {
+      id: 'penal-false-accusation-or-report', label: 'Ζήτημα προς έλεγχο ως προς ψευδή καταμήνυση ή καταγγελία',
+      primaryEntryIds: ['pk-10'], relatedEntryIds: [],
+      notice: 'Μια μη αποδειχθείσα ή αρχειοθετημένη καταγγελία δεν είναι αυτομάτως ψευδής. Απαιτείται ειδική απόδειξη των στοιχείων της διάταξης.'
     }
   };
 
@@ -221,7 +259,7 @@
 
   function startsWithConcept(word, concepts) {
     return concepts.some(function (concept) {
-      return word.indexOf(concept) === 0 || (concept.length >= 5 && concept.indexOf(word) === 0);
+      return word.indexOf(concept) === 0 || (word.length >= 4 && concept.length >= 5 && concept.indexOf(word) === 0);
     });
   }
 
@@ -292,6 +330,14 @@
       var unauthorized = hasConcept(words, ['αυθαιρετ']) || (has('noPermit') && hasConcept(words, ['αδεια']) && construction);
       if (unauthorized) return RULES.building;
     }
+
+    if (has('official') && has('assault')) return RULES.officialViolence;
+    if (has('falseReport') && hasConcept(words, ['καταγγελ','καταμηνυσ','κατηγορησ','κατηγγειλ','μηνυσ'])) return RULES.falseReport;
+    if (has('fraud') && hasConcept(words, ['χρημα','τραπεζ','μεταφορ','λογαριασ','περιουσ','εξαπατ','παραπλαν'])) return RULES.fraud;
+    if (has('threat') || (has('coercion') && hasConcept(words, ['εξαναγκασ','αναγκασ']))) return RULES.threatOrCoercion;
+    if (has('theft') && hasConcept(words, ['αντικειμεν','κινητο','πορτοφολ','χρημα','πραγμα','πραγματα','ιδιοκτησ','αφαιρεσ','εκλεψ'])) return RULES.theft;
+    if (has('propertyDamage') && hasConcept(words, ['αυτοκινητ','οχημα','πορτα','τζαμι','περιουσ','αντικειμεν','ξενη','καταστημα'])) return RULES.theft;
+    if (has('assault') && has('person')) return RULES.bodilyInjury;
     return null;
   }
 
