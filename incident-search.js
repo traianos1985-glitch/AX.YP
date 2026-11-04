@@ -444,7 +444,7 @@
     if (has('bodilySearch') && has('searchOperation')) return RULES.kpdBodySearch;
     if (has('searchOperation') && has('residence')) return RULES.kpdSearch;
     if (has('scenePreservation') && (has('searchOperation') || hasConcept(words, ['πειστηρ','τοπο','σκηνη']))) return RULES.kpdScenePreservation;
-    if (has('searchOperation') && hasConcept(words, ['εκθεση','ευρημα','μεσεγγυηση']) && hasConcept(words, ['κατασχε','πειστηρ','αντικειμεν'])) return RULES.kpdSearchReport;
+    if (has('searchOperation') && hasConcept(words, ['εκθεση','ευρημα','μεσεγγυηση']) && hasConcept(words, ['κατασχε','πειστηρ','αντικειμεν','ευρημα','μεσεγγυηση'])) return RULES.kpdSearchReport;
     if (has('proceduralDefect') && hasConcept(words, ['ελλειψ','παρατυπ']) && hasConcept(words, ['εγκληση','αιτηση','αδεια']) && hasConcept(words, ['διωξ','νεα','επαν'])) return RULES.kpdReprosecution;
     if (has('resJudicata') && (hasConcept(words, ['δεδικασμεν','εκκρεμοδικ']) || (hasConcept(words, ['ιδια']) && hasConcept(words, ['πραξη']) && hasConcept(words, ['αθωωθ','καταδικαστ','παυση'])))) return RULES.kpdResJudicata;
     if (has('authorityApplication') && hasConcept(words, ['αιτηση']) && hasConcept(words, ['διωξ']) && hasConcept(words, ['αρχη','υπηρεσια','υπουργ'])) return RULES.kpdAuthorityApplication;
