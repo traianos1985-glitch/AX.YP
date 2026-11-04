@@ -94,6 +94,23 @@
 
   function localStorageApi() { return window.AXYP_STORAGE || localStorage; }
 
+  async function fileExists(directory, name) {
+    try {
+      await directory.getFileHandle(name);
+      return true;
+    } catch (error) {
+      if (error && error.name === 'NotFoundError') return false;
+      throw error;
+    }
+  }
+
+  function numberedFileName(name, number) {
+    var dot = name.lastIndexOf('.');
+    return dot > 0
+      ? name.slice(0, dot) + '-' + number + name.slice(dot)
+      : name + '-' + number;
+  }
+
   async function copyBundleDocuments(item, dossierDirectory) {
     if (!item.sourceBundleId) return;
     var bundles = [];
@@ -101,15 +118,27 @@
     var bundle = bundles.find(function (entry) { return entry.id === item.sourceBundleId; });
     if (!bundle || !Array.isArray(bundle.documents)) return;
     var documents = await dossierDirectory.getDirectoryHandle('Έγγραφα', { create: true });
+    var usedNames = Object.create(null);
     for (var i = 0; i < bundle.documents.length; i++) {
       var doc = bundle.documents[i];
       if (!doc || !doc.data || !doc.name) continue;
       var parts = String(doc.data).split(',');
-      if (parts.length < 2) continue;
+      if (parts.length < 2 || !/^data:[^,]*;base64$/i.test(parts[0])) continue;
+
+      var originalName = safePart(doc.name);
+      var name = originalName;
+      var suffix = 2;
+      while (usedNames[name]) name = numberedFileName(originalName, suffix++);
+      usedNames[name] = true;
+
+      // Bundle files are starter copies, not authoritative replacements.
+      // Never overwrite a file that the officer may already have edited.
+      if (await fileExists(documents, name)) continue;
+
       var binary = atob(parts[1]);
       var bytes = new Uint8Array(binary.length);
       for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
-      var fileHandle = await documents.getFileHandle(safePart(doc.name), { create: true });
+      var fileHandle = await documents.getFileHandle(name, { create: true });
       var writable = await fileHandle.createWritable();
       await writable.write(new Blob([bytes], { type: doc.type || 'application/octet-stream' }));
       await writable.close();
@@ -134,11 +163,12 @@
       workspaceRevision: Number(existing && existing.workspaceRevision || 0) + 1,
       updatedAt: new Date().toISOString()
     });
-    await writeText(directory, 'case.json', JSON.stringify(saved, null, 2), 'application/json');
     var history = await directory.getDirectoryHandle('Ιστορικό', { create: true });
     await writeText(history, 'εκδόσεις.json', JSON.stringify(saved.snapshots || [], null, 2), 'application/json');
     await directory.getDirectoryHandle('Έγγραφα', { create: true });
     await copyBundleDocuments(saved, directory);
+    // Write the case manifest last: it represents the committed metadata version.
+    await writeText(directory, 'case.json', JSON.stringify(saved, null, 2), 'application/json');
     return saved;
   }
 

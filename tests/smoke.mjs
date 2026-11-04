@@ -84,6 +84,14 @@ assert.match(workspaceSource, /showDirectoryPicker/)
 assert.match(workspaceSource, /Δικογραφίες/)
 assert.match(workspaceSource, /Ιστορικό/)
 assert.doesNotMatch(workspaceSource, /shared-root|Κοινόχρηστος φάκελος/)
+// Re-saving a case must never overwrite an officer-edited starter document.
+assert.match(workspaceSource, /async function fileExists\(directory, name\)/)
+assert.match(workspaceSource, /if \(await fileExists\(documents, name\)\) continue/)
+assert.match(workspaceSource, /numberedFileName\(originalName, suffix\+\+\)/)
+assert.ok(
+  workspaceSource.indexOf("await copyBundleDocuments(saved, directory)") <
+  workspaceSource.indexOf("await writeText(directory, 'case.json'")
+)
 
 assert.ok(usageGuide.includes('δεν κρυπτογραφούνται από το ίδιο το AX.YP'))
 assert.ok(readmeSource.includes('ΟΔΗΓΙΕΣ-ΧΡΗΣΗΣ.md'))
