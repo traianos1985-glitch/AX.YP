@@ -317,7 +317,7 @@ assert.match(findKpd('kpd-11').procedure, /χωρίς χρονοτριβή/);
 assert.match(findKpd('kpd-11').notes, /δεν θεσπίζει γενική υποχρέωση/);
 assert.match(findKpd('kpd-12').procedure, /συντάσσεται έκθεση/);
 assert.match(findKpd('kpd-12').notes, /δεν ταυτίζεται με την έγκληση/);
-assert.match(findKpd('kpd-13').procedure, /νέα πραγματικά περιστατικά ή στοιχεία/);
+assert.match(findKpd('kpd-13').procedure, /νέων πραγματικών περιστατικών ή στοιχείων/);
 assert.match(findKpd('kpd-13').notes, /δεν ισοδυναμεί με δικαστική αθώωση/);
 assert.match(findKpd('kpd-14').procedure, /τρεις μήνες/);
 assert.match(findKpd('kpd-14').notes, /άρθρο 114 ΠΚ/);
