@@ -398,3 +398,34 @@ assert.equal(incidentSearch.classify('κατάσχεση δεδομένων υπ
 assert.equal(incidentSearch.classify('έκθεση έρευνας και μεσεγγύηση ευρημάτων').id, 'kpd-search-report-and-sequestration');
 assert.equal(incidentSearch.classify('έρευνα σε τρίτο πρόσωπο για αντικείμενο και σωματικός έλεγχος').id, 'kpd-personal-search');
 assert.equal(incidentSearch.classify('είχε μια συζήτηση με τον γείτονα'), null);
+
+
+// Final KPD coverage package: seizure lifecycle, reports, evidence, measures and remedies.
+for (const id of ['kpd-25','kpd-26','kpd-27','kpd-28','kpd-29','kpd-30','kpd-31','kpd-32']) {
+  const entry = findKpd(id);
+  assert.ok(entry, 'Missing final KPD entry: ' + id);
+  assert.equal(entry.status, 'partial');
+  assert.match(entry.source, /taxheaven\.gr\/law\/4620\/2019/);
+}
+assert.match(findKpd('kpd-25').procedure, /δέκα \(10\) ημέρες/);
+assert.match(findKpd('kpd-25').notes, /δεν αποτελεί γενική εντολή καταστροφής/);
+assert.match(findKpd('kpd-26').procedure, /μόνο εφόσον αυτά δεν επαρκούν/);
+assert.match(findKpd('kpd-26').notes, /έσχατο μέτρο/);
+assert.match(findKpd('kpd-27').procedure, /ακριβή περιγραφή/);
+assert.match(findKpd('kpd-27').procedure, /υπογραφές/);
+assert.match(findKpd('kpd-28').procedure, /κάθε αμφιβολία/);
+assert.match(findKpd('kpd-28').notes, /αξιόποινες πράξεις/);
+assert.match(findKpd('kpd-29').notes, /δεν είναι αυτοματοποιημένη/);
+assert.match(findKpd('kpd-30').notes, /δεν διαγιγνώσκει ψυχική κατάσταση/);
+assert.match(findKpd('kpd-31').notes, /209–233/);
+assert.match(findKpd('kpd-32').notes, /δεν επιχειρεί να συμπυκνώσει όλες τις προθεσμίες/);
+assert.equal(incidentSearch.classify('φύλαξη και σφράγιση κατασχεμένων πειστηρίων').id, 'kpd-seized-property-chain-of-custody');
+assert.equal(incidentSearch.classify('αίτηση άρσης κατάσχεσης πειστηρίων').id, 'kpd-seized-property-chain-of-custody');
+assert.equal(incidentSearch.classify('προσωρινή κράτηση και περιοριστικοί όροι μετά την απολογία').id, 'kpd-restrictive-terms-and-pretrial-detention');
+assert.equal(incidentSearch.classify('έκθεση χωρίς υπογραφή και χρονολογία').id, 'kpd-formal-validity-of-procedural-reports');
+assert.equal(incidentSearch.classify('παράνομα αποδεικτικά στοιχεία και αμφιβολίες').id, 'kpd-evidence-and-exclusionary-rule');
+assert.equal(incidentSearch.classify('προδικαστικό ζήτημα με εκκρεμή αστική διαφορά').id, 'kpd-preliminary-issues-and-parallel-proceedings');
+assert.equal(incidentSearch.classify('ψυχιατρική πραγματογνωμοσύνη κατηγορουμένου').id, 'kpd-psychiatric-expertise-and-special-knowledge');
+assert.equal(incidentSearch.classify('εξέταση μάρτυρα με ειδικές γνώσεις').id, 'kpd-witness-examination');
+assert.equal(incidentSearch.classify('προθεσμία έφεσης και αναίρεσης').id, 'kpd-appeals-and-enforcement-index');
+assert.equal(incidentSearch.classify('έφτιαξε καφέ και πήγε σπίτι'), null);
