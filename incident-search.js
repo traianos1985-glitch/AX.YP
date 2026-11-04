@@ -387,7 +387,7 @@
     if (has('complaintFiling') && (has('complaintProcess') || has('prosecutionAction'))) return RULES.kpdComplaintProcess;
     if (has('complaintFiling')) return RULES.kpdComplaint;
     if (has('prosecutionAction') && hasConcept(words, ['ποινικη','διωξη','αρχειοθετ','αρχειο'])) return RULES.kpdProsecution;
-    if (hasConcept(words, ['ανακοινωση','αναγγελια']) && hasConcept(words, ['αξιοποινη','πραξη']) && hasConcept(words, ['ανακριτικ','υπαλληλ','δημοσιο'])) return RULES.kpdReporting;
+    if (hasConcept(words, ['ανακοινωση','ανακοινωσ','αναγγελια','αναγγελ']) && hasConcept(words, ['αξιοποινη','πραξη']) && hasConcept(words, ['ανακριτικ','υπαλληλ','δημοσιο'])) return RULES.kpdReporting;
 
     if (has('preliminary')) return RULES.kpdPreliminary;
     if (has('inquiry')) return RULES.kpdInquiry;
