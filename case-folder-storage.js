@@ -182,7 +182,19 @@
     try { local = JSON.parse(stored.getItem('axyp-hypotheses') || '[]'); } catch (_) {}
     var remote = await loadAll();
     var byId = new Map(local.map(function (item) { return [item.id, item]; }));
-    remote.forEach(function (item) { if (!byId.has(item.id)) byId.set(item.id, item); });
+    remote.forEach(function (item) {
+      if (!byId.has(item.id)) {
+        byId.set(item.id, item);
+      } else {
+        // Διατήρησε τοπικά πεδία που μπορεί να είναι νεότερα, αλλά πάρε την
+        // έκδοση του αρχείου ώστε ο επόμενος έλεγχος σύγκρουσης να είναι σωστός.
+        var current = byId.get(item.id);
+        byId.set(item.id, Object.assign({}, current, {
+          folderName: item.folderName,
+          workspaceRevision: item.workspaceRevision
+        }));
+      }
+    });
     stored.setItem('axyp-hypotheses', JSON.stringify(Array.from(byId.values())));
     if (window.HypothesesView) window.HypothesesView.refresh();
     return remote.length;
