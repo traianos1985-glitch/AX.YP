@@ -58,7 +58,12 @@
     autoforo: ['αυτοφωρ'],
     warrant: ['ενταλμα'],
     custody: ['κρατητηρ','κρατηση','προσαγωγ'],
-    evidenceSeizure: ['κατασχε','πειστηρ']
+    evidenceSeizure: ['κατασχε','πειστηρ'],
+    complaintFiling: ['μηνυση','εγκληση','εγκαλων','εγκαλουσα'],
+    complaintProcess: ['παραβολο','ανακληση','παραιτηση','προσφυγη','απορριψη','προθεσμια'],
+    complaintTime: ['μηνων','μηνεσ','μηνα'],
+    prosecutionAction: ['διωξ','αρχειοθετ','αρχειο','ανασυρ'],
+    reportDuty: ['ανακοινωσ','αναγγελια','ανακριτικ','υπαλληλ','αξιοποινη']
   };
 
   var RULES = {
@@ -252,6 +257,26 @@
       primaryEntryIds: ['pk-10'], relatedEntryIds: [],
       notice: 'Μια μη αποδειχθείσα ή αρχειοθετημένη καταγγελία δεν είναι αυτομάτως ψευδής. Απαιτείται ειδική απόδειξη των στοιχείων της διάταξης.'
     },
+    kpdReporting: {
+      id: 'kpd-reporting-duty', label: 'Υποχρέωση ανακοίνωσης ή αναγγελίας αξιόποινης πράξης',
+      primaryEntryIds: ['kpd-11'], relatedEntryIds: [],
+      notice: 'Διακρίνεται η υποχρέωση ανακριτικών/δημοσίων υπαλλήλων κατά το άρθρο 38 από την ειδική υποχρέωση ιδιωτών του άρθρου 40. Ελέγχεται αν η πράξη διώκεται αυτεπαγγέλτως.'
+    },
+    kpdComplaint: {
+      id: 'kpd-criminal-complaint-submission', label: 'Υποβολή μήνυσης για αξιόποινη πράξη',
+      primaryEntryIds: ['kpd-12'], relatedEntryIds: ['kpd-11'],
+      notice: 'Η μήνυση του άρθρου 42 αφορά αυτεπαγγέλτως διωκόμενη πράξη και δεν ταυτίζεται με την έγκληση του παθόντος. Η υποβολή δεν σημαίνει αυτομάτως ότι ασκήθηκε ποινική δίωξη.'
+    },
+    kpdProsecution: {
+      id: 'kpd-prosecution-and-archiving', label: 'Εισαγγελική κρίση για άσκηση δίωξης ή αρχειοθέτηση',
+      primaryEntryIds: ['kpd-13'], relatedEntryIds: ['kpd-11', 'kpd-12'],
+      notice: 'Η άσκηση ποινικής δίωξης και η αρχειοθέτηση αποτελούν εισαγγελικές πράξεις. Η εφαρμογή δεν αξιολογεί επάρκεια ενδείξεων και δεν προβλέπει το αποτέλεσμα.'
+    },
+    kpdComplaintProcess: {
+      id: 'kpd-complaint-deadlines-fees-and-withdrawal', label: 'Έγκληση, παράβολο, προθεσμίες, προσφυγή ή ανάκληση',
+      primaryEntryIds: ['kpd-14', 'kpd-15'], relatedEntryIds: ['kpd-12', 'kpd-13'],
+      notice: 'Διακρίνονται η τρίμηνη προθεσμία αρχικής έγκλησης, η 15ήμερη προσφυγή κατά απόρριψης, η παραίτηση πριν από την άσκηση και η ανάκληση ήδη υποβληθείσας έγκλησης. Ελέγχονται πάντα οι εξαιρέσεις και τα ισχύοντα ποσά παραβόλων.'
+    },
     kpdPreliminary: {
       id: 'kpd-preliminary-examination', label: 'Αναζήτηση για προκαταρκτική εξέταση και δικαιώματα υπόπτου',
       primaryEntryIds: ['kpd-4'], relatedEntryIds: ['kpd-5'],
@@ -358,6 +383,12 @@
       var unauthorized = hasConcept(words, ['αυθαιρετ']) || (has('noPermit') && hasConcept(words, ['αδεια']) && construction);
       if (unauthorized) return RULES.building;
     }
+
+    if (has('falseReport') && hasConcept(words, ['καταγγελ','καταμηνυσ','κατηγορησ','κατηγγειλ','μηνυσ'])) return RULES.falseReport;
+    if (has('complaintFiling') && (has('complaintProcess') || has('complaintTime') || has('prosecutionAction'))) return RULES.kpdComplaintProcess;
+    if (has('complaintFiling')) return RULES.kpdComplaint;
+    if (has('prosecutionAction') && hasConcept(words, ['ποινικη','διωξη','αρχειοθετ','αρχειο'])) return RULES.kpdProsecution;
+    if (hasConcept(words, ['ανακοινωση','ανακοινωσ','αναγγελια','αναγγελ']) && hasConcept(words, ['αξιοποινη','πραξη']) && hasConcept(words, ['ανακριτικ','υπαλληλ','δημοσιο'])) return RULES.kpdReporting;
 
     if (has('preliminary')) return RULES.kpdPreliminary;
     if (has('inquiry')) return RULES.kpdInquiry;

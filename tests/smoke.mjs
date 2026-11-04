@@ -304,3 +304,35 @@ assert.equal(incidentSearch.classify('σύλληψη για αυτόφωρο π�
 assert.equal(incidentSearch.classify('εκτέλεση εντάλματος σύλληψης').id, 'kpd-arrest-and-detention');
 assert.equal(incidentSearch.classify('πώς γίνεται η σύλληψη και η κατάσχεση πειστηρίων').id, 'kpd-arrest-and-detention');
 assert.equal(incidentSearch.classify('είχε μια συζήτηση με τον γείτονα'), null);
+
+
+// KPD reporting, complaint and prosecution lifecycle.
+for (const id of ['kpd-11','kpd-12','kpd-13','kpd-14','kpd-15']) {
+  const entry = findKpd(id);
+  assert.ok(entry, 'Missing KPD entry: ' + id);
+  assert.equal(entry.status, 'partial');
+  assert.match(entry.source, /taxheaven\.gr\/law\//);
+}
+assert.match(findKpd('kpd-11').procedure, /χωρίς χρονοτριβή/);
+assert.match(findKpd('kpd-11').notes, /δεν θεσπίζει γενική υποχρέωση/);
+assert.match(findKpd('kpd-12').procedure, /συντάσσεται έκθεση/);
+assert.match(findKpd('kpd-12').notes, /δεν ταυτίζεται με την έγκληση/);
+assert.match(findKpd('kpd-13').procedure, /νέων πραγματικών περιστατικών ή στοιχείων/);
+assert.match(findKpd('kpd-13').notes, /δεν ισοδυναμεί με δικαστική αθώωση/);
+assert.match(findKpd('kpd-14').procedure, /τρεις μήνες/);
+assert.match(findKpd('kpd-14').notes, /άρθρο 114 ΠΚ/);
+assert.match(findKpd('kpd-15').procedure, /15 ημέρες/);
+assert.match(findKpd('kpd-15').procedure, /350 €/);
+assert.match(findKpd('kpd-15').notes, /καταργημένο/);
+assert.equal(incidentSearch.classify('ανακοίνωση αξιόποινης πράξης από ανακριτικό υπάλληλο').id, 'kpd-reporting-duty');
+assert.equal(incidentSearch.classify('υποχρέωση δημόσιου υπαλλήλου να ανακοινώσει αξιόποινη πράξη').id, 'kpd-reporting-duty');
+assert.equal(incidentSearch.classify('υποβολή μήνυσης προφορικά σε ανακριτικό υπάλληλο').id, 'kpd-criminal-complaint-submission');
+assert.equal(incidentSearch.classify('κατέθεσε μήνυση για κλοπή').id, 'kpd-criminal-complaint-submission');
+assert.equal(incidentSearch.classify('εισαγγελέας αρχειοθέτησε τη μήνυση').id, 'kpd-complaint-deadlines-fees-and-withdrawal');
+assert.equal(incidentSearch.classify('άσκηση ποινικής δίωξης μετά από προκαταρκτική εξέταση').id, 'kpd-prosecution-and-archiving');
+assert.equal(incidentSearch.classify('προσφυγή κατά απόρριψης έγκλησης μέσα σε δεκαπέντε ημέρες').id, 'kpd-complaint-deadlines-fees-and-withdrawal');
+assert.equal(incidentSearch.classify('ανάκληση ήδη υποβληθείσας έγκλησης').id, 'kpd-complaint-deadlines-fees-and-withdrawal');
+assert.equal(incidentSearch.classify('παραίτηση από το δικαίωμα έγκλησης').id, 'kpd-complaint-deadlines-fees-and-withdrawal');
+assert.equal(incidentSearch.classify('η έγκληση υποβάλλεται εντός τριών μηνών').id, 'kpd-complaint-deadlines-fees-and-withdrawal');
+assert.equal(incidentSearch.classify('κατήγγειλε εν γνώσει του ψευδώς ότι ο γείτονας έκλεψε').id, 'penal-false-accusation-or-report');
+assert.equal(incidentSearch.classify('είχε μια συζήτηση με τον γείτονα'), null);
