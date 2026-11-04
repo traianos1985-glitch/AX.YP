@@ -93,7 +93,7 @@
   }
 
   // Builds a Word document with a title, a warning line, a table of label/value rows and a source line.
-  function download(options) {
+  function createDocument(options) {
     var body = paragraph(options.title, true, 'Heading1') +
       paragraph(options.notice, true) +
       table(options.rows) +
@@ -108,7 +108,26 @@
       { name: 'word/document.xml', content: documentXml },
       { name: 'word/styles.xml', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="28"/></w:rPr></w:style></w:styles>' }
     ]);
-    var url = URL.createObjectURL(blob);
+    return blob;
+  }
+
+  function open(options) {
+    var url = URL.createObjectURL(createDocument(options));
+    var opened = window.open(url, '_blank', 'noopener');
+    if (!opened) {
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = options.fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    return !!opened;
+  }
+
+  function download(options) {
+    var url = URL.createObjectURL(createDocument(options));
     var link = document.createElement('a');
     link.href = url;
     link.download = options.fileName;
@@ -118,5 +137,5 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
-  window.DocxExport = { download: download };
+  window.DocxExport = { download: download, open: open };
 })();
