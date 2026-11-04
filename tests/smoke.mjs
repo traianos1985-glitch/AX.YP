@@ -273,3 +273,34 @@ assert.match(findLegal('zoa-33').notes, /δεν αφορούν ιδιωτικό 
 assert.equal(incidentSearch.classify('σκύλος εργασίας της Ελληνικής Αστυνομίας κατά την εκτέλεση υπηρεσίας').id, 'animal-police-working-dog');
 assert.equal(incidentSearch.classify('αστυνομικός βρήκε σκύλο στον δρόμο'), null);
 assert.equal(incidentSearch.classify('ανώνυμη καταγγελία για κακοποίηση ζώου με συγκεκριμένα στοιχεία').id, 'animal-report-or-anonymous-complaint');
+
+
+// KPD procedural entries are current-source linked, cautious, and remain partial.
+const kpdModule = legalModules.find((module) => module.id === 'kpd');
+assert.ok(kpdModule);
+const findKpd = (id) => kpdModule.items.find((item) => item.id === id);
+for (const id of ['kpd-0','kpd-1','kpd-2','kpd-3','kpd-4','kpd-5','kpd-6','kpd-7','kpd-8','kpd-9','kpd-10']) {
+  assert.ok(findKpd(id), 'Missing KPD entry: ' + id);
+  assert.equal(findKpd(id).status, 'partial');
+  assert.match(findKpd(id).source, /taxheaven\.gr\/law\/4620\/2019/);
+}
+assert.match(findKpd('kpd-4').procedure, /έξι μήνες/);
+assert.match(findKpd('kpd-5').procedure, /χωρίς όρκο/);
+assert.match(findKpd('kpd-6').procedure, /γραπτή παραγγελία/);
+assert.match(findKpd('kpd-6').procedure, /χωρίς προηγούμενη παραγγελία/);
+assert.match(findKpd('kpd-7').procedure, /αναλογικότητας/);
+assert.match(findKpd('kpd-2').procedure, /κατ’ έγκληση/);
+assert.match(findKpd('kpd-3').procedure, /24 ωρών/);
+assert.match(findKpd('kpd-3').procedure, /12 ωρών/);
+assert.match(findKpd('kpd-8').procedure, /ύποπτος φυγής/);
+assert.match(findKpd('kpd-9').procedure, /σχετική έκθεση/);
+assert.match(findKpd('kpd-10').procedure, /ή να απολυθεί/);
+assert.equal(incidentSearch.classify('προκαταρκτική εξέταση για συλλογή αποδεικτικών στοιχείων').id, 'kpd-preliminary-examination');
+assert.equal(incidentSearch.classify('δικαιώματα υπόπτου κατά την προκαταρκτική εξέταση').id, 'kpd-preliminary-examination');
+assert.equal(incidentSearch.classify('διενέργεια προανάκρισης με γραπτή εισαγγελική παραγγελία').id, 'kpd-preliminary-inquiry');
+assert.equal(incidentSearch.classify('αυτεπάγγελτη προανάκριση λόγω κινδύνου απώλειας αποδεικτικών στοιχείων').id, 'kpd-preliminary-inquiry');
+assert.equal(incidentSearch.classify('καθήκοντα ανακριτικού υπαλλήλου και αρχή αναλογικότητας').id, 'kpd-investigator-duties');
+assert.equal(incidentSearch.classify('σύλληψη για αυτόφωρο πλημμέλημα και προσαγωγή στον εισαγγελέα').id, 'kpd-arrest-and-detention');
+assert.equal(incidentSearch.classify('εκτέλεση εντάλματος σύλληψης').id, 'kpd-arrest-and-detention');
+assert.equal(incidentSearch.classify('πώς γίνεται η σύλληψη και η κατάσχεση πειστηρίων').id, 'kpd-arrest-and-detention');
+assert.equal(incidentSearch.classify('είχε μια συζήτηση με τον γείτονα'), null);
