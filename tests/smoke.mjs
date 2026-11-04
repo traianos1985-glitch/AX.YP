@@ -239,7 +239,7 @@ assert.match(findLegal('zoa-27').notes, /προγράμματα αναπαραγ
 assert.match(findLegal('zoa-16').notes, /δήμοι δεν ευθύνονται/);
 assert.match(findLegal('zoa-32').notes, /όχι γενικά τις περ\. δ΄–στ΄/);
 assert.match(findLegal('zoa-9').notes, /70 € ανά ζώο και 40 € για κυνηγετικό σκύλο/);
-assert.match(findLegal('zoa-16').notes, /για αδέσποτο χωρίς σήμανση ευθύνεται ο δήμος/);
+assert.match(findLegal('zoa-16').notes, /αδέσποτο ζώο χωρίς ηλεκτρονική σήμανση, η ευθύνη βαρύνει τον δήμο/);
 assert.equal(findLegal('zoa-33').status, 'partial');
 assert.equal(findLegal('zoa-34').status, 'partial');
 assert.match(findLegal('zoa-34').procedure, /συγκεκριμένα στοιχεία/);
