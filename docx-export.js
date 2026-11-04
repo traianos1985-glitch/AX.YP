@@ -111,8 +111,16 @@
     ]);
   }
 
-  function download(options) {
+  async function download(options) {
     var blob = createDocument(options);
+    if (options.caseId && window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()) {
+      try {
+        await window.AXYP_WORKSPACE.saveDocument(options.caseId, options.fileName, blob);
+      } catch (error) {
+        var flash = document.getElementById('case-flash');
+        if (flash) flash.textContent = 'Το Word θα ληφθεί, αλλά δεν αποθηκεύτηκε στον φάκελο εργασίας: ' + error.message;
+      }
+    }
     var url = URL.createObjectURL(blob);
     var link = document.createElement('a');
     link.href = url;
@@ -121,6 +129,7 @@
     link.click();
     link.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    return blob;
   }
 
   window.DocxExport = { download: download };
