@@ -489,6 +489,7 @@
     }
 
 
+    if (has('scenePreservation') && (has('searchOperation') || hasConcept(words, ['σκηνη']) || (hasConcept(words, ['τοπο']) && hasConcept(words, ['εγκλημα'])))) return RULES.kpdScenePreservation;
     if (has('seizureHandling') && (hasConcept(words, ['φυλαξ','σφραγιδ','αποσφραγ','αρσηκατασχε','αποδοση','καταστροφ']) || hasConcept(words, ['πειστηρ']) && hasConcept(words, ['κατασχε','αντιγραφ']))) return RULES.kpdSeizureHandling;
     if (has('pretrialMeasures') && (hasConcept(words, ['περιοριστικ','ηλεκτρονικηεπιτηρηση']) || (hasConcept(words, ['προσωρινη']) && hasConcept(words, ['κρατηση'])) || (hasConcept(words, ['εγγυηση']) && hasConcept(words, ['ανακρι','κατηγορουμ'])))) return RULES.kpdPretrialMeasures;
     if (has('reportFormalities') && hasConcept(words, ['εκθεση']) && hasConcept(words, ['υπογραφ','χρονολογ','παρισταμεν','ακυροτητα','μαρτυρεσ'])) return RULES.kpdReportFormalities;
@@ -500,7 +501,6 @@
     if (has('digitalEvidence') && (hasConcept(words, ['κατασχε','αντιγραφ','ακεραιοτ','αυθεντικοτ','πειστηρ']) || hasConcept(words, ['ψηφιακ','ηλεκτρονικ']) && hasConcept(words, ['ερευν','δεδομεν']))) return RULES.kpdDigitalEvidence;
     if (has('bodilySearch') && has('searchOperation')) return RULES.kpdBodySearch;
     if (has('searchOperation') && has('residence')) return RULES.kpdSearch;
-    if (has('scenePreservation') && (has('searchOperation') || hasConcept(words, ['σκηνη']) || (hasConcept(words, ['τοπο']) && hasConcept(words, ['εγκλημα'])))) return RULES.kpdScenePreservation;
     if (has('searchOperation') && hasConcept(words, ['εκθεση','ευρημα','μεσεγγυηση']) && hasConcept(words, ['κατασχε','πειστηρ','αντικειμεν','ευρημα','μεσεγγυηση'])) return RULES.kpdSearchReport;
     if (has('proceduralDefect') && hasConcept(words, ['ελλειψ','παρατυπ']) && hasConcept(words, ['εγκληση','αιτηση','αδεια']) && hasConcept(words, ['διωξ','νεα','επαν'])) return RULES.kpdReprosecution;
     if (has('resJudicata') && (hasConcept(words, ['δεδικασμεν','εκκρεμοδικ']) || (hasConcept(words, ['ιδια']) && hasConcept(words, ['πραξη']) && hasConcept(words, ['αθωωθ','καταδικαστ','παυση'])))) return RULES.kpdResJudicata;
