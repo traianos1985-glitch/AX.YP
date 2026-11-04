@@ -348,7 +348,7 @@ for (const id of ['kpd-16','kpd-17','kpd-18','kpd-19']) {
 assert.match(findKpd('kpd-16').procedure, /εκπρόσωπο της εισαγγελικής αρχής/);
 assert.match(findKpd('kpd-16').notes, /ΑΠ 10\/2022/);
 assert.match(findKpd('kpd-16').notes, /όχι σε ανακριτικό υπάλληλο/);
-assert.match(findKpd('kpd-17').procedure, /δεν επιτρέπονται.*ανακριτικές πράξεις/s);
+assert.match(findKpd('kpd-17').procedure, /Δεν επιτρέπονται.*ανακριτικές πράξεις/s);
 assert.match(findKpd('kpd-17').procedure, /συγκατηγορούμενοι/);
 assert.match(findKpd('kpd-17').notes, /δεν δημιουργεί από μόνο του καθεστώς ασυλίας/);
 assert.match(findKpd('kpd-18').procedure, /ίδια πράξη/);
