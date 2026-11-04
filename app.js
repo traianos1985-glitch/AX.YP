@@ -237,6 +237,9 @@
     article.appendChild(el('span', 'badge ' + (stale ? 'b-old' : 'b-ok'), 'Καταγραφή: ' + item.verified + (stale ? ' · χρειάζεται επαλήθευση' : '')));
     article.appendChild(el('span', 'badge b-info', entry.module.title));
     article.appendChild(el('span', 'badge b-wait', official ? 'Επίσημη πηγή' : 'Δευτερεύουσα πηγή'));
+    if (item.source === 'https://search.et.gr/el/') {
+      article.appendChild(el('span', 'badge b-info', 'Επίσημη αναζήτηση ΦΕΚ'));
+    }
 
     var dl = el('dl');
     [['Διάταξη', item.law], ['Ποινή ή πρόστιμο', item.penalty], ['Διαδικασία', item.procedure], ['Σημειώσεις', item.notes]].forEach(function (pair) {
