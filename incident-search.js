@@ -10,14 +10,13 @@
     personal: ['προσωπικ','ατομικ','ιδια','δικημου','δικημουχρηση'],
     sale: ['πωλ','διακιν','διανομ','διενειμ','παραδιδ','διεθεσ','μεταπωλ','προσφερ'],
     weapon: ['οπλο','πυροβολ','πιστολ','περιστροφ','καραμπιν','κυνηγετικο','μαχαιρ','ξιφο','σπαθ'],
-    carry: ['οπλοφορια','φερε','εφερε','φορουσε','επανωτου','στηντσέπη','στητσέπη','δημοσιοχωρο','στοδρομο','μετεφερε'],
-    possess: ['οπλοκατοχη','κατοχη','φυλασσ','αποθηκευ','στοσπιτι','στηνοικια','εντοςοικιας'],
+    carry: ['οπλοφορια','φερε','εφερε','φορουσε','επανω','τσεπ','δρομ','δημοσιο','μετεφερε'],
+    possess: ['οπλοκατοχη','κατοχη','φυλασσ','αποθηκευ','σπιτι','οικια','εντοσ'],
     migrant: ['αλλοδαπ','μεταναστ','πολιτητριτησχωρασ','διαβατηρ','ταξιδιωτικοεγγραφο','συνορ','εισοδο'],
     transport: ['μεταφερ','μεταφορε','οδηγ','σκαφο','βαρκα','κρυβ','αποκρυπτ','παραλαμβ','προωθ','διευκολυν'],
     forged: ['πλαστο','νοθευ','παραποιημενο','ψευδεσ'],
-    stay: ['παρανομηπαραμον','χωρισαδειαδιαμονησ','ληξηαδειασδιαμονησ','αδειασδιαμονησ'],
     building: ['οικοδομ','κατασκευ','κτισμα','ανεγερ','εργασιεσ','δομησ','αυθαιρετ','αλλαγηχρησησ'],
-    noPermit: ['χωρισαδεια','ανευαδειασ','χωρισοικοδομικηαδεια','χωρισαδειαδομησησ','μηαδειοδοτημεν']
+    noPermit: ['χωρισ','ανευ','μηαδειοδοτημεν']
   };
 
   var RULES = {
@@ -114,12 +113,15 @@
         return RULES.migrationTransport;
       }
       if (has('forged') && hasConcept(words, ['διαβατηρ','ταξιδιωτικοεγγραφο','εγγραφο'])) return RULES.migrationDocuments;
-      if (has('stay')) return RULES.migrationStay;
+      var noResidencePermit = hasConcept(words, ['χωρισ','ανευ']) && hasConcept(words, ['αδεια']) && hasConcept(words, ['διαμον']);
+      var expiredResidencePermit = hasConcept(words, ['ληξ']) && hasConcept(words, ['αδεια']) && hasConcept(words, ['διαμον']);
+      var irregularStay = hasConcept(words, ['παρανομη']) && hasConcept(words, ['παραμον','διαμον']);
+      if (noResidencePermit || expiredResidencePermit || irregularStay) return RULES.migrationStay;
     }
 
     if (has('building')) {
       var construction = hasConcept(words, ['οικοδομ','κατασκευ','ανεγερ','εργασιεσ','κτισμα','δομησ']);
-      var unauthorized = hasConcept(words, ['αυθαιρετ']) || (has('noPermit') && construction);
+      var unauthorized = hasConcept(words, ['αυθαιρετ']) || (has('noPermit') && hasConcept(words, ['αδεια']) && construction);
       if (unauthorized) return RULES.building;
     }
     return null;
