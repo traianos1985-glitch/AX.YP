@@ -157,3 +157,26 @@ assert.equal(incidentSearch.classify('αλλοδαπός χωρίς άδεια �
 assert.equal(incidentSearch.classify('ανέγειρε οικοδομή χωρίς οικοδομική άδεια').id, 'building-without-permit');
 assert.equal(incidentSearch.classify('διαφωνία για συντελεστή δόμησης'), null);
 assert.equal(incidentSearch.classify('βρέθηκε με ποσότητα ναρκωτικών'), null);
+
+
+// Animal incident scenarios surface only existing legal/procedure entries from the local database.
+const animalScenarios = [
+  ['σκύλος κακοποιήθηκε και χτυπήθηκε', 'animal-cruelty', ['zoa-1', 'zoa-10', 'zoa-8']],
+  ['σκύλος παραμελημένος χωρίς νερό και δεμένος με αλυσίδα', 'animal-neglect', ['zoa-11', 'zoa-6', 'zoa-12']],
+  ['ιδιοκτήτης σκύλου τον έχει χωρίς λουρί και χωρίς σήμανση', 'animal-owner-obligations', ['zoa-6', 'zoa-9', 'zoa-12']],
+  ['πωλεί κουτάβια μέσω αγγελίας', 'animal-trade', ['zoa-5', 'zoa-8', 'zoa-12']],
+  ['έκλεψε σκύλο συντροφιάς', 'animal-theft', ['zoa-4']],
+  ['σκύλος γαβγίζει και διαταράσσει την κοινή ησυχία', 'animal-noise', ['zoa-15']],
+  ['μεταφέρει σκύλο σε όχημα χωρίς κατάλληλες συνθήκες', 'animal-transport', ['zoa-13', 'zoa-11']]
+];
+for (const [description, expectedId, entryIds] of animalScenarios) {
+  const match = incidentSearch.classify(description);
+  assert.equal(match.id, expectedId, description);
+  assert.deepEqual(Array.from(match.primaryEntryIds.concat(match.relatedEntryIds)), entryIds);
+  for (const entryId of entryIds) {
+    const entry = animals.items.find((item) => item.id === entryId);
+    assert.ok(entry, 'Missing linked animal entry: ' + entryId);
+    assert.equal(entry.status, 'partial');
+    assert.ok(entry.procedure, 'Missing existing procedure field: ' + entryId);
+  }
+}
