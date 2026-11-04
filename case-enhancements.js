@@ -78,7 +78,7 @@ import { zipSync } from './vendor/fflate.js';
     });
   }
 
-  function downloadWord() {
+  async function downloadWord() {
     syncExtraFields();
     var item = current();
     if (!item) {
@@ -112,14 +112,15 @@ import { zipSync } from './vendor/fflate.js';
     ];
 
     if (window.DocxExport) {
-      window.DocxExport.download({
+      await window.DocxExport.download({
+        caseId: item.id,
         title: item.title || 'Υπηρεσιακό έγγραφο',
         notice: 'Πρόχειρο εργασίας — απαιτείται υπηρεσιακός έλεγχος πριν από κάθε χρήση.',
         rows: rows,
         source: 'https://proanakrisi.gr/',
         fileName: 'axyp-' + (item.id || 'case') + '.docx'
       });
-      $('case-flash').textContent = 'Το πρόχειρο Word (.docx) κατέβηκε επιτυχώς.';
+      $('case-flash').textContent = window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected() ? 'Το Word αποθηκεύτηκε στα Έγγραφα της δικογραφίας και λήφθηκε.' : 'Το πρόχειρο Word (.docx) κατέβηκε. Επίλεξε προσωπικό φάκελο για να αποθηκεύονται τα έγγραφα και εκεί.';
     }
   }
 
