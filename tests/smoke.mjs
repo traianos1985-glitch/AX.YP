@@ -233,3 +233,8 @@ assert.match(findLegal('zoa-11').notes, /δύο ώρες ημερησίως/);
 assert.match(findLegal('zoa-31').notes, /νόμιμη παράδοση/);
 assert.match(findLegal('zoa-30').penalty, /δεν αποδίδεται το ποσό αυτό αυτομάτως/);
 assert.match(findLegal('zoa-27').penalty, /δεν αποδίδεται αυτομάτως σε κάθε παράβαση/);
+assert.match(findLegal('zoa-6').notes, /άρθρο 62 ν\. 5143\/2024/);
+assert.match(findLegal('zoa-22').notes, /σκύλους εργασίας της Ελληνικής Αστυνομίας/);
+assert.match(findLegal('zoa-27').notes, /προγράμματα αναπαραγωγής τους δεν υπόκεινται/);
+assert.match(findLegal('zoa-16').notes, /δήμοι δεν ευθύνονται/);
+assert.match(findLegal('zoa-32').notes, /όχι γενικά τις περ\. δ΄–στ΄/);
