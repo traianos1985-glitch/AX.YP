@@ -496,7 +496,7 @@
     if (has('pretrialQuestions') && hasConcept(words, ['προδικαστικ','αστικηδιαφορα','διοικητικηδιαφορα','αναβοληποινικησ'])) return RULES.kpdPretrialQuestions;
     if (has('psychiatricExpertise') || hasConcept(words, ['ψυχιατρικ','διανοητικηυγεια'])) return RULES.kpdPsychiatricExpertise;
     if (has('witnessEvidence') && hasConcept(words, ['μαρτυρα','καταθεση','ειδικεσγνωσεισ'])) return RULES.kpdWitnessEvidence;
-    if (has('appealExecution') && hasConcept(words, ['εφεση','αναιρεση','ενδικομεσο','εκτελεσηποινησ','ποινικομητρωο','επανεξεταση'])) return RULES.kpdAppealExecution;
+    if (has('appealExecution') && (hasConcept(words, ['εφεση','αναιρεση','ενδικομεσο','ποινικομητρωο','επανεξεταση']) || (hasConcept(words, ['εκτελεση']) && hasConcept(words, ['ποινη'])))) return RULES.kpdAppealExecution;
     if (has('digitalEvidence') && (hasConcept(words, ['κατασχε','αντιγραφ','ακεραιοτ','αυθεντικοτ','πειστηρ']) || hasConcept(words, ['ψηφιακ','ηλεκτρονικ']) && hasConcept(words, ['ερευν','δεδομεν']))) return RULES.kpdDigitalEvidence;
     if (has('bodilySearch') && has('searchOperation')) return RULES.kpdBodySearch;
     if (has('searchOperation') && has('residence')) return RULES.kpdSearch;
