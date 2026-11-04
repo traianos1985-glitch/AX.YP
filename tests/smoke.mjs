@@ -150,7 +150,7 @@ assert.equal(incidentSearch.classify('πουλούσε και διέθετε ν�
 assert.equal(incidentSearch.classify('βρέθηκε με ποσότητα ναρκωτικών'), null);
 assert.equal(incidentSearch.classify('βρέθηκε με πιστόλι στην τσέπη στον δρόμο').id, 'weapon-carrying');
 assert.equal(incidentSearch.classify('βρέθηκε πιστόλι φυλαγμένο στο σπίτι').id, 'weapon-possession');
-assert.equal(incidentSearch.classify('βρέθηκε μαχαίρι').id, null);
+assert.equal(incidentSearch.classify('βρέθηκε μαχαίρι'), null);
 assert.equal(incidentSearch.classify('οδηγός μετέφερε κρυμμένους αλλοδαπούς προς τα σύνορα').id, 'migration-transport');
 assert.equal(incidentSearch.classify('εντοπίστηκε αλλοδαπός με πλαστό διαβατήριο').id, 'migration-documents');
 assert.equal(incidentSearch.classify('αλλοδαπός χωρίς άδεια διαμονής').id, 'migration-stay-status');
