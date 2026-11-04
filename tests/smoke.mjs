@@ -378,7 +378,7 @@ assert.match(findKpd('kpd-20').procedure, /σφραγίδων/);
 assert.match(findKpd('kpd-20').procedure, /να μην απομακρυνθεί κανείς/);
 assert.match(findKpd('kpd-21').procedure, /μόνο με αυτήν/);
 assert.match(findKpd('kpd-21').procedure, /παρουσία εκπροσώπων της δικαστικής εξουσίας/);
-assert.match(findKpd('kpd-21').notes, /προανακριτή πρωτοδίκη και πρωτοδίκη/);
+assert.match(findKpd('kpd-21').notes, /προανακριτής πρωτοδίκης και πρωτοδίκης/);
 assert.match(findKpd('kpd-21').notes, /20:00–06:00/);
 assert.match(findKpd('kpd-22').procedure, /σοβαρή και βάσιμη υπόνοια/);
 assert.match(findKpd('kpd-22').procedure, /χωριστά για κάθε πρόσωπο/);
