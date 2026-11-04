@@ -142,3 +142,18 @@ assert.match(findLegal('special-migration-25').law, /άρθρο 25/)
 assert.match(findLegal('building-unauthorized').law, /125Θ–125ΙΕ/)
 assert.doesNotMatch(findLegal('building-unauthorized').law, /άρθρο 94 §8/)
 assert.ok(['special-drugs-20','special-drugs-29','special-weapons-7','special-weapons-10','special-migration-24','special-migration-25','building-unauthorized'].every((id) => findLegal(id).status === 'partial'))
+
+
+// Scenario recognition stays deterministic, local, cautious, and scoped to known legal entries.
+assert.equal(incidentSearch.classify('βρέθηκε με μικροποσότητα κάνναβης για προσωπική χρήση').id, 'drugs-personal-use');
+assert.equal(incidentSearch.classify('πουλούσε και διέθετε ναρκωτικά σε τρίτους').id, 'drugs-trafficking-indicators');
+assert.equal(incidentSearch.classify('βρέθηκε με ποσότητα ναρκωτικών').id, null);
+assert.equal(incidentSearch.classify('βρέθηκε με πιστόλι στην τσέπη στον δρόμο').id, 'weapon-carrying');
+assert.equal(incidentSearch.classify('βρέθηκε πιστόλι φυλαγμένο στο σπίτι').id, 'weapon-possession');
+assert.equal(incidentSearch.classify('βρέθηκε μαχαίρι').id, null);
+assert.equal(incidentSearch.classify('οδηγός μετέφερε κρυμμένους αλλοδαπούς προς τα σύνορα').id, 'migration-transport');
+assert.equal(incidentSearch.classify('εντοπίστηκε αλλοδαπός με πλαστό διαβατήριο').id, 'migration-documents');
+assert.equal(incidentSearch.classify('αλλοδαπός χωρίς άδεια διαμονής').id, 'migration-stay-status');
+assert.equal(incidentSearch.classify('ανέγειρε οικοδομή χωρίς οικοδομική άδεια').id, 'building-without-permit');
+assert.equal(incidentSearch.classify('διαφωνία για συντελεστή δόμησης').id, null);
+assert.equal(incidentSearch.classify('βρέθηκε με ποσότητα ναρκωτικών'), null);
