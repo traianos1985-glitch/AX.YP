@@ -419,6 +419,9 @@ assert.match(findKpd('kpd-29').notes, /δεν είναι αυτοματοποι�
 assert.match(findKpd('kpd-30').notes, /δεν διαγιγνώσκει ψυχική κατάσταση/);
 assert.match(findKpd('kpd-31').notes, /209–233/);
 assert.match(findKpd('kpd-32').notes, /δεν επιχειρεί να συμπυκνώσει όλες τις προθεσμίες/);
+assert.match(findKpd('kpd-31').source, /arthro\/209$/);
+assert.match(findKpd('kpd-32').law, /476Α/);
+assert.match(findKpd('kpd-32').notes, /άρθρο 63 ν\. 5282\/2026/);
 assert.equal(incidentSearch.classify('φύλαξη και σφράγιση κατασχεμένων πειστηρίων').id, 'kpd-seized-property-chain-of-custody');
 assert.equal(incidentSearch.classify('αίτηση άρσης κατάσχεσης πειστηρίων').id, 'kpd-seized-property-chain-of-custody');
 assert.equal(incidentSearch.classify('προσωρινή κράτηση και περιοριστικοί όροι μετά την απολογία').id, 'kpd-restrictive-terms-and-pretrial-detention');
