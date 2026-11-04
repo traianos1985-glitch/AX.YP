@@ -1,11 +1,12 @@
 // Bump this name whenever the app shell or bundled source content changes.
-const CACHE_NAME = "axyp-v7";
+const CACHE_NAME = "axyp-v8";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./storage.js",
   "./case-folder-storage.js",
   "./data.js",
+  "./incident-search.js",
   "./forms.js",
   "./docx-export.js",
   "./forms-view.js",

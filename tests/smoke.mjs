@@ -97,3 +97,31 @@ assert.ok(usageGuide.includes('δεν κρυπτογραφούνται από τ
 assert.ok(readmeSource.includes('ΟΔΗΓΙΕΣ-ΧΡΗΣΗΣ.md'))
 assert.ok(serviceWorker.includes('./case-folder-storage.js'))
 assert.ok(serviceWorker.includes('./ΟΔΗΓΙΕΣ-ΧΡΗΣΗΣ.md'))
+
+
+// Deterministic incident recognition must remain local and must not overstate a legal result.
+const incidentSearchSource = await readFile(new URL('../incident-search.js', import.meta.url), 'utf8')
+const legalDataSource = await readFile(new URL('../data.js', import.meta.url), 'utf8')
+const incidentContext = { window: {} }
+vm.runInNewContext(incidentSearchSource, incidentContext)
+const incidentSearch = incidentContext.window.AXYPIncidentSearch
+assert.equal(incidentSearch.classify('σκύλος με ιδιοκτήτη δάγκωσε άνθρωπο').id, 'dog-bite')
+assert.equal(incidentSearch.classify('σκύλος γαβγίζει στον δρόμο'), null)
+const legalContext = { window: {} }
+vm.runInNewContext(legalDataSource, legalContext)
+const legalModules = legalContext.window.DATA.modules
+const animals = legalModules.find((module) => module.id === 'zoa')
+const dogBite = animals.items.find((item) => item.id === 'zoa-16')
+assert.ok(dogBite)
+assert.equal(dogBite.status, 'partial')
+assert.match(dogBite.law, /άρθρο 314/)
+assert.match(dogBite.notes, /αστική ευθύνη/)
+assert.ok(animals.items.some((item) => item.id === 'zoa-12'))
+assert.ok(legalModules.some((module) => module.id === 'special-penal'))
+assert.ok(legalModules.some((module) => module.id === 'building'))
+assert.ok(legalModules.find((module) => module.id === 'building').items.some((item) => item.id === 'building-unauthorized' && item.law.includes('άρθρο 94')))
+assert.match(legalModules.find((module) => module.id === 'special-penal').items.find((item) => item.id === 'special-migration').law, /5307\/2026/)
+assert.ok(legalModules.find((module) => module.id === 'special-penal').items.every((item) => item.status === 'partial'))
+assert.ok(incidentSearch.hasCoverage('σκύλος ιδιοκτήτης δάγκωσε άνθρωπο', dogBite))
+assert.match(app, /AXYPIncidentSearch\.classify/)
+assert.match(app, /Συμπληρωματική διαδικασία — υπό προϋποθέσεις/)
