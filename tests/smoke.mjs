@@ -61,3 +61,16 @@ assert.match(zipText, /word\/styles\.xml/)
 assert.match(zipText, /Heading1/)
 
 console.log('Smoke tests passed: manifest, offline cache, DOCX archive, and Greek search normalization.')
+
+
+// Regression checks for shared-computer safety.
+const storageSource = await readFile(new URL('../storage.js', import.meta.url), 'utf8')
+const templateLibrary = await readFile(new URL('../template-library.js', import.meta.url), 'utf8')
+const caseEnhancements = await readFile(new URL('../case-enhancements.js', import.meta.url), 'utf8')
+assert.match(storageSource, /key\.indexOf\('axyp-'\) === 0/)
+assert.doesNotMatch(storageSource, /localStorage\.clear\(\)/)
+assert.doesNotMatch(storageSource, /objectStore\(STORE_NAME\)\.clear\(\)/)
+assert.match(templateLibrary, /if \(!activeId\) return null/)
+assert.doesNotMatch(templateLibrary, /return all\[0\] \|\| \{\}/)
+assert.match(caseEnhancements, /if \(!id\) return null/)
+assert.doesNotMatch(caseEnhancements, /return list\[0\]/)
