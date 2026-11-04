@@ -239,7 +239,13 @@ assert.match(findLegal('zoa-27').notes, /προγράμματα αναπαραγ
 assert.match(findLegal('zoa-16').notes, /δήμοι δεν ευθύνονται/);
 assert.match(findLegal('zoa-32').notes, /όχι γενικά τις περ\. δ΄–στ΄/);
 assert.equal(findLegal('zoa-33').status, 'partial');
+assert.equal(findLegal('zoa-34').status, 'partial');
+assert.match(findLegal('zoa-34').procedure, /συγκεκριμένα στοιχεία/);
+assert.match(findLegal('zoa-29').procedure, /επόμενη εργάσιμη ημέρα/);
+assert.match(findLegal('zoa-29').procedure, /αστυνομικής συνδρομής/);
+assert.doesNotMatch(findLegal('zoa-6').notes, /έκθεση σκύλων\/γατών σε pet shops/);
 assert.match(findLegal('zoa-33').notes, /ειδικό μητρώο/);
 assert.match(findLegal('zoa-33').notes, /δεν αφορούν ιδιωτικό ζώο αστυνομικού/);
 assert.equal(incidentSearch.classify('σκύλος εργασίας της Ελληνικής Αστυνομίας κατά την εκτέλεση υπηρεσίας').id, 'animal-police-working-dog');
 assert.equal(incidentSearch.classify('αστυνομικός βρήκε σκύλο στον δρόμο'), null);
+assert.equal(incidentSearch.classify('ανώνυμη καταγγελία για κακοποίηση ζώου με συγκεκριμένα στοιχεία').id, 'animal-report-or-anonymous-complaint');
