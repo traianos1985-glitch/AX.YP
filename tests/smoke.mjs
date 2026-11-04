@@ -407,7 +407,7 @@ for (const id of ['kpd-25','kpd-26','kpd-27','kpd-28','kpd-29','kpd-30','kpd-31'
   assert.equal(entry.status, 'partial');
   assert.match(entry.source, /taxheaven\.gr\/law\/4620\/2019/);
 }
-assert.match(findKpd('kpd-25').procedure, /δέκα \(10\) ημέρες/);
+assert.match(findKpd('kpd-25').procedure, /δέκα ημέρες/);
 assert.match(findKpd('kpd-25').notes, /δεν αποτελεί γενική εντολή καταστροφής/);
 assert.match(findKpd('kpd-26').procedure, /μόνο εφόσον αυτά δεν επαρκούν/);
 assert.match(findKpd('kpd-26').notes, /έσχατο μέτρο/);
