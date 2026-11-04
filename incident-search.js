@@ -67,7 +67,14 @@
     authorityApplication: ['αιτηση','διωξ','αρχη','υπηρεσια'],
     prosecutionPermission: ['αδεια','διωξ','χορηγηθ','αρνηση'],
     resJudicata: ['δεδικασμεν','εκκρεμοδικ','αμετακλητ','αθωωθ'],
-    proceduralDefect: ['ελλειψ','παρατυπ','απαραδεκτ','νεα','επαν','ξανα']
+    proceduralDefect: ['ελλειψ','παρατυπ','απαραδεκτ','νεα','επαν','ξανα'],
+    scenePreservation: ['τοποεγκληματος','σκηνηεγκληματος','σφραγιδ','φυλακ','αλλοιωσ','απομακρυνθ'],
+    searchOperation: ['ερευν','ερευνα','ερευνων','ερευνησ'],
+    residence: ['κατοικ','οικια','σπιτι','διαμερισμα'],
+    nightSearch: ['νυχτεριν','νυχτα','βραδυ'],
+    bodilySearch: ['σωματικ','σωμα','ενδυμα','τσεπεσ'],
+    digitalEvidence: ['ψηφιακ','ηλεκτρονικ','υπολογιστ','κινητοτηλεφωνο','σκληροδισκο','αποθηκευτικομεσο','cloud','νεφοϋπολογιστικ','δεδομενα'],
+    evidenceSeizureFormal: ['κατασχε','αντιγραφ','ακεραιοτ','αυθεντικοτ','πειστηρ','μεσεγγυηση','ειδικηεκθεση']
   };
 
   var RULES = {
@@ -281,6 +288,31 @@
       primaryEntryIds: ['kpd-19'], relatedEntryIds: ['kpd-16', 'kpd-17', 'kpd-18'],
       notice: 'Το άρθρο 58 αφορά μόνο την ειδική περίπτωση απαραδέκτου λόγω έλλειψης ή πλημμέλειας έγκλησης, αίτησης ή άδειας· δεν παραμερίζει γενικά το δεδικασμένο.'
     },
+    kpdScenePreservation: {
+      id: 'kpd-scene-and-evidence-preservation', label: 'Διασφάλιση τόπου και αποδεικτικών στοιχείων',
+      primaryEntryIds: ['kpd-20'], relatedEntryIds: ['kpd-7', 'kpd-23'],
+      notice: 'Τα μέτρα του άρθρου 252 συνδέονται με συγκεκριμένη ανακριτική πράξη και ασκούνται από τα αρμόδια πρόσωπα, με νόμιμη βάση και αναλογικότητα.'
+    },
+    kpdSearch: {
+      id: 'kpd-search-and-home-search-formalities', label: 'Προϋποθέσεις έρευνας και έρευνας κατοικίας',
+      primaryEntryIds: ['kpd-21'], relatedEntryIds: ['kpd-20', 'kpd-22', 'kpd-23'],
+      notice: 'Ελέγχονται οι ειδικές προϋποθέσεις έρευνας, η παρουσία δικαστικής αρχής όταν αφορά κατοικία, οι διατυπώσεις του άρθρου 256 και οι περιοριστικά οριζόμενες περιπτώσεις νυχτερινής έρευνας.'
+    },
+    kpdBodySearch: {
+      id: 'kpd-personal-search', label: 'Προϋποθέσεις και εγγυήσεις σωματικής έρευνας',
+      primaryEntryIds: ['kpd-22'], relatedEntryIds: ['kpd-23'],
+      notice: 'Για τρίτο πρόσωπο απαιτείται σοβαρή και βάσιμη υπόνοια ή απόλυτη ανάγκη. Η έρευνα γίνεται χωριστά, με σεβασμό στην υγεία και αξιοπρέπεια και με προηγούμενη πρόσκληση παράδοσης του συγκεκριμένου αντικειμένου όπου αυτό αναζητείται.'
+    },
+    kpdSearchReport: {
+      id: 'kpd-search-report-and-sequestration', label: 'Έκθεση έρευνας και μεσεγγύηση ευρημάτων',
+      primaryEntryIds: ['kpd-23'], relatedEntryIds: ['kpd-20', 'kpd-21', 'kpd-24'],
+      notice: 'Μετά την έρευνα συντάσσεται έκθεση. Η κατάσχεση και η μεσεγγύηση είναι διακριτές έννοιες και ακολουθούν τις ειδικές διατυπώσεις.'
+    },
+    kpdDigitalEvidence: {
+      id: 'kpd-digital-evidence-seizure', label: 'Κατάσχεση και διατήρηση ψηφιακών αποδεικτικών στοιχείων',
+      primaryEntryIds: ['kpd-24'], relatedEntryIds: ['kpd-20', 'kpd-23'],
+      notice: 'Το άρθρο 265 προβλέπει ειδικό εξοπλισμό, ειδική έκθεση και διασφάλιση αυθεντικότητας/ακεραιότητας. Η ρύθμιση για απομακρυσμένα συστήματα δεν καλύπτει αυτομάτως cloud δεδομένα.'
+    },
     kpdReporting: {
       id: 'kpd-reporting-duty', label: 'Υποχρέωση ανακοίνωσης ή αναγγελίας αξιόποινης πράξης',
       primaryEntryIds: ['kpd-11'], relatedEntryIds: [],
@@ -408,6 +440,11 @@
       if (unauthorized) return RULES.building;
     }
 
+    if (has('digitalEvidence') && (hasConcept(words, ['κατασχε','αντιγραφ','ακεραιοτ','αυθεντικοτ','πειστηρ']) || hasConcept(words, ['ψηφιακ','ηλεκτρονικ']) && hasConcept(words, ['ερευν','δεδομεν']))) return RULES.kpdDigitalEvidence;
+    if (has('bodilySearch') && has('searchOperation')) return RULES.kpdBodySearch;
+    if (has('searchOperation') && has('residence')) return RULES.kpdSearch;
+    if (has('scenePreservation') && (has('searchOperation') || hasConcept(words, ['πειστηρ','τοπο','σκηνη']))) return RULES.kpdScenePreservation;
+    if (has('searchOperation') && hasConcept(words, ['εκθεση','ευρημα','μεσεγγυηση']) && hasConcept(words, ['κατασχε','πειστηρ','αντικειμεν','ευρημα','μεσεγγυηση'])) return RULES.kpdSearchReport;
     if (has('proceduralDefect') && hasConcept(words, ['ελλειψ','παρατυπ']) && hasConcept(words, ['εγκληση','αιτηση','αδεια']) && hasConcept(words, ['διωξ','νεα','επαν'])) return RULES.kpdReprosecution;
     if (has('resJudicata') && (hasConcept(words, ['δεδικασμεν','εκκρεμοδικ']) || (hasConcept(words, ['ιδια']) && hasConcept(words, ['πραξη']) && hasConcept(words, ['αθωωθ','καταδικαστ','παυση'])))) return RULES.kpdResJudicata;
     if (has('authorityApplication') && hasConcept(words, ['αιτηση']) && hasConcept(words, ['διωξ']) && hasConcept(words, ['αρχη','υπηρεσια','υπουργ'])) return RULES.kpdAuthorityApplication;
