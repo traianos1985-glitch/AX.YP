@@ -50,7 +50,7 @@
     propertyDamage: ['εσπασε','κατεστρεψ','φθορα','ζημιωσ','κατεστραμ'],
     fraud: ['απατη','εξαπατ','παραπλαν','ψευδηπαρασταση','phishing','ηλεκτρονικηαπατη'],
     official: ['αστυνομικ','αστυνομια','υπαλληλ','οργανο','δικαστικο','δημοσιολειτουργ'],
-    falseReport: ['ψευδησκαταμηνυσ','ψευδηκαταγγελ','κατηγορησεψευδωσ','ενγνωσειψευδωσ']
+    falseReport: ['ψευδωσ','ψευδησκαταμηνυσ','ψευδηκαταγγελ','κατηγορησεψευδωσ','ενγνωσειψευδωσ']
   };
 
   var RULES = {
@@ -332,7 +332,7 @@
     }
 
     if (has('official') && has('assault')) return RULES.officialViolence;
-    if (has('falseReport') && hasConcept(words, ['καταγγελ','καταμηνυσ','κατηγορησ'])) return RULES.falseReport;
+    if (has('falseReport') && hasConcept(words, ['καταγγελ','καταμηνυσ','κατηγορησ','κατηγγειλ','μηνυσ'])) return RULES.falseReport;
     if (has('fraud') && hasConcept(words, ['χρημα','τραπεζ','μεταφορ','λογαριασ','περιουσ','εξαπατ','παραπλαν'])) return RULES.fraud;
     if (has('threat') || (has('coercion') && hasConcept(words, ['εξαναγκασ','αναγκασ']))) return RULES.threatOrCoercion;
     if (has('theft') && hasConcept(words, ['αντικειμεν','κινητο','πορτοφολ','χρημα','πραγμα','πραγματα','ιδιοκτησ','αφαιρεσ','εκλεψ'])) return RULES.theft;
