@@ -336,3 +336,32 @@ assert.equal(incidentSearch.classify('παραίτηση από το δικαί�
 assert.equal(incidentSearch.classify('η έγκληση υποβάλλεται εντός τριών μηνών').id, 'kpd-complaint-deadlines-fees-and-withdrawal');
 assert.equal(incidentSearch.classify('κατήγγειλε εν γνώσει του ψευδώς ότι ο γείτονας έκλεψε').id, 'penal-false-accusation-or-report');
 assert.equal(incidentSearch.classify('είχε μια συζήτηση με τον γείτονα'), null);
+
+
+// KPD authority request, prosecution permission and res judicata safeguards.
+for (const id of ['kpd-16','kpd-17','kpd-18','kpd-19']) {
+  const entry = findKpd(id);
+  assert.ok(entry, 'Missing KPD entry: ' + id);
+  assert.equal(entry.status, 'partial');
+  assert.match(entry.source, /taxheaven\.gr\/law\/4620\/2019\/arthro\//);
+}
+assert.match(findKpd('kpd-16').procedure, /εκπρόσωπο της εισαγγελικής αρχής/);
+assert.match(findKpd('kpd-16').notes, /ΑΠ 10\/2022/);
+assert.match(findKpd('kpd-16').notes, /όχι σε ανακριτικό υπάλληλο/);
+assert.match(findKpd('kpd-17').procedure, /δεν επιτρέπονται.*ανακριτικές πράξεις/s);
+assert.match(findKpd('kpd-17').procedure, /συγκατηγορούμενοι/);
+assert.match(findKpd('kpd-17').notes, /δεν δημιουργεί από μόνο του καθεστώς ασυλίας/);
+assert.match(findKpd('kpd-18').procedure, /ίδια πράξη/);
+assert.match(findKpd('kpd-18').procedure, /μεταγενέστερες κηρύσσονται απαράδεκτες/);
+assert.match(findKpd('kpd-19').procedure, /δοθεί κανονικά αργότερα/);
+assert.match(findKpd('kpd-19').notes, /δεν αποτελεί γενική δυνατότητα επανάληψης/);
+assert.equal(incidentSearch.classify('αίτηση της αρχής για άσκηση ποινικής δίωξης').id, 'kpd-authority-application-for-prosecution');
+assert.equal(incidentSearch.classify('προφορική αίτηση αρχής προς τον εισαγγελέα για δίωξη').id, 'kpd-authority-application-for-prosecution');
+assert.equal(incidentSearch.classify('άδεια για δίωξη και περιορισμοί ανακριτικών πράξεων πριν από τη χορήγησή της').id, 'kpd-permission-before-prosecution');
+assert.equal(incidentSearch.classify('άρνηση χορήγησης άδειας δίωξης').id, 'kpd-permission-before-prosecution');
+assert.equal(incidentSearch.classify('δεδικασμένο για την ίδια πράξη μετά από αμετάκλητη αθώωση').id, 'kpd-res-judicata-or-pending-prosecution');
+assert.equal(incidentSearch.classify('εκκρεμοδικία για το ίδιο πρόσωπο και την ίδια πράξη').id, 'kpd-res-judicata-or-pending-prosecution');
+assert.equal(incidentSearch.classify('νέα άσκηση ποινικής δίωξης μετά από έλλειψη έγκλησης').id, 'kpd-new-prosecution-after-procedural-defect');
+assert.equal(incidentSearch.classify('νέα δίωξη μετά από παρατυπία της αίτησης ή της άδειας').id, 'kpd-new-prosecution-after-procedural-defect');
+assert.equal(incidentSearch.classify('έχει υποβληθεί απλή μήνυση για κλοπή').id, 'kpd-criminal-complaint-submission');
+assert.equal(incidentSearch.classify('είχε μια συζήτηση με τον γείτονα'), null);
