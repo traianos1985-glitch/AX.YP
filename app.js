@@ -125,7 +125,7 @@
   function isOfficial(url) {
     try {
       var host = new URL(url).hostname;
-      var officialHosts = ['et.gr', 'gov.gr', 'proanakrisi.gr', 'kodiko.gr', 'e-nomothesia.gr'];
+      var officialHosts = ['et.gr', 'gov.gr', 'hellenicparliament.gr', 'proanakrisi.gr', 'kodiko.gr', 'e-nomothesia.gr'];
       return officialHosts.some(function (h) {
         return host === h || host.endsWith('.' + h);
       });
