@@ -63,7 +63,11 @@
     complaintProcess: ['παραβολο','ανακληση','παραιτηση','προσφυγη','απορριψη','προθεσμια'],
     complaintTime: ['μηνων','μηνεσ','μηνα'],
     prosecutionAction: ['διωξ','αρχειοθετ','αρχειο','ανασυρ'],
-    reportDuty: ['ανακοινωσ','αναγγελια','ανακριτικ','υπαλληλ','αξιοποινη']
+    reportDuty: ['ανακοινωσ','αναγγελια','ανακριτικ','υπαλληλ','αξιοποινη'],
+    authorityApplication: ['αιτηση','διωξ','αρχη','υπηρεσια'],
+    prosecutionPermission: ['αδεια','διωξ','χορηγηθ','αρνηση'],
+    resJudicata: ['δεδικασμεν','εκκρεμοδικ','αμετακλητ','αθωωθ'],
+    proceduralDefect: ['ελλειψ','παρατυπ','απαραδεκτ','νεα','επαν','ξανα']
   };
 
   var RULES = {
@@ -257,6 +261,26 @@
       primaryEntryIds: ['pk-10'], relatedEntryIds: [],
       notice: 'Μια μη αποδειχθείσα ή αρχειοθετημένη καταγγελία δεν είναι αυτομάτως ψευδής. Απαιτείται ειδική απόδειξη των στοιχείων της διάταξης.'
     },
+    kpdAuthorityApplication: {
+      id: 'kpd-authority-application-for-prosecution', label: 'Ειδική αίτηση αρχής ως προϋπόθεση ποινικής δίωξης',
+      primaryEntryIds: ['kpd-16'], relatedEntryIds: ['kpd-12', 'kpd-13'],
+      notice: 'Η αίτηση του άρθρου 41 απαιτείται μόνο όταν ειδική διάταξη το προβλέπει. Απευθύνεται σε εκπρόσωπο της εισαγγελικής αρχής και διακρίνεται από μήνυση ή έγκληση.'
+    },
+    kpdProsecutionPermission: {
+      id: 'kpd-permission-before-prosecution', label: 'Ειδική άδεια ως προϋπόθεση δίωξης',
+      primaryEntryIds: ['kpd-17'], relatedEntryIds: ['kpd-16'],
+      notice: 'Πρέπει να εντοπιστεί η ειδική συνταγματική ή νομοθετική διάταξη που απαιτεί άδεια. Το άρθρο 56 θέτει όρια στις ανακριτικές πράξεις πριν από τη χορήγησή της.'
+    },
+    kpdResJudicata: {
+      id: 'kpd-res-judicata-or-pending-prosecution', label: 'Πιθανό ζήτημα δεδικασμένου ή εκκρεμοδικίας',
+      primaryEntryIds: ['kpd-18'], relatedEntryIds: ['kpd-19'],
+      notice: 'Ελέγχεται η ταυτότητα προσώπου και πράξης και το περιεχόμενο/στάδιο της προηγούμενης διαδικασίας. Η εφαρμογή δεν αποφαίνεται αν υπάρχει δεδικασμένο.'
+    },
+    kpdReprosecution: {
+      id: 'kpd-new-prosecution-after-procedural-defect', label: 'Νέα δίωξη μετά από θεραπεία έλλειψης έγκλησης, αίτησης ή άδειας',
+      primaryEntryIds: ['kpd-19'], relatedEntryIds: ['kpd-16', 'kpd-17', 'kpd-18'],
+      notice: 'Το άρθρο 58 αφορά μόνο την ειδική περίπτωση απαραδέκτου λόγω έλλειψης ή πλημμέλειας έγκλησης, αίτησης ή άδειας· δεν παραμερίζει γενικά το δεδικασμένο.'
+    },
     kpdReporting: {
       id: 'kpd-reporting-duty', label: 'Υποχρέωση ανακοίνωσης ή αναγγελίας αξιόποινης πράξης',
       primaryEntryIds: ['kpd-11'], relatedEntryIds: [],
@@ -384,6 +408,10 @@
       if (unauthorized) return RULES.building;
     }
 
+    if (has('proceduralDefect') && hasConcept(words, ['ελλειψ','παρατυπ']) && hasConcept(words, ['εγκληση','αιτηση','αδεια']) && hasConcept(words, ['διωξ','νεα','επαν'])) return RULES.kpdReprosecution;
+    if (has('resJudicata') && (hasConcept(words, ['δεδικασμεν','εκκρεμοδικ']) || (hasConcept(words, ['ιδια']) && hasConcept(words, ['πραξη']) && hasConcept(words, ['αθωωθ','καταδικαστ','παυση'])))) return RULES.kpdResJudicata;
+    if (has('authorityApplication') && hasConcept(words, ['αιτηση']) && hasConcept(words, ['διωξ']) && hasConcept(words, ['αρχη','υπηρεσια','υπουργ'])) return RULES.kpdAuthorityApplication;
+    if (has('prosecutionPermission') && hasConcept(words, ['αδεια']) && hasConcept(words, ['διωξ']) && hasConcept(words, ['ανακριτικ','πραξει','ανακριση','προανακρι'])) return RULES.kpdProsecutionPermission;
     if (has('falseReport') && hasConcept(words, ['καταγγελ','καταμηνυσ','κατηγορησ','κατηγγειλ','μηνυσ'])) return RULES.falseReport;
     if (has('complaintFiling') && (has('complaintProcess') || has('complaintTime') || has('prosecutionAction'))) return RULES.kpdComplaintProcess;
     if (has('complaintFiling')) return RULES.kpdComplaint;
