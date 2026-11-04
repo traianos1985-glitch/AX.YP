@@ -1,5 +1,5 @@
 // Bump this name whenever the app shell or bundled source content changes.
-const CACHE_NAME = "axyp-v18";
+const CACHE_NAME = "axyp-v19";
 const APP_SHELL = [
   "./",
   "./index.html",
