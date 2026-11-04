@@ -106,7 +106,7 @@ const incidentContext = { window: {} }
 vm.runInNewContext(incidentSearchSource, incidentContext)
 const incidentSearch = incidentContext.window.AXYPIncidentSearch
 assert.equal(incidentSearch.classify('σκύλος με ιδιοκτήτη δάγκωσε άνθρωπο').id, 'dog-bite')
-assert.equal(incidentSearch.classify('σκύλος γαβγίζει στον δρόμο'), null)
+assert.equal(incidentSearch.classify('σκύλος γαβγίζει στον δρόμο').id, 'animal-noise')
 const legalContext = { window: {} }
 vm.runInNewContext(legalDataSource, legalContext)
 const legalModules = legalContext.window.DATA.modules
