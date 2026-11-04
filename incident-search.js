@@ -411,7 +411,7 @@
     if (has('proceduralDefect') && hasConcept(words, ['ελλειψ','παρατυπ']) && hasConcept(words, ['εγκληση','αιτηση','αδεια']) && hasConcept(words, ['διωξ','νεα','επαν'])) return RULES.kpdReprosecution;
     if (has('resJudicata') && (hasConcept(words, ['δεδικασμεν','εκκρεμοδικ']) || (hasConcept(words, ['ιδια']) && hasConcept(words, ['πραξη']) && hasConcept(words, ['αθωωθ','καταδικαστ','παυση'])))) return RULES.kpdResJudicata;
     if (has('authorityApplication') && hasConcept(words, ['αιτηση']) && hasConcept(words, ['διωξ']) && hasConcept(words, ['αρχη','υπηρεσια','υπουργ'])) return RULES.kpdAuthorityApplication;
-    if (has('prosecutionPermission') && hasConcept(words, ['αδεια']) && hasConcept(words, ['διωξ']) && hasConcept(words, ['ανακριτικ','πραξει','ανακριση','προανακρι'])) return RULES.kpdProsecutionPermission;
+    if (has('prosecutionPermission') && hasConcept(words, ['αδεια']) && hasConcept(words, ['διωξ'])) return RULES.kpdProsecutionPermission;
     if (has('falseReport') && hasConcept(words, ['καταγγελ','καταμηνυσ','κατηγορησ','κατηγγειλ','μηνυσ'])) return RULES.falseReport;
     if (has('complaintFiling') && (has('complaintProcess') || has('complaintTime') || has('prosecutionAction'))) return RULES.kpdComplaintProcess;
     if (has('complaintFiling')) return RULES.kpdComplaint;
