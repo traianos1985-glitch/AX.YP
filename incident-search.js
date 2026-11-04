@@ -22,6 +22,7 @@
     animalWild: ['αγριαπανιδ','αγριοειδο','αγριο','αγρια','ενδημ','εξωτικ','γερακ'],
     animalBird: ['πουλερικ','ορνιθ','πτηνο','πουλια','πτηνα','κοκορ','παπια','περιστερ'],
     animalInspection: ['παρεμποδ','αρνηθ','αρνηση','δυσχερ','ελεγχ','επιθεωρ'],
+    animalComplaint: ['καταγγελ','αναφορ','ανωνυμ','ανωνυμη'],
     animalRoad: ['τροχαι','ατυχημ','παρασυρ'],
     animalPoliceDog: ['αστυνομικ','ελασ','εργασιασ','υπηρεσιακ','k9'],
     animalAbandonment: ['εγκαταλειπ','εγκατελειψ','παρατησ','παρατησε'],
@@ -94,6 +95,11 @@
       id: 'animal-inspection-obstruction', label: 'Πιθανή άρνηση ή παρεμπόδιση επίσημου ελέγχου προστασίας ζώων',
       primaryEntryIds: ['zoa-25'], relatedEntryIds: ['zoa-9'],
       notice: 'Εξετάζεται αν πρόκειται για επίσημο έλεγχο αρμόδιας αρχής στους τομείς που καλύπτει ο ν. 4235/2014 και αν υπήρξε συγκεκριμένη παρεμπόδιση.'
+    },
+    animalComplaint: {
+      id: 'animal-report-or-anonymous-complaint', label: 'Αναφορά περιστατικού κακοποίησης ζώου',
+      primaryEntryIds: ['zoa-34'], relatedEntryIds: ['zoa-29', 'zoa-8'],
+      notice: 'Η ανώνυμη καταγγελία διερευνάται μόνο αν περιέχει συγκεκριμένα στοιχεία που παρέχουν επαρκή βάση. Το άρθρο 25 δεν θεσπίζει από μόνο του ειδική αστυνομική διαδικασία.'
     },
     animalPoliceDog: {
       id: 'animal-police-working-dog', label: 'Ειδικό καθεστώς σκύλου εργασίας της Ελληνικής Αστυνομίας',
@@ -232,6 +238,7 @@
 
     if (has('animal')) {
       if (has('animalChipAction') && hasConcept(words, ['τσιπ','μικροτσιπ','σημανσ'])) return RULES.animalChipRemoval;
+      if (has('animalComplaint') && hasConcept(words, ['ζωο','ζωων','σκυλο','γατα','κακοποι'])) return RULES.animalComplaint;
       if (has('dog') && has('animalPoliceDog') && hasConcept(words, ['εργασιασ','υπηρεσιακ','k9','ελασ'])) return RULES.animalPoliceDog;
       if (has('animalRoad') && hasConcept(words, ['τραυματ','χτυπ','παρασυρ','τραυματισμ'])) return RULES.animalRoad;
       if (has('animalSurrender') && hasConcept(words, ['δημο'])) return null;
