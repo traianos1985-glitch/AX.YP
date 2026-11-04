@@ -50,7 +50,15 @@
     propertyDamage: ['εσπασε','κατεστρεψ','φθορα','ζημιωσ','κατεστραμ'],
     fraud: ['απατη','εξαπατ','παραπλαν','ψευδηπαρασταση','phishing','ηλεκτρονικηαπατη'],
     official: ['αστυνομικ','αστυνομια','υπαλληλ','οργανο','δικαστικο','δημοσιολειτουργ'],
-    falseReport: ['ψευδωσ','ψευδησκαταμηνυσ','ψευδηκαταγγελ','κατηγορησεψευδωσ','ενγνωσειψευδωσ']
+    falseReport: ['ψευδωσ','ψευδησκαταμηνυσ','ψευδηκαταγγελ','κατηγορησεψευδωσ','ενγνωσειψευδωσ'],
+    preliminary: ['προκαταρκτικ'],
+    inquiry: ['προανακρι'],
+    investigatorDuties: ['ανακριτικ','καθηκον','αναλογικοτ','συλλογη','αποδειξ'],
+    arrest: ['συλληψ','συνεληφ','συλλαμβαν'],
+    autoforo: ['αυτοφωρ'],
+    warrant: ['ενταλμα'],
+    custody: ['κρατητηρ','κρατηση','προσαγωγ'],
+    evidenceSeizure: ['κατασχε','πειστηρ']
   };
 
   var RULES = {
@@ -243,7 +251,27 @@
       id: 'penal-false-accusation-or-report', label: 'Ζήτημα προς έλεγχο ως προς ψευδή καταμήνυση ή καταγγελία',
       primaryEntryIds: ['pk-10'], relatedEntryIds: [],
       notice: 'Μια μη αποδειχθείσα ή αρχειοθετημένη καταγγελία δεν είναι αυτομάτως ψευδής. Απαιτείται ειδική απόδειξη των στοιχείων της διάταξης.'
-    }
+    },
+    kpdPreliminary: {
+      id: 'kpd-preliminary-examination', label: 'Αναζήτηση για προκαταρκτική εξέταση και δικαιώματα υπόπτου',
+      primaryEntryIds: ['kpd-4'], relatedEntryIds: ['kpd-5'],
+      notice: 'Η προκαταρκτική εξέταση αποσκοπεί στη συλλογή στοιχείων πριν από την κρίση για ποινική δίωξη. Ελέγχονται υποχρεωτικά τα δικαιώματα του υπόπτου και οι ειδικές προθεσμίες.'
+    },
+    kpdInquiry: {
+      id: 'kpd-preliminary-inquiry', label: 'Αναζήτηση για προανάκριση και αυτεπάγγελτες προανακριτικές πράξεις',
+      primaryEntryIds: ['kpd-6'], relatedEntryIds: ['kpd-7'],
+      notice: 'Διακρίνεται η προανάκριση κατόπιν γραπτής εισαγγελικής παραγγελίας από την αυτεπάγγελτη προανάκριση του άρθρου 245 §2, η οποία επιτρέπεται μόνο υπό συγκεκριμένες προϋποθέσεις.'
+    },
+    kpdDuties: {
+      id: 'kpd-investigator-duties', label: 'Καθήκοντα ανακριτικού υπαλλήλου και αναλογικότητα',
+      primaryEntryIds: ['kpd-7'], relatedEntryIds: ['kpd-6'],
+      notice: 'Κάθε ανακριτική πράξη απαιτεί ειδική νόμιμη βάση, αρμοδιότητα, προϋποθέσεις και τήρηση της αρχής της αναλογικότητας.'
+    },
+    kpdArrest: {
+      id: 'kpd-arrest-and-detention', label: 'Αναζήτηση για αυτόφωρο, σύλληψη, προσαγωγή και πειστήρια',
+      primaryEntryIds: ['kpd-1', 'kpd-2'], relatedEntryIds: ['kpd-8', 'kpd-3', 'kpd-9', 'kpd-10'],
+      notice: 'Η αναγνώριση παραπέμπει στις σχετικές δικονομικές διατάξεις· δεν κρίνει αν συντρέχει αυτόφωρο ή νόμιμη βάση σύλληψης. Ελέγχονται χωριστά οι προϋποθέσεις σύλληψης, ο τρόπος εκτέλεσης και οι προθεσμίες προσαγωγής.'
+    },
   };
 
   function normalize(value) {
@@ -330,6 +358,11 @@
       var unauthorized = hasConcept(words, ['αυθαιρετ']) || (has('noPermit') && hasConcept(words, ['αδεια']) && construction);
       if (unauthorized) return RULES.building;
     }
+
+    if (has('preliminary')) return RULES.kpdPreliminary;
+    if (has('inquiry')) return RULES.kpdInquiry;
+    if (has('investigatorDuties') && hasConcept(words, ['ανακριτικ','καθηκον','αναλογικοτ','αποδειξ'])) return RULES.kpdDuties;
+    if (has('arrest') && (has('autoforo') || has('warrant') || has('custody') || has('evidenceSeizure'))) return RULES.kpdArrest;
 
     if (has('official') && has('assault')) return RULES.officialViolence;
     if (has('falseReport') && hasConcept(words, ['καταγγελ','καταμηνυσ','κατηγορησ','κατηγγειλ','μηνυσ'])) return RULES.falseReport;
