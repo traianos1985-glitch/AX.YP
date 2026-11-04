@@ -232,8 +232,8 @@ function importTemplate(event) {
 
 function generate(template) {
   const item = getCase();
-  if (!item.id) {
-    window.alert('Επίλεξε ή αποθήκευσε πρώτα μια υπόθεση.');
+  if (!item || !item.id) {
+    window.alert('Επίλεξε ρητά την υπόθεση που αφορά το έγγραφο πριν από τη συμπλήρωση.');
     return;
   }
   const files = Object.fromEntries(Object.entries(template.files).map(([name, data]) => [name, new Uint8Array(data)]));
