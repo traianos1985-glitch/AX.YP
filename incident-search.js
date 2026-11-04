@@ -251,7 +251,7 @@
       id: 'penal-false-accusation-or-report', label: 'Ζήτημα προς έλεγχο ως προς ψευδή καταμήνυση ή καταγγελία',
       primaryEntryIds: ['pk-10'], relatedEntryIds: [],
       notice: 'Μια μη αποδειχθείσα ή αρχειοθετημένη καταγγελία δεν είναι αυτομάτως ψευδής. Απαιτείται ειδική απόδειξη των στοιχείων της διάταξης.'
-    }
+    },
     kpdPreliminary: {
       id: 'kpd-preliminary-examination', label: 'Αναζήτηση για προκαταρκτική εξέταση και δικαιώματα υπόπτου',
       primaryEntryIds: ['kpd-4'], relatedEntryIds: ['kpd-5'],
