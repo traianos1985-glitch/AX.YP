@@ -30,5 +30,8 @@ function copyStaticFiles() {
 }
 
 export default defineConfig({
+  server: {
+    allowedHosts: ['sb-40r56ujyldw6.vercel.run'],
+  },
   plugins: [copyStaticFiles()],
 });
