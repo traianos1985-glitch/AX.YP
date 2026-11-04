@@ -238,3 +238,8 @@ assert.match(findLegal('zoa-22').notes, /σκύλους εργασίας της 
 assert.match(findLegal('zoa-27').notes, /προγράμματα αναπαραγωγής τους δεν υπόκεινται/);
 assert.match(findLegal('zoa-16').notes, /δήμοι δεν ευθύνονται/);
 assert.match(findLegal('zoa-32').notes, /όχι γενικά τις περ\. δ΄–στ΄/);
+assert.equal(findLegal('zoa-33').status, 'partial');
+assert.match(findLegal('zoa-33').notes, /ειδικό μητρώο/);
+assert.match(findLegal('zoa-33').notes, /δεν αφορούν ιδιωτικό ζώο αστυνομικού/);
+assert.equal(incidentSearch.classify('σκύλος εργασίας της Ελληνικής Αστυνομίας κατά την εκτέλεση υπηρεσίας').id, 'animal-police-working-dog');
+assert.equal(incidentSearch.classify('αστυνομικός βρήκε σκύλο στον δρόμο'), null);
