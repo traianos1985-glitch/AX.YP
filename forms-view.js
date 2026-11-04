@@ -154,18 +154,16 @@
     var button = document.createElement('button');
     button.type = 'button';
     button.className = 'mini-button';
-    button.textContent = 'Συμπλήρωση και άνοιγμα Word';
+    button.textContent = 'Εξαγωγή DOCX για Word';
     button.onclick = function () {
-      var opened = DocxExport.open({
+      DocxExport.download({
         title: item.title,
         notice: 'ΠΡΟΣΧΕΔΙΟ: έλεγξε και επεξεργάσου τα στοιχεία στο Word πριν από την εκτύπωση.',
         rows: fieldValues(item).map(function (entry) { return [entry.label, entry.value]; }),
         source: item.source,
         fileName: item.id + '-proschedio.docx'
       });
-      message(opened
-        ? 'Το συμπληρωμένο έγγραφο άνοιξε σε νέα καρτέλα. Αν δεν ανοίξει στο Word, επίλεξε Άνοιγμα με Word από το πρόγραμμα περιήγησης.'
-        : 'Το συμπληρωμένο έγγραφο κατέβηκε, επειδή το πρόγραμμα περιήγησης απέκλεισε το άνοιγμα νέας καρτέλας.');
+      message('Το συμπληρωμένο έγγραφο DOCX κατέβηκε τοπικά. Μπορείς να το ανοίξεις απευθείας στο Word.');
     };
     return button;
   }

@@ -1,0 +1,138 @@
+// Τοπική αποθήκευση με IndexedDB και μνήμη cache για ασφαλή χειρισμό μεγάλων αρχείων χωρίς όρια localStorage.
+(function () {
+  var DB_NAME = 'axyp-local-db';
+  var STORE_NAME = 'kv';
+  var dbPromise = null;
+  var cache = {};
+
+  function openDB() {
+    if (!dbPromise) {
+      dbPromise = new Promise(function (resolve) {
+        if (!window.indexedDB) return resolve(null);
+        try {
+          var req = indexedDB.open(DB_NAME, 1);
+          req.onupgradeneeded = function (e) {
+            var db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+              db.createObjectStore(STORE_NAME);
+            }
+          };
+          req.onsuccess = function (e) { resolve(e.target.result); };
+          req.onerror = function () { resolve(null); };
+        } catch (_) {
+          resolve(null);
+        }
+      });
+    }
+    return dbPromise;
+  }
+
+  var KNOWN_KEYS = [
+    'axyp-hypotheses',
+    'axyp-case-bundles',
+    'axyp-docx-templates',
+    'axyp-template-mappings',
+    'axyp-favorites',
+    'axyp-form-profile',
+    'axyp-theme',
+    'axyp-privacy'
+  ];
+
+  // Αρχική ανάγνωση από localStorage
+  KNOWN_KEYS.forEach(function (k) {
+    try {
+      var v = localStorage.getItem(k);
+      if (v !== null) cache[k] = v;
+    } catch (_) {}
+  });
+
+  // Συγχρονισμός/μεταφορά από IndexedDB
+  openDB().then(function (db) {
+    if (!db) return;
+    try {
+      var tx = db.transaction(STORE_NAME, 'readonly');
+      var store = tx.objectStore(STORE_NAME);
+      KNOWN_KEYS.forEach(function (k) {
+        var req = store.get(k);
+        req.onsuccess = function () {
+          if (req.result !== undefined && req.result !== null) {
+            cache[k] = req.result;
+          } else if (cache[k] !== undefined) {
+            try {
+              var wtx = db.transaction(STORE_NAME, 'readwrite');
+              wtx.objectStore(STORE_NAME).put(cache[k], k);
+            } catch (_) {}
+          }
+        };
+      });
+    } catch (_) {}
+  });
+
+  function getItem(key) {
+    if (cache[key] !== undefined) return cache[key];
+    try { return localStorage.getItem(key); } catch (_) { return null; }
+  }
+
+  function setItem(key, value) {
+    var str = String(value);
+    cache[key] = str;
+    openDB().then(function (db) {
+      if (!db) return;
+      try {
+        var tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(str, key);
+      } catch (err) {
+        console.warn('IndexedDB write error:', err);
+      }
+    });
+    try {
+      localStorage.setItem(key, str);
+    } catch (_) {
+      // Σε περίπτωση υπέρβασης ορίου 5MB στο localStorage, τα δεδομένα σώζονται κανονικά στο IndexedDB
+    }
+  }
+
+  function removeItem(key) {
+    delete cache[key];
+    try { localStorage.removeItem(key); } catch (_) {}
+    openDB().then(function (db) {
+      if (!db) return;
+      try {
+        var tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).delete(key);
+      } catch (_) {}
+    });
+  }
+
+  function clear() {
+    cache = {};
+    try { localStorage.clear(); } catch (_) {}
+    openDB().then(function (db) {
+      if (!db) return;
+      try {
+        var tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).clear();
+      } catch (_) {}
+    });
+  }
+
+  function checkQuota() {
+    if (navigator.storage && navigator.storage.estimate) {
+      return navigator.storage.estimate().then(function (est) {
+        if (est.quota && est.usage && (est.quota - est.usage < 10 * 1024 * 1024)) {
+          return { low: true, freeMb: Math.round((est.quota - est.usage) / (1024 * 1024)) };
+        }
+        return { low: false };
+      }).catch(function () { return { low: false }; });
+    }
+    return Promise.resolve({ low: false });
+  }
+
+  window.AXYP_STORAGE = {
+    getItem: getItem,
+    setItem: setItem,
+    removeItem: removeItem,
+    clear: clear,
+    checkQuota: checkQuota
+  };
+})();

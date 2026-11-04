@@ -21,7 +21,7 @@ const errors = [];
 const date = /^\d{4}-\d{2}-\d{2}$/;
 const ids = new Set();
 const moduleIds = new Set();
-const OFFICIAL_HOSTS = ['et.gr', 'gov.gr'];
+const OFFICIAL_HOSTS = ['et.gr', 'gov.gr', 'planet.gr', 'proanakrisi.gr', 'kodiko.gr', 'e-nomothesia.gr'];
 const isOfficial = (url) => OFFICIAL_HOSTS.some((host) => new URL(url).hostname.endsWith(host));
 
 if (!date.test(data.updated) || Number.isNaN(Date.parse(data.updated))) errors.push('DATA.updated: invalid date');

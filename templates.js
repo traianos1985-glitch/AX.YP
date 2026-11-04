@@ -1,8 +1,9 @@
 (function () {
   var KEY = 'axyp-template-mappings';
   var root = document.getElementById('template-catalog');
-  function read() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
-  function write(value) { localStorage.setItem(KEY, JSON.stringify(value)); }
+  function storage() { return window.AXYP_STORAGE || localStorage; }
+  function read() { try { return JSON.parse(storage().getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  function write(value) { storage().setItem(KEY, JSON.stringify(value)); }
   function render() {
     if (!root || !window.FORMS_DATA) return;
     var mappings = read(); root.textContent = '';

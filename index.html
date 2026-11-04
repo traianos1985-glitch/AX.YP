@@ -112,7 +112,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
 }
 </style>
 </head>
-<body><div id="lock-screen" class="lock-screen" hidden><div class="lock-card"><p class="eyebrow">Προστατευμένη εφαρμογή</p><h2 id="lock-title">Ορισμός εξαψήφιου PIN</h2><p id="lock-message" class="muted">Το PIN παραμένει μόνο σε αυτή τη συσκευή.</p><form id="lock-form"><label for="lock-pin">Εξαψήφιο PIN</label><input id="lock-pin" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required><button class="mini-button" type="submit">Συνέχεια</button></form><button id="lock-reset" class="text-button" type="button" hidden>Διαγραφή PIN συσκευής</button></div></div><main>
+<body><main>
 <header>
   <p class="eyebrow">Τοπική εφαρμογή · δοκιμαστική έκδοση</p>
   <h1>Βοηθός Αξιωματικού Υπηρεσίας</h1>
@@ -241,6 +241,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
   </nav>
 </footer>
 </main>
+<script type="module" src="storage.js"></script>
 <script type="module" src="data.js"></script>
 <script type="module" src="forms.js"></script>
 <script type="module" src="docx-export.js"></script>

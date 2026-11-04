@@ -10,10 +10,11 @@ const [manifest, serviceWorker, docxExporter, app] = await Promise.all([
 ])
 
 const parsedManifest = JSON.parse(manifest)
+assert.equal(parsedManifest.id, './')
 assert.equal(parsedManifest.start_url, './')
 assert.equal(parsedManifest.scope, './')
 assert.ok(parsedManifest.icons.every((icon) => icon.src.startsWith('./')))
-assert.match(serviceWorker, /CACHE_NAME = "axyp-v4"/)
+assert.match(serviceWorker, /CACHE_NAME = "axyp-v5"/)
 assert.match(serviceWorker, /\.\/sources\/poinikos-kodikas\.md/)
 assert.match(docxExporter, /word\/styles\.xml/)
 assert.match(docxExporter, /styleId="Heading1"/)
