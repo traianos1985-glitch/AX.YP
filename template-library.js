@@ -11,11 +11,8 @@ const getCase = () => {
   try {
     const all = JSON.parse(storage().getItem('axyp-hypotheses') || '[]');
     const activeId = $('case-id')?.value || (window.HypothesesView && window.HypothesesView.getSelectedId && window.HypothesesView.getSelectedId());
-    if (activeId) {
-      const match = all.find((item) => item.id === activeId);
-      if (match) return match;
-    }
-    return all[0] || {};
+    if (!activeId) return null;
+    return all.find((item) => item.id === activeId) || null;
   } catch (_) {
     return {};
   }
@@ -148,7 +145,7 @@ function render() {
       '<div class="template-review-actions"><span class="mapping-result muted"></span><button type="button" class="mini-button save-mapping">Αποθήκευση αντιστοίχισης</button><button type="button" class="mini-button generate" disabled>Συμπλήρωση Word</button></div>';
 
     card.querySelector('strong').textContent = template.name;
-    const caseNote = currentCase.title ? ` (ενεργή υπόθεση: «${currentCase.title}»)` : '';
+    const caseNote = currentCase && currentCase.title ? ` (ενεργή υπόθεση: «${currentCase.title}»)` : ' (δεν έχει επιλεγεί υπόθεση)';
     card.querySelector('p').textContent = `${template.fields.length} placeholders εντοπίστηκαν${caseNote}.`;
 
     const mappingRoot = card.querySelector('.mapping-review');
