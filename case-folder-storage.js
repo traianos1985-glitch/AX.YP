@@ -1,49 +1,46 @@
-// Κοινόχρηστη αποθήκη δικογραφιών σε πραγματικό φάκελο του υπολογιστή.
-// Τα δεδομένα των δικογραφιών γράφονται σε αρχεία JSON και έγγραφα, όχι στο cloud.
+// Τοπικός χώρος εργασίας AX.YP. Δεν γράφει ποτέ στον κοινόχρηστο φάκελο υπηρεσίας.
+// Ο χρήστης επιλέγει προσωπικό φάκελο· η μεταφορά στο κοινόχρηστο αρχείο γίνεται
+// χειροκίνητα από την Εξερεύνηση αρχείων των Windows.
 (function () {
   'use strict';
 
-  var DB_NAME = 'axyp-case-folder-handles';
+  var DB_NAME = 'axyp-workspace-handles';
   var STORE_NAME = 'handles';
-  var HANDLE_KEY = 'shared-root';
-  var ROOT_NAME = 'AX.YP';
+  var HANDLE_KEY = 'personal-workspace';
   var CASES_NAME = 'Δικογραφίες';
-  var handle = null;
-  var casesHandle = null;
-  var statusNode = function () { return document.getElementById('case-folder-status'); };
+  var workspace = null;
+  var casesDirectory = null;
 
   function status(message, error) {
-    var node = statusNode();
+    var node = document.getElementById('case-folder-status');
     if (!node) return;
     node.textContent = message;
     node.setAttribute('data-state', error ? 'error' : 'ok');
   }
 
-  function openHandleDb() {
+  function openDb() {
     return new Promise(function (resolve, reject) {
-      if (!window.indexedDB) return reject(new Error('Το IndexedDB δεν είναι διαθέσιμο.'));
       var request = indexedDB.open(DB_NAME, 1);
       request.onupgradeneeded = function () {
         if (!request.result.objectStoreNames.contains(STORE_NAME)) request.result.createObjectStore(STORE_NAME);
       };
       request.onsuccess = function () { resolve(request.result); };
-      request.onerror = function () { reject(request.error || new Error('Αποτυχία πρόσβασης στις ρυθμίσεις φακέλου.')); };
+      request.onerror = function () { reject(request.error || new Error('Δεν ήταν δυνατή η αποθήκευση της επιλογής φακέλου.')); };
     });
   }
 
-  async function saveHandle(value) {
-    var db = await openHandleDb();
+  async function storeHandle(handle) {
+    var db = await openDb();
     return new Promise(function (resolve, reject) {
       var tx = db.transaction(STORE_NAME, 'readwrite');
-      tx.objectStore(STORE_NAME).put(value, HANDLE_KEY);
+      tx.objectStore(STORE_NAME).put(handle, HANDLE_KEY);
       tx.oncomplete = function () { db.close(); resolve(); };
-      tx.onerror = function () { db.close(); reject(tx.error); };
-      tx.onabort = function () { db.close(); reject(tx.error || new Error('Η αποθήκευση της σύνδεσης ακυρώθηκε.')); };
+      tx.onerror = tx.onabort = function () { db.close(); reject(tx.error || new Error('Αποτυχία αποθήκευσης ρυθμίσεων.')); };
     });
   }
 
   async function readHandle() {
-    var db = await openHandleDb();
+    var db = await openDb();
     return new Promise(function (resolve, reject) {
       var tx = db.transaction(STORE_NAME, 'readonly');
       var request = tx.objectStore(STORE_NAME).get(HANDLE_KEY);
@@ -54,13 +51,11 @@
     });
   }
 
-  async function permission(value, request) {
-    if (!value) return false;
+  async function hasPermission(handle, ask) {
+    if (!handle) return false;
     var options = { mode: 'readwrite' };
-    var current = await value.queryPermission(options);
-    if (current === 'granted') return true;
-    if (request && current === 'prompt') return (await value.requestPermission(options)) === 'granted';
-    return false;
+    if (await handle.queryPermission(options) === 'granted') return true;
+    return !!(ask && await handle.requestPermission(options) === 'granted');
   }
 
   function safePart(value) {
@@ -74,18 +69,22 @@
   }
 
   function folderName(item) {
-    var type = safePart(item.offence || item.profile || 'Υπόθεση');
-    var protocol = safePart(item.protocolNumber || '');
     if (!item.offence || !item.protocolNumber) {
-      throw new Error('Για κοινόχρηστη αποθήκευση συμπλήρωσε είδος υπόθεσης και αριθμό πρωτοκόλλου.');
+      throw new Error('Για να δημιουργηθεί ο φάκελος δικογραφίας, συμπλήρωσε είδος υπόθεσης και αριθμό πρωτοκόλλου.');
     }
-    return type + '_' + protocol;
+    return safePart(item.offence) + '_' + safePart(item.protocolNumber);
+  }
+
+  async function writeText(directory, name, content, type) {
+    var fileHandle = await directory.getFileHandle(name, { create: true });
+    var writable = await fileHandle.createWritable();
+    await writable.write(new Blob([content], { type: type || 'text/plain;charset=utf-8' }));
+    await writable.close();
   }
 
   async function readJson(directory, name) {
     try {
-      var fileHandle = await directory.getFileHandle(name);
-      var file = await fileHandle.getFile();
+      var file = await (await directory.getFileHandle(name)).getFile();
       return JSON.parse(await file.text());
     } catch (error) {
       if (error && error.name === 'NotFoundError') return null;
@@ -93,181 +92,151 @@
     }
   }
 
-  async function writeBlob(directory, name, blob) {
-    var fileHandle = await directory.getFileHandle(name, { create: true });
-    var writable = await fileHandle.createWritable();
-    await writable.write(blob);
-    await writable.close();
-  }
+  function localStorageApi() { return window.AXYP_STORAGE || localStorage; }
 
-  function dataUrlToBlob(dataUrl, type) {
-    var parts = String(dataUrl || '').split(',');
-    if (parts.length < 2) throw new Error('Μη έγκυρο αρχείο συνημμένου.');
-    var binary = atob(parts[1]);
-    var bytes = new Uint8Array(binary.length);
-    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return new Blob([bytes], { type: type || 'application/octet-stream' });
-  }
-
-  async function copyBundleDocuments(item, directory) {
-    if (!item.sourceBundleId || !window.AXYP_STORAGE) return;
+  async function copyBundleDocuments(item, dossierDirectory) {
+    if (!item.sourceBundleId) return;
     var bundles = [];
-    try { bundles = JSON.parse(window.AXYP_STORAGE.getItem('axyp-case-bundles') || '[]'); } catch (_) {}
+    try { bundles = JSON.parse(localStorageApi().getItem('axyp-case-bundles') || '[]'); } catch (_) {}
     var bundle = bundles.find(function (entry) { return entry.id === item.sourceBundleId; });
     if (!bundle || !Array.isArray(bundle.documents)) return;
-    var documents = await directory.getDirectoryHandle('Έγγραφα', { create: true });
+    var documents = await dossierDirectory.getDirectoryHandle('Έγγραφα', { create: true });
     for (var i = 0; i < bundle.documents.length; i++) {
       var doc = bundle.documents[i];
       if (!doc || !doc.data || !doc.name) continue;
-      await writeBlob(documents, safePart(doc.name), dataUrlToBlob(doc.data, doc.type));
+      var parts = String(doc.data).split(',');
+      if (parts.length < 2) continue;
+      var binary = atob(parts[1]);
+      var bytes = new Uint8Array(binary.length);
+      for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
+      var fileHandle = await documents.getFileHandle(safePart(doc.name), { create: true });
+      var writable = await fileHandle.createWritable();
+      await writable.write(new Blob([bytes], { type: doc.type || 'application/octet-stream' }));
+      await writable.close();
     }
-  }
-
-  async function loadAll() {
-    if (!casesHandle) return [];
-    var results = [];
-    for await (var entry of casesHandle.values()) {
-      if (entry.kind !== 'directory') continue;
-      var record = await readJson(entry, 'case.json');
-      if (record && record.id) {
-        record.folderName = entry.name;
-        results.push(record);
-      }
-    }
-    results.sort(function (a, b) {
-      return String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''));
-    });
-    return results;
   }
 
   async function saveCase(item) {
-    if (!casesHandle || !(await permission(handle, false))) {
-      throw new Error('Ο κοινόχρηστος φάκελος δεν είναι διαθέσιμος. Πάτησε «Σύνδεση φακέλου» και επίλεξε ξανά τη θέση του AX.YP.');
+    if (!casesDirectory || !(await hasPermission(workspace, false))) {
+      throw new Error('Επίλεξε πρώτα τον προσωπικό φάκελο εργασίας και δώσε άδεια εγγραφής.');
     }
     var name = folderName(item);
-    var directory = await casesHandle.getDirectoryHandle(name, { create: true });
+    var directory = await casesDirectory.getDirectoryHandle(name, { create: true });
     var existing = await readJson(directory, 'case.json');
     if (existing && existing.id !== item.id) {
-      throw new Error('Υπάρχει ήδη διαφορετική δικογραφία με το ίδιο είδος και αριθμό πρωτοκόλλου. Δεν έγινε αντικατάσταση.');
+      throw new Error('Υπάρχει ήδη διαφορετική δικογραφία με ίδιο είδος και αριθμό πρωτοκόλλου. Δεν έγινε αντικατάσταση.');
     }
-    var currentRevision = existing ? Number(existing.storageRevision || 0) : 0;
-    var localRevision = Number(item.storageRevision || 0);
-    if (existing && currentRevision !== localRevision) {
-      throw new Error('Εντοπίστηκε νεότερη έκδοση της δικογραφίας από άλλον χρήστη ή browser. Δεν έγινε αντικατάσταση· ανανέωσε τη λίστα και φόρτωσε την τελευταία έκδοση.');
-    }
-    if (!existing && localRevision > 0) {
-      throw new Error('Ο φάκελος της δικογραφίας δεν βρέθηκε. Για προστασία των δεδομένων δεν έγινε νέα εγγραφή.');
+    if (existing && Number(existing.workspaceRevision || 0) !== Number(item.workspaceRevision || 0)) {
+      throw new Error('Το αρχείο στον φάκελο έχει διαφορετική έκδοση. Δεν έγινε αντικατάσταση· φόρτωσε ή έλεγξε πρώτα την τελευταία έκδοση.');
     }
     var saved = Object.assign({}, item, {
       folderName: name,
-      storageRevision: currentRevision + 1,
+      workspaceRevision: Number(existing && existing.workspaceRevision || 0) + 1,
       updatedAt: new Date().toISOString()
     });
-    await writeBlob(directory, 'case.json', new Blob([JSON.stringify(saved, null, 2)], { type: 'application/json' }));
+    await writeText(directory, 'case.json', JSON.stringify(saved, null, 2), 'application/json');
+    var history = await directory.getDirectoryHandle('Ιστορικό', { create: true });
+    await writeText(history, 'εκδόσεις.json', JSON.stringify(saved.snapshots || [], null, 2), 'application/json');
     await directory.getDirectoryHandle('Έγγραφα', { create: true });
     await copyBundleDocuments(saved, directory);
     return saved;
   }
 
+  async function saveSnapshot(item) {
+    return saveCase(item);
+  }
+
   async function saveDocument(caseId, fileName, blob) {
-    if (!casesHandle || !(await permission(handle, false))) throw new Error('Δεν υπάρχει ενεργή σύνδεση με τον κοινόχρηστο φάκελο.');
+    if (!casesDirectory || !(await hasPermission(workspace, false))) {
+      throw new Error('Δεν έχει επιλεγεί προσωπικός φάκελος εργασίας.');
+    }
     var all = await loadAll();
     var item = all.find(function (entry) { return entry.id === caseId; });
-    if (!item || !item.folderName) throw new Error('Δεν βρέθηκε ο φάκελος της επιλεγμένης δικογραφίας.');
-    var directory = await casesHandle.getDirectoryHandle(item.folderName);
-    var documents = await directory.getDirectoryHandle('Έγγραφα', { create: true });
-    await writeBlob(documents, safePart(fileName), blob);
+    if (!item) throw new Error('Δεν βρέθηκε η επιλεγμένη δικογραφία στον φάκελο εργασίας.');
+    var dossier = await casesDirectory.getDirectoryHandle(item.folderName || folderName(item));
+    var documents = await dossier.getDirectoryHandle('Έγγραφα', { create: true });
+    var file = await documents.getFileHandle(safePart(fileName), { create: true });
+    var writable = await file.createWritable();
+    await writable.write(blob);
+    await writable.close();
   }
 
-  async function importLocalCases() {
-    var storage = window.AXYP_STORAGE || localStorage;
-    var local = [];
-    try { local = JSON.parse(storage.getItem('axyp-hypotheses') || '[]'); } catch (_) {}
-    var existing = await loadAll();
-    var known = new Set(existing.map(function (item) { return item.id; }));
-    var skipped = 0;
-    for (var i = 0; i < local.length; i++) {
-      if (known.has(local[i].id)) continue;
-      try {
-        if (!local[i].offence || !local[i].protocolNumber) { skipped++; continue; }
-        var saved = await saveCase(local[i]);
-        existing.push(saved);
-        known.add(saved.id);
-      } catch (error) {
-        if (error && /ίδιο είδος και αριθμό πρωτοκόλλου/.test(error.message)) throw error;
-        skipped++;
+  async function loadAll() {
+    if (!casesDirectory) return [];
+    var records = [];
+    for await (var entry of casesDirectory.values()) {
+      if (entry.kind !== 'directory') continue;
+      var record = await readJson(entry, 'case.json');
+      if (record && record.id) {
+        record.folderName = entry.name;
+        records.push(record);
       }
     }
-    storage.setItem('axyp-hypotheses', JSON.stringify(existing));
-    return { count: existing.length, skipped: skipped };
+    records.sort(function (a, b) { return String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')); });
+    return records;
   }
 
-  async function refreshFromFolder() {
-    if (!casesHandle || !(await permission(handle, false))) return [];
-    var all = await loadAll();
-    (window.AXYP_STORAGE || localStorage).setItem('axyp-hypotheses', JSON.stringify(all));
+  async function mergeWorkspaceIntoBrowser() {
+    var stored = localStorageApi();
+    var local = [];
+    try { local = JSON.parse(stored.getItem('axyp-hypotheses') || '[]'); } catch (_) {}
+    var remote = await loadAll();
+    var byId = new Map(local.map(function (item) { return [item.id, item]; }));
+    remote.forEach(function (item) { if (!byId.has(item.id)) byId.set(item.id, item); });
+    stored.setItem('axyp-hypotheses', JSON.stringify(Array.from(byId.values())));
     if (window.HypothesesView) window.HypothesesView.refresh();
-    return all;
+    return remote.length;
   }
 
   async function connect() {
     if (!window.showDirectoryPicker) {
-      throw new Error('Ο browser δεν υποστηρίζει επιλογή κοινόχρηστου φακέλου. Χρησιμοποίησε πρόσφατο Microsoft Edge ή Google Chrome.');
+      throw new Error('Ο browser δεν υποστηρίζει επιλογή φακέλου. Χρησιμοποίησε πρόσφατο Microsoft Edge ή Google Chrome.');
     }
-    // Ο χρήστης επιλέγει τη θέση-γονέα. Η εφαρμογή δημιουργεί εκεί τον φάκελο AX.YP.
-    var parent = await window.showDirectoryPicker({ mode: 'readwrite' });
-    if (!(await permission(parent, true))) throw new Error('Δεν δόθηκε άδεια εγγραφής στον επιλεγμένο φάκελο.');
-    var root = await parent.getDirectoryHandle(ROOT_NAME, { create: true });
-    var cases = await root.getDirectoryHandle(CASES_NAME, { create: true });
-    await root.getDirectoryHandle('Πρότυπα', { create: true });
-    handle = root;
-    casesHandle = cases;
-    await saveHandle(root);
-    var result = await importLocalCases();
-    status('Συνδεδεμένος κοινόχρηστος φάκελος AX.YP · ' + result.count + ' δικογραφίες' +
-      (result.skipped ? ' · ' + result.skipped + ' τοπικές εγγραφές χρειάζονται στοιχεία/έλεγχο' : ''), false);
-    if (window.HypothesesView) window.HypothesesView.refresh();
-    return result;
+    // Επιλέγεται ο ίδιος ο προσωπικός φάκελος που έχει δημιουργήσει το στέλεχος.
+    var selected = await window.showDirectoryPicker({ mode: 'readwrite' });
+    if (!(await hasPermission(selected, true))) throw new Error('Δεν δόθηκε άδεια εγγραφής στον επιλεγμένο φάκελο.');
+    workspace = selected;
+    casesDirectory = await workspace.getDirectoryHandle(CASES_NAME, { create: true });
+    await storeHandle(workspace);
+    var count = await mergeWorkspaceIntoBrowser();
+    status('Προσωπικός χώρος εργασίας: ' + workspace.name + ' · ' + count + ' δικογραφίες από τον φάκελο.', false);
+    return { count: count, name: workspace.name };
   }
 
   async function restore() {
     try {
-      handle = await readHandle();
-      if (!handle) {
-        status('Δεν έχει οριστεί ακόμη κοινόχρηστος φάκελος. Η αποθήκευση δικογραφιών είναι απενεργοποιημένη.', true);
+      workspace = await readHandle();
+      if (!workspace) {
+        status('Δεν έχει επιλεγεί προσωπικός φάκελος εργασίας. Τα δεδομένα παραμένουν προσωρινά στον browser μέχρι να επιλέξεις φάκελο.', true);
         return;
       }
-      if (!(await permission(handle, false))) {
-        status('Χρειάζεται επανασύνδεση/έγκριση πρόσβασης στον κοινόχρηστο φάκελο.', true);
+      if (!(await hasPermission(workspace, false))) {
+        status('Χρειάζεται νέα έγκριση πρόσβασης στον προσωπικό φάκελο. Πάτησε «Επιλογή φακέλου εργασίας».', true);
         return;
       }
-      casesHandle = await handle.getDirectoryHandle(CASES_NAME);
-      await refreshFromFolder();
-      status('Συνδεδεμένος κοινόχρηστος φάκελος AX.YP.', false);
+      casesDirectory = await workspace.getDirectoryHandle(CASES_NAME, { create: true });
+      var count = await mergeWorkspaceIntoBrowser();
+      status('Προσωπικός χώρος εργασίας: ' + workspace.name + ' · ' + count + ' δικογραφίες.', false);
     } catch (error) {
-      handle = null;
-      casesHandle = null;
-      status('Δεν ήταν δυνατή η πρόσβαση στον φάκελο: ' + error.message, true);
+      workspace = null;
+      casesDirectory = null;
+      status('Δεν ήταν δυνατή η πρόσβαση στον φάκελο εργασίας: ' + error.message, true);
     }
   }
 
   var ready = restore();
-  var connectButton = document.getElementById('connect-case-folder');
-  if (connectButton) {
-    connectButton.addEventListener('click', function () {
-      connect().catch(function (error) {
-        status(error.message || 'Αποτυχία σύνδεσης φακέλου.', true);
-      });
-    });
-  }
+  var button = document.getElementById('connect-case-folder');
+  if (button) button.addEventListener('click', function () {
+    connect().catch(function (error) { status(error.message || 'Αποτυχία επιλογής φακέλου.', true); });
+  });
 
-  window.AXYP_CASE_FILES = {
+  window.AXYP_WORKSPACE = {
     ready: ready,
     connect: connect,
-    isConnected: function () { return !!(handle && casesHandle); },
+    isConnected: function () { return !!(workspace && casesDirectory); },
     loadAll: loadAll,
-    refresh: refreshFromFolder,
     saveCase: saveCase,
+    saveSnapshot: saveSnapshot,
     saveDocument: saveDocument
   };
 })();
