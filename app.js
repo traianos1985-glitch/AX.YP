@@ -369,7 +369,7 @@
       return;
     }
     hint.textContent = incidentRule
-      ? incidentRule.label + '. Εμφανίζονται οι βασικές και οι υπό προϋποθέσεις συμπληρωματικές εγγραφές.'
+      ? incidentRule.label + '. ' + incidentRule.notice + ' Εμφανίζονται οι σχετικές νομικές καταχωρίσεις.'
       : (terms.length ? list.length + ' σχετικές εγγραφές σε όλη τη βάση.' : 'Εμφανίζονται ' + list.length + ' εγγραφές της ενότητας.');
     list.forEach(function (row) { out.appendChild(card(row.entry, raw, row.related)); });
   }
