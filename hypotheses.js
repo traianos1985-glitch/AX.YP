@@ -145,32 +145,39 @@
     });
   }
 
-  function save(event) {
+  async function save(event) {
     event.preventDefault();
     if (window.AXYP_STORAGE && window.AXYP_STORAGE.checkQuota) {
       window.AXYP_STORAGE.checkQuota().then(function (res) {
-        if (res.low) {
-          $('case-flash').textContent = 'Προσοχή: Ο διαθέσιμος αποθηκευτικός χώρος είναι χαμηλός (' + res.freeMb + ' MB).';
-        }
+        if (res.low) $('case-flash').textContent = 'Προσοχή: Ο διαθέσιμος αποθηκευτικός χώρος είναι χαμηλός (' + res.freeMb + ' MB).';
       });
     }
     var items = read();
     var data = values();
     var id = $('case-id').value || uid();
     var existing = items.filter(function (item) { return item.id === id; })[0];
-    if (existing) {
-      Object.assign(existing, data);
-      existing.updatedAt = new Date().toISOString();
-    } else {
-      items.unshift(Object.assign({ id: id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), snapshots: [] }, data));
+    var saved = existing
+      ? Object.assign({}, existing, data, { updatedAt: new Date().toISOString() })
+      : Object.assign({ id: id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), snapshots: [] }, data);
+    try {
+      if (window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()) {
+        saved = await window.AXYP_WORKSPACE.saveCase(saved);
+      }
+      var index = items.findIndex(function (item) { return item.id === id; });
+      if (index >= 0) items[index] = saved;
+      else items.unshift(saved);
+      write(items);
+      selectedId = id;
+      $('case-flash').textContent = window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()
+        ? 'Η υπόθεση αποθηκεύτηκε στον προσωπικό φάκελο εργασίας και στον τοπικό κατάλογο.'
+        : 'Η υπόθεση αποθηκεύτηκε μόνο στον browser. Επίλεξε προσωπικό φάκελο εργασίας για να δημιουργηθεί και αυτοτελής φάκελος στον υπολογιστή.';
+      render();
+    } catch (error) {
+      $('case-flash').textContent = 'Δεν ολοκληρώθηκε η αποθήκευση στον φάκελο εργασίας: ' + error.message + ' Τα στοιχεία της φόρμας παραμένουν διαθέσιμα· έλεγξε τον φάκελο και ξαναπροσπάθησε.';
     }
-    write(items);
-    selectedId = id;
-    $('case-flash').textContent = 'Η υπόθεση αποθηκεύτηκε τοπικά.';
-    render();
   }
 
-  function snapshot() {
+  async function snapshot() {
     var items = read();
     var item = items.filter(function (entry) { return entry.id === selectedId; })[0];
     if (!item) return;
@@ -181,9 +188,19 @@
       data: values()
     });
     item.updatedAt = new Date().toISOString();
-    write(items);
-    $('case-flash').textContent = 'Το snapshot αποθηκεύτηκε στο ιστορικό.';
-    renderDetail();
+    try {
+      if (window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()) {
+        var saved = await window.AXYP_WORKSPACE.saveSnapshot(item);
+        Object.assign(item, saved);
+      }
+      write(items);
+      $('case-flash').textContent = window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()
+        ? 'Το snapshot αποθηκεύτηκε στο Ιστορικό της δικογραφίας.'
+        : 'Το snapshot αποθηκεύτηκε στον browser. Επίλεξε προσωπικό φάκελο για αντίγραφο στον υπολογιστή.';
+      renderDetail();
+    } catch (error) {
+      $('case-flash').textContent = 'Δεν αποθηκεύτηκε το ιστορικό στον φάκελο εργασίας: ' + error.message;
+    }
   }
 
   function exportData() {
