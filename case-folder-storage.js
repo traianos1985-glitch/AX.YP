@@ -186,10 +186,9 @@
       if (!byId.has(item.id)) {
         byId.set(item.id, item);
       } else {
-        // Διατήρησε τοπικά πεδία που μπορεί να είναι νεότερα, αλλά πάρε την
-        // έκδοση του αρχείου ώστε ο επόμενος έλεγχος σύγκρουσης να είναι σωστός.
         var current = byId.get(item.id);
-        byId.set(item.id, Object.assign({}, current, {
+        var remoteIsNewer = Date.parse(item.updatedAt || '') > Date.parse(current.updatedAt || '');
+        byId.set(item.id, Object.assign({}, remoteIsNewer ? item : current, {
           folderName: item.folderName,
           workspaceRevision: item.workspaceRevision
         }));
@@ -211,8 +210,28 @@
     casesDirectory = await workspace.getDirectoryHandle(CASES_NAME, { create: true });
     await storeHandle(workspace);
     var count = await mergeWorkspaceIntoBrowser();
-    status('Προσωπικός χώρος εργασίας: ' + workspace.name + ' · ' + count + ' δικογραφίες από τον φάκελο.', false);
-    return { count: count, name: workspace.name };
+    var stored = localStorageApi();
+    var local = [];
+    try { local = JSON.parse(stored.getItem('axyp-hypotheses') || '[]'); } catch (_) {}
+    var migrated = 0;
+    var skipped = 0;
+    var remoteIds = new Set((await loadAll()).map(function (item) { return item.id; }));
+    for (var i = 0; i < local.length; i++) {
+      if (remoteIds.has(local[i].id)) continue;
+      if (!local[i].offence || !local[i].protocolNumber) { skipped++; continue; }
+      try {
+        var saved = await saveCase(local[i]);
+        local[i] = saved;
+        remoteIds.add(saved.id);
+        migrated++;
+      } catch (error) {
+        skipped++;
+      }
+    }
+    stored.setItem('axyp-hypotheses', JSON.stringify(local));
+    status('Προσωπικός χώρος εργασίας: ' + workspace.name + ' · ' + count + ' υπάρχουσες δικογραφίες · ' + migrated + ' μεταφέρθηκαν από τον browser' + (skipped ? ' · ' + skipped + ' χρειάζονται έλεγχο' : '') + '.', false);
+    if (window.HypothesesView) window.HypothesesView.refresh();
+    return { count: count, migrated: migrated, skipped: skipped, name: workspace.name };
   }
 
   async function restore() {
