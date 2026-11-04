@@ -287,7 +287,7 @@ for (const id of ['kpd-0','kpd-1','kpd-2','kpd-3','kpd-4','kpd-5','kpd-6','kpd-7
 assert.match(findKpd('kpd-4').procedure, /έξι μήνες/);
 assert.match(findKpd('kpd-5').procedure, /χωρίς όρκο/);
 assert.match(findKpd('kpd-6').procedure, /γραπτή παραγγελία/);
-assert.match(findKpd('kpd-6').procedure, /χωρίς προηγούμενη παραγγελία/);
+assert.match(findKpd('kpd-6').procedure, /χωρίς προηγούμενη εισαγγελική παραγγελία/);
 assert.match(findKpd('kpd-7').procedure, /αναλογικότητας/);
 assert.match(findKpd('kpd-2').procedure, /κατ’ έγκληση/);
 assert.match(findKpd('kpd-3').procedure, /24 ωρών/);
