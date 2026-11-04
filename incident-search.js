@@ -231,7 +231,7 @@
       if (has('animalAbandonment')) return RULES.animalAbandonment;
       if (has('animalPublicDisplay')) return RULES.animalPublicDisplay;
       if (has('animalExhibition')) return RULES.animalExhibition;
-      if (has('dog') && has('animalOutdoorDog') && has('animalNeglect')) return RULES.animalOutdoorDog;
+      if (has('dog') && has('animalOutdoorDog') && hasConcept(words, ['αυλη','εξωτερικοχωρο']) && hasConcept(words, ['καταλυμ','προσδεσ','αλυσιδ'])) return RULES.animalOutdoorDog;
       if (has('animalMutilation')) return RULES.animalMutilation;
       if (has('animalMedia') && (has('animalHarm') || has('animalSexual'))) return RULES.animalMedia;
       if (has('animalDoping')) return RULES.animalDoping;
