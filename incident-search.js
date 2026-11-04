@@ -78,7 +78,7 @@
     seizureHandling: ['φυλαξ','σφραγιδ','αποσφραγ','αρσηκατασχε','αποδοση','καταστροφ','αντιγραφ','φωτογραφ'],
     reportFormalities: ['εκθεση','υπογραφ','χρονολογ','παρισταμεν','μαρτυρεσ','ακυροτητα'],
     evidencePrinciples: ['αποδεικτικ','αποδειξη','αμφιβολ','νομιμαστοιχεια','παρανομαστοιχεια'],
-    pretrialMeasures: ['περιοριστικ','προσωρινηκρατηση','προφυλακ','κατ οικον','ηλεκτρονικηεπιτηρηση','βραχιολακι','εγγυηση'],
+    pretrialMeasures: ['περιοριστικ','προσωρινη','κρατηση','κατοικον','ηλεκτρονικηεπιτηρηση','βραχιολακι','εγγυηση'],
     pretrialQuestions: ['προδικαστικ','αστικηδιαφορα','διοικητικηδιαφορα','αναβοληποινικησ'],
     witnessEvidence: ['μαρτυρα','μαρτυρασ','καταθεση','ειδικεσγνωσεισ','μαρτυρικη'],
     psychiatricExpertise: ['ψυχιατρικ','διανοητικηυγεια','ψυχικηυγεια','ψυχιατρειο'],
@@ -490,7 +490,7 @@
 
 
     if (has('seizureHandling') && (hasConcept(words, ['φυλαξ','σφραγιδ','αποσφραγ','αρσηκατασχε','αποδοση','καταστροφ']) || hasConcept(words, ['πειστηρ']) && hasConcept(words, ['κατασχε','αντιγραφ']))) return RULES.kpdSeizureHandling;
-    if (has('pretrialMeasures') && (hasConcept(words, ['προσωρινηκρατηση','προφυλακ','περιοριστικ','ηλεκτρονικηεπιτηρηση']) || hasConcept(words, ['εγγυηση']) && hasConcept(words, ['ανακρι','κατηγορουμ']))) return RULES.kpdPretrialMeasures;
+    if (has('pretrialMeasures') && (hasConcept(words, ['περιοριστικ','ηλεκτρονικηεπιτηρηση']) || (hasConcept(words, ['προσωρινη']) && hasConcept(words, ['κρατηση'])) || (hasConcept(words, ['εγγυηση']) && hasConcept(words, ['ανακρι','κατηγορουμ'])))) return RULES.kpdPretrialMeasures;
     if (has('reportFormalities') && hasConcept(words, ['εκθεση']) && hasConcept(words, ['υπογραφ','χρονολογ','παρισταμεν','ακυροτητα','μαρτυρεσ'])) return RULES.kpdReportFormalities;
     if (!has('preliminary') && !has('inquiry') && has('evidencePrinciples') && (hasConcept(words, ['αποδεικτικ','αποδειξη']) || hasConcept(words, ['παρανομα']) && hasConcept(words, ['στοιχεια']))) return RULES.kpdEvidencePrinciples;
     if (has('pretrialQuestions') && hasConcept(words, ['προδικαστικ','αστικηδιαφορα','διοικητικηδιαφορα','αναβοληποινικησ'])) return RULES.kpdPretrialQuestions;
