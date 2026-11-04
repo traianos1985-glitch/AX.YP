@@ -147,7 +147,7 @@ assert.ok(['special-drugs-20','special-drugs-29','special-weapons-7','special-we
 // Scenario recognition stays deterministic, local, cautious, and scoped to known legal entries.
 assert.equal(incidentSearch.classify('βρέθηκε με μικροποσότητα κάνναβης για προσωπική χρήση').id, 'drugs-personal-use');
 assert.equal(incidentSearch.classify('πουλούσε και διέθετε ναρκωτικά σε τρίτους').id, 'drugs-trafficking-indicators');
-assert.equal(incidentSearch.classify('βρέθηκε με ποσότητα ναρκωτικών').id, null);
+assert.equal(incidentSearch.classify('βρέθηκε με ποσότητα ναρκωτικών'), null);
 assert.equal(incidentSearch.classify('βρέθηκε με πιστόλι στην τσέπη στον δρόμο').id, 'weapon-carrying');
 assert.equal(incidentSearch.classify('βρέθηκε πιστόλι φυλαγμένο στο σπίτι').id, 'weapon-possession');
 assert.equal(incidentSearch.classify('βρέθηκε μαχαίρι').id, null);
