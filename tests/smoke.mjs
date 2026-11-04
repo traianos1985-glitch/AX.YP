@@ -167,7 +167,7 @@ const animalScenarios = [
   ['πωλεί κουτάβια μέσω αγγελίας', 'animal-trade', ['zoa-5', 'zoa-8', 'zoa-12']],
   ['έκλεψε σκύλο συντροφιάς', 'animal-theft', ['zoa-4']],
   ['σκύλος γαβγίζει και διαταράσσει την κοινή ησυχία', 'animal-noise', ['zoa-15']],
-  ['μεταφέρει σκύλο σε όχημα χωρίς κατάλληλες συνθήκες', 'animal-transport', ['zoa-13', 'zoa-11']]
+  ['μεταφέρει σκύλο σε όχημα χωρίς κατάλληλες συνθήκες', 'animal-transport', ['zoa-13', 'zoa-26', 'zoa-11']]
 ];
 for (const [description, expectedId, entryIds] of animalScenarios) {
   const match = incidentSearch.classify(description);
@@ -180,3 +180,33 @@ for (const [description, expectedId, entryIds] of animalScenarios) {
     assert.ok(entry.procedure, 'Missing existing procedure field: ' + entryId);
   }
 }
+
+const expandedAnimalScenarios = [
+  ['σκύλος με κομμένα αυτιά μετά από μη θεραπευτικό ακρωτηριασμό', 'animal-nontherapeutic-mutilation', ['zoa-17', 'zoa-10', 'zoa-9']],
+  ['βίντεο στο διαδίκτυο δείχνει βία και κακοποίηση ζώου', 'animal-violent-audiovisual-material', ['zoa-18', 'zoa-10']],
+  ['χορήγησε αναβολικά σε άλογο για αγώνα', 'animal-doping-or-excessive-exercise', ['zoa-19', 'zoa-7']],
+  ['πανηγύρι με ζώα χωρίς κτηνίατρο και απόφαση δημοτικού συμβουλίου', 'animal-local-traditional-event', ['zoa-20', 'zoa-3', 'zoa-9']],
+  ['αφαίρεσε το μικροτσίπ από σκύλο χωρίς εισαγγελική εντολή', 'animal-microchip-removal', ['zoa-21', 'zoa-9', 'zoa-12']],
+  ['ο σκύλος δραπέτευσε από την αυλή χωρίς μέτρα περίφραξης', 'animal-escape-prevention', ['zoa-22', 'zoa-6', 'zoa-9']],
+  ['βρέθηκε γεράκι άγριας πανίδας σε παράνομη κατοχή', 'wildlife-possession-or-trade', ['zoa-23']],
+  ['πωλούσε πουλερικά σε υπαίθρια αγορά χωρίς κτηνιατρικά πιστοποιητικά', 'bird-or-poultry-outdoor-trade', ['zoa-24', 'zoa-13']],
+  ['παρεμπόδισε επίσημο έλεγχο προστασίας ζώων και αρνήθηκε στοιχεία', 'animal-inspection-obstruction', ['zoa-25', 'zoa-9']]
+];
+for (const [description, expectedId, entryIds] of expandedAnimalScenarios) {
+  const match = incidentSearch.classify(description);
+  assert.equal(match && match.id, expectedId, description);
+  assert.deepEqual(Array.from(match.primaryEntryIds.concat(match.relatedEntryIds)), entryIds);
+  for (const entryId of entryIds) {
+    const entry = animals.items.find((item) => item.id === entryId);
+    assert.ok(entry, 'Missing expanded animal entry: ' + entryId);
+    assert.equal(entry.status, 'partial');
+    assert.ok(entry.procedure, 'Missing procedure/checklist field: ' + entryId);
+  }
+}
+assert.equal(incidentSearch.classify('σκύλος έκανε απλή βόλτα και έφαγε'), null);
+assert.equal(incidentSearch.classify('είδα βίντεο με σκύλο να παίζει'), null);
+assert.match(findLegal('zoa-9').penalty, /46\./);
+assert.match(findLegal('zoa-9').notes, /70%/);
+assert.match(findLegal('zoa-12').procedure, /10 εργάσιμων ημερών/);
+assert.doesNotMatch(findLegal('zoa-12').procedure, /5 εργάσιμων ημερών/);
+assert.ok(['zoa-17','zoa-18','zoa-19','zoa-20','zoa-21','zoa-22','zoa-23','zoa-24','zoa-25','zoa-26'].every((id) => findLegal(id).status === 'partial'));
