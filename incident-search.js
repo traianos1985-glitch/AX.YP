@@ -61,6 +61,7 @@
     evidenceSeizure: ['κατασχε','πειστηρ'],
     complaintFiling: ['μηνυση','εγκληση','εγκαλων','εγκαλουσα'],
     complaintProcess: ['παραβολο','ανακληση','παραιτηση','προσφυγη','απορριψη','προθεσμια'],
+    complaintTime: ['μηνων','μηνεσ','μηνα'],
     prosecutionAction: ['διωξ','αρχειοθετ','αρχειο','ανασυρ'],
     reportDuty: ['ανακοινωσ','αναγγελια','ανακριτικ','υπαλληλ','αξιοποινη']
   };
@@ -384,7 +385,7 @@
     }
 
     if (has('falseReport') && hasConcept(words, ['καταγγελ','καταμηνυσ','κατηγορησ','κατηγγειλ','μηνυσ'])) return RULES.falseReport;
-    if (has('complaintFiling') && (has('complaintProcess') || has('prosecutionAction'))) return RULES.kpdComplaintProcess;
+    if (has('complaintFiling') && (has('complaintProcess') || has('complaintTime') || has('prosecutionAction'))) return RULES.kpdComplaintProcess;
     if (has('complaintFiling')) return RULES.kpdComplaint;
     if (has('prosecutionAction') && hasConcept(words, ['ποινικη','διωξη','αρχειοθετ','αρχειο'])) return RULES.kpdProsecution;
     if (hasConcept(words, ['ανακοινωση','ανακοινωσ','αναγγελια','αναγγελ']) && hasConcept(words, ['αξιοποινη','πραξη']) && hasConcept(words, ['ανακριτικ','υπαλληλ','δημοσιο'])) return RULES.kpdReporting;
