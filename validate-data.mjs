@@ -21,7 +21,7 @@ const errors = [];
 const date = /^\d{4}-\d{2}-\d{2}$/;
 const ids = new Set();
 const moduleIds = new Set();
-const OFFICIAL_HOSTS = ['et.gr', 'gov.gr', 'planet.gr', 'proanakrisi.gr', 'kodiko.gr', 'e-nomothesia.gr'];
+const OFFICIAL_HOSTS = ['et.gr', 'gov.gr', 'hellenicparliament.gr', 'planet.gr', 'proanakrisi.gr', 'kodiko.gr', 'e-nomothesia.gr'];
 const isOfficial = (url) => {
   try {
     const host = new URL(url).hostname;
