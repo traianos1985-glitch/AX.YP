@@ -492,7 +492,7 @@
     if (has('seizureHandling') && (hasConcept(words, ['φυλαξ','σφραγιδ','αποσφραγ','αρσηκατασχε','αποδοση','καταστροφ']) || hasConcept(words, ['πειστηρ']) && hasConcept(words, ['κατασχε','αντιγραφ']))) return RULES.kpdSeizureHandling;
     if (has('pretrialMeasures') && (hasConcept(words, ['προσωρινηκρατηση','προφυλακ','περιοριστικ','ηλεκτρονικηεπιτηρηση']) || hasConcept(words, ['εγγυηση']) && hasConcept(words, ['ανακρι','κατηγορουμ']))) return RULES.kpdPretrialMeasures;
     if (has('reportFormalities') && hasConcept(words, ['εκθεση']) && hasConcept(words, ['υπογραφ','χρονολογ','παρισταμεν','ακυροτητα','μαρτυρεσ'])) return RULES.kpdReportFormalities;
-    if (has('evidencePrinciples') && (hasConcept(words, ['αποδεικτικ','αποδειξη']) || hasConcept(words, ['παρανομα']) && hasConcept(words, ['στοιχεια']))) return RULES.kpdEvidencePrinciples;
+    if (!has('preliminary') && !has('inquiry') && has('evidencePrinciples') && (hasConcept(words, ['αποδεικτικ','αποδειξη']) || hasConcept(words, ['παρανομα']) && hasConcept(words, ['στοιχεια']))) return RULES.kpdEvidencePrinciples;
     if (has('pretrialQuestions') && hasConcept(words, ['προδικαστικ','αστικηδιαφορα','διοικητικηδιαφορα','αναβοληποινικησ'])) return RULES.kpdPretrialQuestions;
     if (has('psychiatricExpertise') || hasConcept(words, ['ψυχιατρικ','διανοητικηυγεια'])) return RULES.kpdPsychiatricExpertise;
     if (has('witnessEvidence') && hasConcept(words, ['μαρτυρα','καταθεση','ειδικεσγνωσεισ'])) return RULES.kpdWitnessEvidence;
