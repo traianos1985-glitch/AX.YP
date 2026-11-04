@@ -3,8 +3,8 @@
 (function (root) {
   var STOPWORDS = ['και','να','με','για','σε','στο','στη','στον','στην','τον','την','του','της','των','τα','το','ο','η','οι','ως','απο','που','ειναι','κατα','προς','περι','μετα','παρα','δια','υπο','επι','ενωπιον','λογω'];
   var CONCEPTS = {
-    dog: ['σκυλο','σκυλι','κυνο','κυνα','ζωοσυντροφιας'],
-    animal: ['ζωο','ζωων','ζωα','σκυλο','σκυλι','γατα','γατεσ','ζωοσυντροφιασ','κουταβ','γατακι','αιγοπροβατ','ιππο','αλογ','αγριο','αγρια','ενδημ','εξωτικ','γερακ','πτηνο','πουλερικ','ορνιθ','πουλια'],
+    dog: ['σκυλο','σκυλων','σκυλι','κυνο','κυνα','ζωοσυντροφιας'],
+    animal: ['ζωο','ζωων','ζωα','σκυλο','σκυλων','σκυλι','γατα','γατεσ','ζωοσυντροφιασ','κουταβ','γατακι','αιγοπροβατ','ιππο','αλογ','αγριο','αγρια','ενδημ','εξωτικ','γερακ','πτηνο','πουλερικ','ορνιθ','πουλια'],
     animalHarm: ['κακοποι','βασαν','χτυπ','δηλητηρ','πυροβολ','τραυματ','θανατ','θανατω'],
     animalNeglect: ['παραμελ','πεινα','διψ','αλυσιδ','δεμεν','καταλυμ','ευζω'],
     animalOwner: ['λουρι','συνοδευ','ελευθερ','μικροτσιπ','τσιπ','σημανσ','στειρωσ','dna','ανεμβολιαστ'],
@@ -22,6 +22,14 @@
     animalWild: ['αγριαπανιδ','αγριοειδο','αγριο','αγρια','ενδημ','εξωτικ','γερακ'],
     animalBird: ['πουλερικ','ορνιθ','πτηνο','πουλια','πτηνα','κοκορ','παπια','περιστερ'],
     animalInspection: ['παρεμποδ','αρνηθ','αρνηση','δυσχερ','ελεγχ','επιθεωρ'],
+    animalComplaint: ['καταγγελ','αναφορ','ανωνυμ','ανωνυμη'],
+    animalRoad: ['τροχαι','ατυχημ','παρασυρ'],
+    animalPoliceDog: ['αστυνομικ','ελασ','εργασιασ','υπηρεσιακ','k9'],
+    animalAbandonment: ['εγκαταλειπ','εγκατελειψ','παρατησ','παρατησε'],
+    animalSurrender: ['παρεδωσε','παρεδωσ','παραδωσε','παραδιδ','παραδοση'],
+    animalPublicDisplay: ['κληρω','λοταρ','διαγωνισμ','επαθλο'],
+    animalExhibition: ['εκθεση','εκδηλωσ','θεαμα','τσιρκο','μορφολογια','petshop'],
+    animalOutdoorDog: ['αλυσιδ','δεμεν','προσδεσ','καταλυμ','αυλη','εξωτερικοχωρο','ασκηση'],
     bite: ['δαγκ','επιθεσ','επιτεθ','δαγκωμα'],
     person: ['ανθρωπ','πολιτ','παθων','τραυματι','σωματικηβλαβη'],
     drug: ['ναρκωτ','εξαρτησιογον','κανναβ','ηρωιν','κοκαιν','μεθαμφεταμ'],
@@ -88,6 +96,41 @@
       primaryEntryIds: ['zoa-25'], relatedEntryIds: ['zoa-9'],
       notice: 'Εξετάζεται αν πρόκειται για επίσημο έλεγχο αρμόδιας αρχής στους τομείς που καλύπτει ο ν. 4235/2014 και αν υπήρξε συγκεκριμένη παρεμπόδιση.'
     },
+    animalComplaint: {
+      id: 'animal-report-or-anonymous-complaint', label: 'Αναφορά περιστατικού κακοποίησης ζώου',
+      primaryEntryIds: ['zoa-34'], relatedEntryIds: ['zoa-29', 'zoa-8'],
+      notice: 'Η ανώνυμη καταγγελία διερευνάται μόνο αν περιέχει συγκεκριμένα στοιχεία που παρέχουν επαρκή βάση. Το άρθρο 25 δεν θεσπίζει από μόνο του ειδική αστυνομική διαδικασία.'
+    },
+    animalPoliceDog: {
+      id: 'animal-police-working-dog', label: 'Ειδικό καθεστώς σκύλου εργασίας της Ελληνικής Αστυνομίας',
+      primaryEntryIds: ['zoa-33'], relatedEntryIds: ['zoa-6', 'zoa-22', 'zoa-27'],
+      notice: 'Οι εξαιρέσεις ισχύουν μόνο για επίσημο σκύλο εργασίας της ΕΛ.ΑΣ. και, όπου ο νόμος το ορίζει, μόνο κατά την εκτέλεση υπηρεσίας. Δεν αφορούν ιδιωτικό ζώο αστυνομικού.'
+    },
+    animalRoad: {
+      id: 'animal-road-traffic-injury', label: 'Τραυματισμός ζώου σε τροχαίο ατύχημα',
+      primaryEntryIds: ['zoa-30'], relatedEntryIds: ['zoa-13'],
+      notice: 'Ελέγχεται αν ο υπαίτιος ειδοποίησε άμεσα τον δήμο ή την Ελληνική Αστυνομία ώστε να παρασχεθεί κτηνιατρική φροντίδα. Το πρόστιμο της α/α 45 αφορά εγκατάλειψη τραυματισμένου ζώου και δεν εφαρμόζεται αυτομάτως σε κάθε τροχαίο.'
+    },
+    animalAbandonment: {
+      id: 'animal-abandonment-or-lawful-surrender', label: 'Πιθανή εγκατάλειψη ζώου ή νόμιμη παράδοσή του στον δήμο',
+      primaryEntryIds: ['zoa-31'], relatedEntryIds: ['zoa-10', 'zoa-9', 'zoa-8'],
+      notice: 'Διακρίνεται η απαγορευμένη εγκατάλειψη από τη νόμιμη παράδοση στον δήμο μετά την προβλεπόμενη διαδικασία. Η περιγραφή από μόνη της δεν αποδεικνύει εγκατάλειψη.'
+    },
+    animalPublicDisplay: {
+      id: 'animal-public-display-or-prize', label: 'Χρήση ζώου σε υπαίθρια δημόσια έκθεση ή ως έπαθλο',
+      primaryEntryIds: ['zoa-29'], relatedEntryIds: ['zoa-3', 'zoa-9'],
+      notice: 'Ελέγχεται ο σκοπός οικονομικού οφέλους, το είδος της εκδήλωσης και αν συντρέχει νόμιμη εξαίρεση ή ειδική άδεια.'
+    },
+    animalExhibition: {
+      id: 'animal-exhibition-requirements', label: 'Έκθεση ή εκδήλωση με ζώα συντροφιάς',
+      primaryEntryIds: ['zoa-28'], relatedEntryIds: ['zoa-17', 'zoa-9'],
+      notice: 'Ελέγχονται η άδεια, η επίβλεψη, η παρουσία κτηνιάτρου όπου απαιτείται, τα έγγραφα υγείας/σήμανσης και η απαγόρευση συμμετοχής ακρωτηριασμένων ζώων.'
+    },
+    animalOutdoorDog: {
+      id: 'dog-outdoor-welfare-duties', label: 'Συνθήκες διαβίωσης και πρόσδεσης σκύλου σε εξωτερικό χώρο',
+      primaryEntryIds: ['zoa-32'], relatedEntryIds: ['zoa-11', 'zoa-6'],
+      notice: 'Ελέγχονται τα ειδικά όρια πρόσδεσης, το κατάλυμα, η καθαριότητα και η δυνατότητα κίνησης/άσκησης. Δεν αποδίδεται παράβαση μόνο από τη διαπίστωση ότι ο σκύλος βρίσκεται στην αυλή.'
+    },
     animalCruelty: {
       id: 'animal-cruelty', label: 'Πιθανό περιστατικό κακοποίησης ή βάναυσης μεταχείρισης ζώου',
       primaryEntryIds: ['zoa-1'], relatedEntryIds: ['zoa-10', 'zoa-8'],
@@ -105,7 +148,7 @@
     },
     animalTrade: {
       id: 'animal-trade', label: 'Πιθανό περιστατικό παράνομης εμπορίας ζώου συντροφιάς',
-      primaryEntryIds: ['zoa-5'], relatedEntryIds: ['zoa-8', 'zoa-12'],
+      primaryEntryIds: ['zoa-5'], relatedEntryIds: ['zoa-27', 'zoa-8', 'zoa-12'],
       notice: 'Απαιτείται έλεγχος των προϋποθέσεων νόμιμης εμπορίας, της ιδιότητας των εμπλεκομένων και των συγκεκριμένων πράξεων.'
     },
     animalTheft: {
@@ -195,6 +238,14 @@
 
     if (has('animal')) {
       if (has('animalChipAction') && hasConcept(words, ['τσιπ','μικροτσιπ','σημανσ'])) return RULES.animalChipRemoval;
+      if (has('animalComplaint') && hasConcept(words, ['ζωο','ζωων','σκυλο','γατα','κακοποι'])) return RULES.animalComplaint;
+      if (has('dog') && has('animalPoliceDog') && hasConcept(words, ['εργασιασ','υπηρεσιακ','k9','ελασ'])) return RULES.animalPoliceDog;
+      if (has('animalRoad') && hasConcept(words, ['τραυματ','χτυπ','παρασυρ','τραυματισμ'])) return RULES.animalRoad;
+      if (has('animalSurrender') && hasConcept(words, ['δημο'])) return null;
+      if (has('animalAbandonment')) return RULES.animalAbandonment;
+      if (has('animalPublicDisplay') || (hasConcept(words, ['οικονομικ']) && hasConcept(words, ['οφελο']) && (hasConcept(words, ['υπαιθρια']) || hasConcept(words, ['δημοσια']) || hasConcept(words, ['εκθεση'])))) return RULES.animalPublicDisplay;
+      if (has('animalExhibition')) return RULES.animalExhibition;
+      if (has('dog') && has('animalOutdoorDog') && hasConcept(words, ['αυλη','εξωτερικοχωρο']) && hasConcept(words, ['καταλυμ','προσδεσ','αλυσιδ'])) return RULES.animalOutdoorDog;
       if (has('animalMutilation')) return RULES.animalMutilation;
       if (has('animalMedia') && (has('animalHarm') || has('animalSexual'))) return RULES.animalMedia;
       if (has('animalDoping')) return RULES.animalDoping;

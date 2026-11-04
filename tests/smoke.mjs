@@ -164,7 +164,7 @@ const animalScenarios = [
   ['σκύλος κακοποιήθηκε και χτυπήθηκε', 'animal-cruelty', ['zoa-1', 'zoa-10', 'zoa-8']],
   ['σκύλος παραμελημένος χωρίς νερό και δεμένος με αλυσίδα', 'animal-neglect', ['zoa-11', 'zoa-6', 'zoa-12']],
   ['ιδιοκτήτης σκύλου τον έχει χωρίς λουρί και χωρίς σήμανση', 'animal-owner-obligations', ['zoa-6', 'zoa-9', 'zoa-12']],
-  ['πωλεί κουτάβια μέσω αγγελίας', 'animal-trade', ['zoa-5', 'zoa-8', 'zoa-12']],
+  ['πωλεί κουτάβια μέσω αγγελίας', 'animal-trade', ['zoa-5', 'zoa-27', 'zoa-8', 'zoa-12']],
   ['έκλεψε σκύλο συντροφιάς', 'animal-theft', ['zoa-4']],
   ['σκύλος γαβγίζει και διαταράσσει την κοινή ησυχία', 'animal-noise', ['zoa-15']],
   ['μεταφέρει σκύλο σε όχημα χωρίς κατάλληλες συνθήκες', 'animal-transport', ['zoa-13', 'zoa-26', 'zoa-11']]
@@ -205,8 +205,53 @@ for (const [description, expectedId, entryIds] of expandedAnimalScenarios) {
 }
 assert.equal(incidentSearch.classify('σκύλος έκανε απλή βόλτα και έφαγε'), null);
 assert.equal(incidentSearch.classify('είδα βίντεο με σκύλο να παίζει'), null);
+const roadMatch = incidentSearch.classify('οδηγός χτύπησε σκύλο σε τροχαίο και δεν ειδοποίησε τον δήμο');
+assert.equal(roadMatch.id, 'animal-road-traffic-injury');
+assert.deepEqual(Array.from(roadMatch.primaryEntryIds.concat(roadMatch.relatedEntryIds)), ['zoa-30', 'zoa-13']);
+const abandonmentMatch = incidentSearch.classify('εγκατέλειψε σκύλο στον δρόμο');
+assert.equal(abandonmentMatch.id, 'animal-abandonment-or-lawful-surrender');
+assert.ok(abandonmentMatch.primaryEntryIds.includes('zoa-31'));
+assert.equal(incidentSearch.classify('παρέδωσε νόμιμα τον σκύλο στον δήμο'), null);
+const exhibitionMatch = incidentSearch.classify('έκθεση σκύλων χωρίς άδεια και χωρίς παρουσία κτηνιάτρου');
+assert.equal(exhibitionMatch.id, 'animal-exhibition-requirements');
+assert.equal(exhibitionMatch.primaryEntryIds[0], 'zoa-28');
+const prizeMatch = incidentSearch.classify('έκανε κλήρωση με κουτάβι ως έπαθλο');
+assert.equal(prizeMatch.id, 'animal-public-display-or-prize');
+assert.equal(prizeMatch.primaryEntryIds[0], 'zoa-29');
+const outdoorDogMatch = incidentSearch.classify('σκύλος μόνιμα δεμένος με αλυσίδα στην αυλή χωρίς κατάλυμα');
+assert.equal(outdoorDogMatch.id, 'dog-outdoor-welfare-duties');
+assert.equal(outdoorDogMatch.primaryEntryIds[0], 'zoa-32');
+assert.equal(incidentSearch.classify('ο σκύλος πήγε βόλτα και έπαιξε'), null);
 assert.match(findLegal('zoa-9').penalty, /46\./);
 assert.match(findLegal('zoa-9').notes, /70%/);
 assert.match(findLegal('zoa-12').procedure, /10 εργάσιμων ημερών/);
 assert.doesNotMatch(findLegal('zoa-12').procedure, /5 εργάσιμων ημερών/);
-assert.ok(['zoa-17','zoa-18','zoa-19','zoa-20','zoa-21','zoa-22','zoa-23','zoa-24','zoa-25','zoa-26'].every((id) => findLegal(id).status === 'partial'));
+assert.ok(['zoa-17','zoa-18','zoa-19','zoa-20','zoa-21','zoa-22','zoa-23','zoa-24','zoa-25','zoa-26','zoa-27','zoa-28','zoa-29','zoa-30','zoa-31','zoa-32'].every((id) => findLegal(id).status === 'partial'));
+assert.match(findLegal('zoa-22').law, /άρθρο 9 §3 περ\. β΄/);
+assert.match(findLegal('zoa-8').procedure, /εξαιρετικές καταστάσεις/);
+assert.match(findLegal('zoa-11').notes, /δύο ώρες ημερησίως/);
+assert.match(findLegal('zoa-31').notes, /νόμιμη παράδοση/);
+assert.match(findLegal('zoa-30').penalty, /δεν αποδίδεται το ποσό αυτό αυτομάτως/);
+assert.match(findLegal('zoa-27').penalty, /δεν αποδίδεται αυτομάτως σε κάθε παράβαση/);
+assert.match(findLegal('zoa-6').notes, /άρθρο 62 ν\. 5143\/2024/);
+assert.match(findLegal('zoa-22').notes, /σκύλους εργασίας της Ελληνικής Αστυνομίας/);
+assert.match(findLegal('zoa-27').notes, /προγράμματα αναπαραγωγής τους δεν υπόκεινται/);
+assert.match(findLegal('zoa-16').notes, /δήμοι δεν ευθύνονται/);
+assert.match(findLegal('zoa-32').notes, /όχι γενικά τις περ\. δ΄–στ΄/);
+assert.match(findLegal('zoa-9').notes, /70 € ανά ζώο και 40 € για κυνηγετικό σκύλο/);
+assert.match(findLegal('zoa-16').notes, /για αδέσποτο χωρίς σήμανση ευθύνεται ο δήμος/);
+assert.equal(findLegal('zoa-33').status, 'partial');
+assert.equal(findLegal('zoa-34').status, 'partial');
+assert.match(findLegal('zoa-34').procedure, /συγκεκριμένα στοιχεία/);
+assert.match(findLegal('zoa-34').procedure, /Taxisnet/);
+assert.match(findLegal('zoa-34').procedure, /άρθρο 36 §5 ν\. 5270\/2026/);
+assert.match(findLegal('zoa-34').procedure, /διαπιστωτική πράξη/);
+assert.doesNotMatch(findLegal('zoa-34').procedure, /ψηφιακή εφαρμογή και ιστοσελίδα/);
+assert.match(findLegal('zoa-29').procedure, /επόμενη εργάσιμη ημέρα/);
+assert.match(findLegal('zoa-29').procedure, /συνδρομή της αστυνομίας/);
+assert.doesNotMatch(findLegal('zoa-6').notes, /έκθεση σκύλων\/γατών σε pet shops/);
+assert.match(findLegal('zoa-33').notes, /ειδικό μητρώο/);
+assert.match(findLegal('zoa-33').notes, /δεν αφορούν ιδιωτικό ζώο αστυνομικού/);
+assert.equal(incidentSearch.classify('σκύλος εργασίας της Ελληνικής Αστυνομίας κατά την εκτέλεση υπηρεσίας').id, 'animal-police-working-dog');
+assert.equal(incidentSearch.classify('αστυνομικός βρήκε σκύλο στον δρόμο'), null);
+assert.equal(incidentSearch.classify('ανώνυμη καταγγελία για κακοποίηση ζώου με συγκεκριμένα στοιχεία').id, 'animal-report-or-anonymous-complaint');
