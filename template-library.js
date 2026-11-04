@@ -252,6 +252,9 @@ async function generate(template) {
   const fileName = (item.title ? item.title.replace(/[\\/:*?"<>|]+/g, '-') : 'ypothesi') + '-' + template.name;
   if (window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()) {
     try {
+      const persisted = await window.AXYP_WORKSPACE.saveCase(item);
+      const allCases = JSON.parse(storage().getItem('axyp-hypotheses') || '[]').map((entry) => entry.id === persisted.id ? persisted : entry);
+      storage().setItem('axyp-hypotheses', JSON.stringify(allCases));
       await window.AXYP_WORKSPACE.saveDocument(item.id, fileName, blob);
     } catch (error) {
       window.alert('Το έγγραφο θα ληφθεί, αλλά δεν αποθηκεύτηκε στον φάκελο εργασίας: ' + error.message);
