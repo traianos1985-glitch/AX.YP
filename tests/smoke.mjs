@@ -248,7 +248,7 @@ assert.match(findLegal('zoa-34').procedure, /άρθρο 36 §5 ν\. 5270\/2026/)
 assert.match(findLegal('zoa-34').procedure, /διαπιστωτική πράξη/);
 assert.doesNotMatch(findLegal('zoa-34').procedure, /ψηφιακή εφαρμογή και ιστοσελίδα/);
 assert.match(findLegal('zoa-29').procedure, /επόμενη εργάσιμη ημέρα/);
-assert.match(findLegal('zoa-29').procedure, /αστυνομικής συνδρομής/);
+assert.match(findLegal('zoa-29').procedure, /συνδρομή της αστυνομίας/);
 assert.doesNotMatch(findLegal('zoa-6').notes, /έκθεση σκύλων\/γατών σε pet shops/);
 assert.match(findLegal('zoa-33').notes, /ειδικό μητρώο/);
 assert.match(findLegal('zoa-33').notes, /δεν αφορούν ιδιωτικό ζώο αστυνομικού/);
