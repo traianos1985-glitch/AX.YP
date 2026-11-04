@@ -365,3 +365,36 @@ assert.equal(incidentSearch.classify('νέα άσκηση ποινικής δί�
 assert.equal(incidentSearch.classify('νέα δίωξη μετά από παρατυπία της αίτησης ή της άδειας').id, 'kpd-new-prosecution-after-procedural-defect');
 assert.equal(incidentSearch.classify('έχει υποβληθεί απλή μήνυση για κλοπή').id, 'kpd-criminal-complaint-submission');
 assert.equal(incidentSearch.classify('είχε μια συζήτηση με τον γείτονα'), null);
+
+
+// KPD search, personal-search, search-report and digital-evidence safeguards.
+for (const id of ['kpd-20','kpd-21','kpd-22','kpd-23','kpd-24']) {
+  const entry = findKpd(id);
+  assert.ok(entry, 'Missing KPD entry: ' + id);
+  assert.equal(entry.status, 'partial');
+  assert.match(entry.source, /taxheaven\.gr\/law\/4620\/2019\/arthro\//);
+}
+assert.match(findKpd('kpd-20').procedure, /σφραγίδων/);
+assert.match(findKpd('kpd-20').procedure, /να μην απομακρυνθεί κανείς/);
+assert.match(findKpd('kpd-21').procedure, /μόνο με αυτήν/);
+assert.match(findKpd('kpd-21').procedure, /παρουσία εκπροσώπων της δικαστικής εξουσίας/);
+assert.match(findKpd('kpd-21').notes, /προανακριτή πρωτοδίκη και πρωτοδίκη/);
+assert.match(findKpd('kpd-21').notes, /20:00–06:00/);
+assert.match(findKpd('kpd-22').procedure, /σοβαρή και βάσιμη υπόνοια/);
+assert.match(findKpd('kpd-22').procedure, /χωριστά για κάθε πρόσωπο/);
+assert.match(findKpd('kpd-23').procedure, /συντάσσεται έκθεση/);
+assert.match(findKpd('kpd-23').procedure, /απλώς παραδόθηκαν/);
+assert.match(findKpd('kpd-24').procedure, /ειδική έκθεση/);
+assert.match(findKpd('kpd-24').notes, /cloud/);
+assert.match(findKpd('kpd-24').notes, /δεν θεωρούνται.*διασυνδεδεμένο/);
+assert.match(findKpd('kpd-24').notes, /άρθρο 85 ν\. 5090\/2024/);
+assert.match(findKpd('kpd-24').notes, /σφραγίζεται/);
+assert.equal(incidentSearch.classify('διασφάλιση τόπου εγκλήματος με σφραγίδες και φύλακες').id, 'kpd-scene-and-evidence-preservation');
+assert.equal(incidentSearch.classify('έρευνα κατοικίας κατά τη διάρκεια της ημέρας').id, 'kpd-search-and-home-search-formalities');
+assert.equal(incidentSearch.classify('νυχτερινή έρευνα σε οικία για σύλληψη').id, 'kpd-search-and-home-search-formalities');
+assert.equal(incidentSearch.classify('σωματική έρευνα τρίτου προσώπου και προϋποθέσεις').id, 'kpd-personal-search');
+assert.equal(incidentSearch.classify('κατάσχεση ψηφιακών δεδομένων από κινητό τηλέφωνο και αντιγραφή').id, 'kpd-digital-evidence-seizure');
+assert.equal(incidentSearch.classify('κατάσχεση δεδομένων υπολογιστή και έλεγχος ακεραιότητας').id, 'kpd-digital-evidence-seizure');
+assert.equal(incidentSearch.classify('έκθεση έρευνας και μεσεγγύηση ευρημάτων').id, 'kpd-search-report-and-sequestration');
+assert.equal(incidentSearch.classify('έρευνα σε τρίτο πρόσωπο για αντικείμενο και σωματικός έλεγχος'), 'kpd-personal-search');
+assert.equal(incidentSearch.classify('είχε μια συζήτηση με τον γείτονα'), null);
