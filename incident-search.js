@@ -26,7 +26,7 @@
     animalPoliceDog: ['αστυνομικ','ελασ','εργασιασ','υπηρεσιακ','k9'],
     animalAbandonment: ['εγκαταλειπ','εγκατελειψ','παρατησ','παρατησε'],
     animalSurrender: ['παρεδωσε','παρεδωσ','παραδωσε','παραδιδ','παραδοση'],
-    animalPublicDisplay: ['κληρω','λοταρ','διαγωνισμ','επαθλο','οικονομικοοφελο','υπαιθριαδημοσιαεκθεση'],
+    animalPublicDisplay: ['κληρω','λοταρ','διαγωνισμ','επαθλο'],
     animalExhibition: ['εκθεση','εκδηλωσ','θεαμα','τσιρκο','μορφολογια','petshop'],
     animalOutdoorDog: ['αλυσιδ','δεμεν','προσδεσ','καταλυμ','αυλη','εξωτερικοχωρο','ασκηση'],
     bite: ['δαγκ','επιθεσ','επιτεθ','δαγκωμα'],
@@ -236,7 +236,7 @@
       if (has('animalRoad') && hasConcept(words, ['τραυματ','χτυπ','παρασυρ','τραυματισμ'])) return RULES.animalRoad;
       if (has('animalSurrender') && hasConcept(words, ['δημο'])) return null;
       if (has('animalAbandonment')) return RULES.animalAbandonment;
-      if (has('animalPublicDisplay')) return RULES.animalPublicDisplay;
+      if (has('animalPublicDisplay') || (hasConcept(words, ['οικονομικ']) && hasConcept(words, ['οφελο']) && (hasConcept(words, ['υπαιθρια']) || hasConcept(words, ['δημοσια']) || hasConcept(words, ['εκθεση'])))) return RULES.animalPublicDisplay;
       if (has('animalExhibition')) return RULES.animalExhibition;
       if (has('dog') && has('animalOutdoorDog') && hasConcept(words, ['αυλη','εξωτερικοχωρο']) && hasConcept(words, ['καταλυμ','προσδεσ','αλυσιδ'])) return RULES.animalOutdoorDog;
       if (has('animalMutilation')) return RULES.animalMutilation;
