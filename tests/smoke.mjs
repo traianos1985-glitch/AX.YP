@@ -432,3 +432,19 @@ assert.equal(incidentSearch.classify('ψυχιατρική πραγματογν�
 assert.equal(incidentSearch.classify('εξέταση μάρτυρα με ειδικές γνώσεις').id, 'kpd-witness-examination');
 assert.equal(incidentSearch.classify('προθεσμία έφεσης και αναίρεσης').id, 'kpd-appeals-and-enforcement-index');
 assert.equal(incidentSearch.classify('έφτιαξε καφέ και πήγε σπίτι'), null);
+
+const dataSource = await readFile(new URL('../data.js', import.meta.url), 'utf8')
+const dataContext = { window: {} }
+vm.runInNewContext(dataSource, dataContext)
+const domesticViolence = dataContext.window.DATA.modules.find((module) => module.id === 'evb')
+assert.ok(domesticViolence, 'domestic violence module exists')
+const responseGuide = domesticViolence.items.find((item) => item.id === 'evb-5')
+assert.ok(responseGuide, 'domestic violence response guide exists')
+assert.match(responseGuide.procedure, /εποχούμενης περιπολίας/)
+assert.match(responseGuide.procedure, /γραπτό μήνυμα στο 100/)
+assert.match(responseGuide.procedure, /προανακριτικού υλικού/)
+assert.match(responseGuide.procedure, /δομές φιλοξενίας/)
+assert.match(responseGuide.procedure, /εισαγγελικών αρχών/)
+assert.match(responseGuide.notes, /δεν αποτελεί πλήρες επιχειρησιακό πρωτόκολλο/)
+assert.equal(responseGuide.status, 'partial')
+assert.equal(responseGuide.source, 'https://www.astynomia.gr/')
