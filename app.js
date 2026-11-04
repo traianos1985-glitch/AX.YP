@@ -12,7 +12,7 @@
     'Έλεγχος ισχύος στην επίσημη πηγή',
     'Σημείωση εκκρεμοτήτων και ενημέρωση αρμόδιας αρχής'
   ];
-  var STOPWORDS = ['και', 'να', 'με', 'για', 'σε', 'στο', 'στη', 'στον', 'στην', 'τον', 'την', 'του', 'της', 'τα', 'το', 'ο', 'η', 'οι', 'ή', 'ως', 'από', 'που', 'ειναι'];
+  var STOPWORDS = ['και', 'να', 'με', 'για', 'σε', 'στο', 'στη', 'στον', 'στην', 'τον', 'την', 'του', 'της', 'των', 'τα', 'το', 'ο', 'η', 'οι', 'ως', 'απο', 'που', 'ειναι', 'κατα', 'προς', 'περι', 'μετα', 'παρα', 'δια', 'υπο', 'επι', 'ενωπιον', 'λογω', 'αρθρο', 'αρθρα', 'αρθρου', 'αρθρων', 'αρ', 'παρ', 'παραγρ', 'παραγραφος', 'εδ', 'εδαφ', 'εδαφιο', 'νομου', 'νομος', 'νομων', 'ν'];
   var SYNONYMS = {
     'κινητο': ['τηλεφωνο'], 'τηλεφωνο': ['κινητο'],
     'βια': ['κακοποιηση'], 'κακοποιηση': ['βια'],
@@ -86,8 +86,26 @@
   }
 
   function expandTerms(query) {
+    var qNorm = norm(query);
+    var articleBoosts = [];
+    var articleRegex = /(?:αρθρ[οα]|αρ\.?)\s*(\d+)/g;
+    var match;
+    while ((match = articleRegex.exec(qNorm)) !== null) {
+      articleBoosts.push(match[1]);
+    }
+
     var base = tokens(query);
-    var terms = base.map(function (text) { return { text: text, mult: 1 }; });
+    var terms = base.map(function (text) {
+      var isArticleNum = articleBoosts.indexOf(text) !== -1;
+      return { text: text, mult: isArticleNum ? 4 : 1 };
+    });
+
+    articleBoosts.forEach(function (num) {
+      if (!terms.some(function (t) { return t.text === num; })) {
+        terms.push({ text: num, mult: 4 });
+      }
+    });
+
     base.forEach(function (text) {
       (SYNONYMS[text] || []).forEach(function (synonym) { terms.push({ text: synonym, mult: 0.5 }); });
     });
@@ -105,8 +123,15 @@
   }
 
   function isOfficial(url) {
-    var host = new URL(url).hostname;
-    return host.endsWith('et.gr') || host.endsWith('gov.gr');
+    try {
+      var host = new URL(url).hostname;
+      var officialHosts = ['et.gr', 'gov.gr', 'proanakrisi.gr', 'kodiko.gr', 'e-nomothesia.gr'];
+      return officialHosts.some(function (h) {
+        return host === h || host.endsWith('.' + h);
+      });
+    } catch (_) {
+      return false;
+    }
   }
 
   function ageDays(date) {
@@ -149,9 +174,9 @@
   }
 
   function visibleEntries(terms) {
-    var pool = terms.length && scopeAll ? allEntries() : moduleById(activeModule).items.map(function (item) {
+    var pool = (scopeAll || activeModule === 'all') ? allEntries() : (moduleById(activeModule) ? moduleById(activeModule).items.map(function (item) {
       return { item: item, module: moduleById(activeModule) };
-    });
+    }) : allEntries());
     var saved = favorites();
     var list = pool.map(function (entry) {
       return { entry: entry, score: terms.length ? score(entry.item, terms) : 0 };
@@ -204,14 +229,17 @@
   }
 
   function checklistNode(key, onChange) {
+    var wrapper = el('div', 'checklist-wrapper');
     var list = el('ul', 'summary-list');
     var values = checksFor(key);
+    var inputs = [];
     CHECK_LABELS.forEach(function (label, index) {
       var item = el('li');
       var input = document.createElement('input');
       input.type = 'checkbox';
       input.checked = values[index];
       input.setAttribute('aria-label', label);
+      inputs.push(input);
       input.onchange = function () {
         values[index] = input.checked;
         saveChecks(key, values);
@@ -221,7 +249,23 @@
       item.appendChild(document.createTextNode(label));
       list.appendChild(item);
     });
-    return list;
+    wrapper.appendChild(list);
+
+    var resetBtn = el('button', 'text-button', 'Μηδενισμός λίστας');
+    resetBtn.type = 'button';
+    resetBtn.style.fontSize = '0.8rem';
+    resetBtn.style.margin = '4px 0 0';
+    resetBtn.onclick = function (e) {
+      e.stopPropagation();
+      inputs.forEach(function (inp, idx) {
+        inp.checked = false;
+        values[idx] = false;
+      });
+      saveChecks(key, values);
+      onChange(0);
+    };
+    wrapper.appendChild(resetBtn);
+    return wrapper;
   }
 
   function card(entry, rawQuery) {
@@ -323,10 +367,21 @@
 
   function renderTabs() {
     tabs.textContent = '';
+    var allBtn = el('button', '', 'Όλες');
+    allBtn.type = 'button';
+    allBtn.setAttribute('aria-pressed', String(scopeAll || activeModule === 'all'));
+    allBtn.onclick = function () {
+      scopeAll = true;
+      activeModule = 'all';
+      renderTabs();
+      renderResults();
+    };
+    tabs.appendChild(allBtn);
+
     DATA.modules.forEach(function (module) {
       var button = el('button', '', module.title);
       button.type = 'button';
-      button.setAttribute('aria-pressed', String(module.id === activeModule));
+      button.setAttribute('aria-pressed', String(!scopeAll && module.id === activeModule));
       button.onclick = function () {
         activeModule = module.id;
         scopeAll = false;
@@ -343,15 +398,34 @@
       option.value = module.id;
       wizardModule.appendChild(option);
     });
-    wizardModule.value = activeModule;
+    wizardModule.value = activeModule === 'all' ? DATA.modules[0].id : activeModule;
     var checks = checksFor(WIZARD_CHECKS_KEY);
-    document.querySelectorAll('#wizard-checks input').forEach(function (input, index) {
+    var inputs = document.querySelectorAll('#wizard-checks input');
+    inputs.forEach(function (input, index) {
       input.checked = checks[index];
       input.onchange = function () {
         checks[index] = input.checked;
         saveChecks(WIZARD_CHECKS_KEY, checks);
       };
     });
+
+    if (!document.getElementById('wizard-checks-reset')) {
+      var resetBtn = el('button', 'mini-button', 'Μηδενισμός ελέγχων');
+      resetBtn.id = 'wizard-checks-reset';
+      resetBtn.type = 'button';
+      resetBtn.style.margin = '8px 8px 8px 0';
+      resetBtn.onclick = function () {
+        inputs.forEach(function (input, index) {
+          input.checked = false;
+          checks[index] = false;
+        });
+        saveChecks(WIZARD_CHECKS_KEY, checks);
+      };
+      var wizardChecks = document.getElementById('wizard-checks');
+      if (wizardChecks && wizardChecks.parentNode) {
+        wizardChecks.parentNode.insertBefore(resetBtn, document.getElementById('wizard-run'));
+      }
+    }
   }
 
   function showMode(name) {
@@ -407,6 +481,7 @@
     };
     q.addEventListener('input', function () {
       scopeAll = true;
+      renderTabs();
       scheduleRender();
     });
     document.querySelectorAll('[data-query]').forEach(function (button) {

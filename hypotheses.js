@@ -53,7 +53,10 @@
         safety: $('check-safety').checked,
         source: $('check-source').checked,
         notify: $('check-notify').checked
-      }
+      },
+      checks: ['check-safety', 'check-source', 'check-notify'].filter(function (id) {
+        return $(id) && $(id).checked;
+      })
     };
   }
 

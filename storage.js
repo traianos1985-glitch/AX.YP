@@ -128,6 +128,12 @@
     return Promise.resolve({ low: false });
   }
 
+  
+  // Αίτημα επίμονης αποθήκευσης στον browser για αποφυγή αυτόματης εκκαθάρισης
+  if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
+    try { navigator.storage.persist().catch(function () {}); } catch (_) {}
+  }
+
   window.AXYP_STORAGE = {
     getItem: getItem,
     setItem: setItem,

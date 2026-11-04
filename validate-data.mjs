@@ -22,7 +22,14 @@ const date = /^\d{4}-\d{2}-\d{2}$/;
 const ids = new Set();
 const moduleIds = new Set();
 const OFFICIAL_HOSTS = ['et.gr', 'gov.gr', 'planet.gr', 'proanakrisi.gr', 'kodiko.gr', 'e-nomothesia.gr'];
-const isOfficial = (url) => OFFICIAL_HOSTS.some((host) => new URL(url).hostname.endsWith(host));
+const isOfficial = (url) => {
+  try {
+    const host = new URL(url).hostname;
+    return OFFICIAL_HOSTS.some((h) => host === h || host.endsWith("." + h));
+  } catch (_) {
+    return false;
+  }
+};
 
 if (!date.test(data.updated) || Number.isNaN(Date.parse(data.updated))) errors.push('DATA.updated: invalid date');
 for (const module of data.modules) {

@@ -18,6 +18,9 @@ const files = [
   'templates.js',
   'sw.js',
   'manifest.json',
+  'vendor/fflate.js',
+  'icon-192.png',
+  'icon-512.png',
   'icon-192.svg',
   'icon-512.svg',
   'icon-maskable.svg',
@@ -32,7 +35,9 @@ function copyStaticFiles() {
       const outDir = path.resolve('dist');
       for (const file of files) {
         if (fs.existsSync(file)) {
-          fs.copyFileSync(file, path.join(outDir, file));
+          const dest = path.join(outDir, file);
+          fs.mkdirSync(path.dirname(dest), { recursive: true });
+          fs.copyFileSync(file, dest);
         }
       }
       if (fs.existsSync('sources')) {
@@ -44,8 +49,5 @@ function copyStaticFiles() {
 
 export default defineConfig({
   base: './',
-  server: {
-    allowedHosts: ['sb-40r56ujyldw6.vercel.run'],
-  },
   plugins: [copyStaticFiles()],
 });

@@ -1,4 +1,4 @@
-import { unzipSync, zipSync } from 'fflate';
+import { unzipSync, zipSync } from './vendor/fflate.js';
 
 const KEY = 'axyp-docx-templates';
 const $ = (id) => document.getElementById(id);
@@ -21,7 +21,21 @@ const getCase = () => {
   }
 };
 
-const extractFields = (xml) => [...new Set((xml.match(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g) || []).map((val) => val.replace(/\{\{|\}\}|\s/g, '')))];
+const normalizeDocxXml = (xml) => {
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (p) => {
+    return p.replace(/\{\{(?:(?!\{\{|\}\})[\s\S])*?\}\}/g, (match) => {
+      if (!match.includes('<')) return match;
+      const plain = match.replace(/<[^>]+>/g, '');
+      const field = plain.match(/^\s*\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}\s*$/);
+      if (field) {
+        return `</w:t></w:r><w:r><w:t xml:space="preserve">{{${field[1]}}}</w:t></w:r><w:r><w:t xml:space="preserve">`;
+      }
+      return match;
+    });
+  });
+};
+
+const extractFields = (xml) => [...new Set((normalizeDocxXml(xml).match(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g) || []).map((val) => val.replace(/\{\{|\}\}|\s/g, '')))];
 const display = (value) => value || '—';
 
 const FIELD_OPTIONS = [

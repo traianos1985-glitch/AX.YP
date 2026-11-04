@@ -1,4 +1,4 @@
-import { zipSync } from 'fflate';
+import { zipSync } from './vendor/fflate.js';
 
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -51,6 +51,11 @@ import { zipSync } from 'fflate';
     };
     item.evidence = ($('case-evidence') ? $('case-evidence').value.trim() : '');
     item.checks = selectedChecks();
+    item.completeness = {
+      safety: item.checks.indexOf('check-safety') !== -1,
+      source: item.checks.indexOf('check-source') !== -1,
+      notify: item.checks.indexOf('check-notify') !== -1
+    };
     item.updatedAt = new Date().toISOString();
 
     var list = JSON.parse(storage().getItem('axyp-hypotheses') || '[]').map(function (entry) {
@@ -66,8 +71,13 @@ import { zipSync } from 'fflate';
     if ($('case-people')) $('case-people').value = item.people || '';
     if ($('case-evidence')) $('case-evidence').value = item.evidence || '';
     var checks = item.checks || [];
+    var completeness = item.completeness || {};
     ['check-safety', 'check-source', 'check-notify'].forEach(function (id) {
-      if ($(id)) $(id).checked = checks.indexOf(id) !== -1;
+      var isChecked = checks.indexOf(id) !== -1 ||
+        (id === 'check-safety' && completeness.safety) ||
+        (id === 'check-source' && completeness.source) ||
+        (id === 'check-notify' && completeness.notify);
+      if ($(id)) $(id).checked = !!isChecked;
     });
   }
 
@@ -116,10 +126,7 @@ import { zipSync } from 'fflate';
     }
   }
 
-  ['case-profile', 'case-people', 'case-evidence', 'check-safety', 'check-source', 'check-notify'].forEach(function (id) {
-    var el = $(id);
-    if (el) el.addEventListener('change', syncExtraFields);
-  });
+  // Auto-save on input change removed to prevent writing before clicking "Αποθήκευση".
 
   function dataUrlBytes(dataUrl) {
     var base64 = String(dataUrl || '').split(',')[1] || '';

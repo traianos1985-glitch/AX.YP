@@ -1,5 +1,5 @@
 // Bump this name whenever the app shell or bundled source content changes.
-const CACHE_NAME = "axyp-v5";
+const CACHE_NAME = "axyp-v6";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -17,6 +17,9 @@ const APP_SHELL = [
   "./template-library.js",
   "./templates.js",
   "./manifest.json",
+  "./vendor/fflate.js",
+  "./icon-192.png",
+  "./icon-512.png",
   "./icon-192.svg",
   "./icon-512.svg",
   "./icon-maskable.svg",
