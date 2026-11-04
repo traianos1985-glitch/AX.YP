@@ -7,7 +7,8 @@ vm.createContext(context);
 vm.runInContext(`${source}\nthis.DATA = window.DATA;`, context);
 const urls = [...new Set(context.DATA.modules.flatMap((module) => module.items || []).map((item) => item.source))];
 const USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
-const ATTEMPTS = 3;
+const ATTEMPTS = 2;
+const CONCURRENCY = 5;
 const failures = [];
 const warnings = [];
 
@@ -18,7 +19,7 @@ async function checkUrl(url) {
       const response = await fetch(url, {
         redirect: 'follow',
         headers: { 'User-Agent': USER_AGENT },
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(12000),
       });
       await response.body?.cancel();
       if (response.status === 404 || response.status === 410) return { failure: `${url}: ${response.status}` };
@@ -27,16 +28,21 @@ async function checkUrl(url) {
     } catch (error) {
       lastProblem = error instanceof Error ? error.message : 'request failed';
     }
-    if (attempt < ATTEMPTS) await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
+    if (attempt < ATTEMPTS) await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
   }
   return { warning: `${url}: ${lastProblem}` };
 }
 
-for (const url of urls) {
-  const result = await checkUrl(url);
-  if (result.failure) failures.push(result.failure);
-  if (result.warning) warnings.push(result.warning);
+let nextIndex = 0;
+async function worker() {
+  while (nextIndex < urls.length) {
+    const url = urls[nextIndex++];
+    const result = await checkUrl(url);
+    if (result.failure) failures.push(result.failure);
+    if (result.warning) warnings.push(result.warning);
+  }
 }
+await Promise.all(Array.from({ length: Math.min(CONCURRENCY, urls.length) }, worker));
 
 if (warnings.length) console.warn(`Could not verify (not counted as broken):\n${warnings.join('\n')}`);
 
