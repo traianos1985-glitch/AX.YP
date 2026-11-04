@@ -155,5 +155,5 @@ assert.equal(incidentSearch.classify('οδηγός μετέφερε κρυμμέ
 assert.equal(incidentSearch.classify('εντοπίστηκε αλλοδαπός με πλαστό διαβατήριο').id, 'migration-documents');
 assert.equal(incidentSearch.classify('αλλοδαπός χωρίς άδεια διαμονής').id, 'migration-stay-status');
 assert.equal(incidentSearch.classify('ανέγειρε οικοδομή χωρίς οικοδομική άδεια').id, 'building-without-permit');
-assert.equal(incidentSearch.classify('διαφωνία για συντελεστή δόμησης').id, null);
+assert.equal(incidentSearch.classify('διαφωνία για συντελεστή δόμησης'), null);
 assert.equal(incidentSearch.classify('βρέθηκε με ποσότητα ναρκωτικών'), null);
