@@ -396,5 +396,5 @@ assert.equal(incidentSearch.classify('σωματική έρευνα τρίτου
 assert.equal(incidentSearch.classify('κατάσχεση ψηφιακών δεδομένων από κινητό τηλέφωνο και αντιγραφή').id, 'kpd-digital-evidence-seizure');
 assert.equal(incidentSearch.classify('κατάσχεση δεδομένων υπολογιστή και έλεγχος ακεραιότητας').id, 'kpd-digital-evidence-seizure');
 assert.equal(incidentSearch.classify('έκθεση έρευνας και μεσεγγύηση ευρημάτων').id, 'kpd-search-report-and-sequestration');
-assert.equal(incidentSearch.classify('έρευνα σε τρίτο πρόσωπο για αντικείμενο και σωματικός έλεγχος'), 'kpd-personal-search');
+assert.equal(incidentSearch.classify('έρευνα σε τρίτο πρόσωπο για αντικείμενο και σωματικός έλεγχος').id, 'kpd-personal-search');
 assert.equal(incidentSearch.classify('είχε μια συζήτηση με τον γείτονα'), null);
