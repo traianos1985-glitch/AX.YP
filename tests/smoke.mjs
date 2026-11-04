@@ -125,3 +125,20 @@ assert.ok(legalModules.find((module) => module.id === 'special-penal').items.eve
 assert.ok(incidentSearch.hasCoverage('σκύλος ιδιοκτήτης δάγκωσε άνθρωπο', dogBite))
 assert.match(app, /AXYPIncidentSearch\.classify/)
 assert.match(app, /Συμπληρωματική διαδικασία — υπό προϋποθέσεις/)
+
+
+// Article-level law entries must distinguish conduct and avoid obsolete/overbroad legal labels.
+const lawContext = { window: {} }
+vm.runInNewContext(await readFile(new URL('../data.js', import.meta.url), 'utf8'), lawContext)
+const allLegalItems = lawContext.window.DATA.modules.flatMap((module) => module.items)
+const findLegal = (id) => allLegalItems.find((item) => item.id === id)
+assert.match(findLegal('special-drugs-20').law, /άρθρο 20/)
+assert.match(findLegal('special-drugs-29').law, /άρθρο 29/)
+assert.match(findLegal('special-drugs-29').procedure, /ποσότητα μόνη της δεν αρκεί/)
+assert.match(findLegal('special-weapons-7').law, /άρθρο 7/)
+assert.match(findLegal('special-weapons-10').law, /άρθρο 10/)
+assert.match(findLegal('special-migration-24').procedure, /διοικητική διαδικασία/)
+assert.match(findLegal('special-migration-25').law, /άρθρο 25/)
+assert.match(findLegal('building-unauthorized').law, /125Θ–125ΙΕ/)
+assert.doesNotMatch(findLegal('building-unauthorized').law, /άρθρο 94 §8/)
+assert.ok(['special-drugs-20','special-drugs-29','special-weapons-7','special-weapons-10','special-migration-24','special-migration-25','building-unauthorized'].every((id) => findLegal(id).status === 'partial'))
