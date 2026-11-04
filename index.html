@@ -102,17 +102,12 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
 @media print{
   body{background:#fff;color:#111}
   main{max-width:none;padding:0}
-  .print-only{display:block;color:#111;font-size:.9rem;margin-bottom:12px}
-  .mode,.toolbar,.search,.wizard,.result-tools,.forms-toolbar,footer,.quick-searches,#hint,#forms-panel,#docs-panel{display:none!important}
-  .row button,.favorite{display:none!important}
-  .row{display:block!important;margin-top:8px}
-  .row a{display:inline-block;color:#111;text-decoration:underline}
-  .notice{display:block!important;color:#111;background:#fff;border:1px solid #999}
-  article,.form-card{box-shadow:none;border:1px solid #bbb;break-inside:avoid;color:#111}
-  article h2{color:#111}
-  .badge{border:1px solid #999;color:#111!important;background:#fff!important}
-  .service-summary{display:none}
-  dl a::after,article a::after,.row a::after{content:" <" attr(href) ">";font-size:.8rem}
+  .print-only{display:none!important}
+  .mode,.toolbar,.search,.wizard,.result-tools,.forms-toolbar,footer,.quick-searches,#hint,#forms-panel,#docs-panel,.case-actions{display:none!important}
+  .row,.actions,button,.favorite,.badge,.notice,.service-summary{display:none!important}
+  article,.form-card,.case-card{box-shadow:none;border:none;break-inside:avoid;color:#111;padding:0;margin-bottom:1.5rem}
+  article h2,.case-card h3{color:#111}
+  a{color:inherit!important;text-decoration:none!important}
   h1{color:#111}
 }
 </style>

@@ -97,9 +97,9 @@
 
   function createDocument(options) {
     var body = paragraph(options.title, true, 'Heading1') +
-      paragraph(options.notice, true) +
+      (options.notice ? paragraph(options.notice, true) : '') +
       table(options.rows) +
-      paragraph('Πηγή πρωτοτύπου: ' + options.source, false);
+      (options.includeSource && options.source ? paragraph('Πηγή: ' + options.source, false) : '');
 
     var documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
 
