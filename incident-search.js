@@ -4,7 +4,7 @@
   var STOPWORDS = ['και','να','με','για','σε','στο','στη','στον','στην','τον','την','του','της','των','τα','το','ο','η','οι','ως','απο','που','ειναι','κατα','προς','περι','μετα','παρα','δια','υπο','επι','ενωπιον','λογω'];
   var CONCEPTS = {
     dog: ['σκυλο','σκυλι','κυνο','κυνα','ζωοσυντροφιας'],
-    animal: ['ζωο','ζωων','σκυλο','σκυλι','γατα','γατεσ','ζωοσυντροφιασ','κουταβ','γατακι','αιγοπροβατ','ιππο'],
+    animal: ['ζωο','ζωων','σκυλο','σκυλι','γατα','γατεσ','ζωοσυντροφιασ','κουταβ','γατακι','αιγοπροβατ','ιππο','αγριο','ενδημ','εξωτικ','πτηνο','πουλερικ','ορνιθ','πουλια'],
     animalHarm: ['κακοποι','βασαν','χτυπ','δηλητηρ','πυροβολ','τραυματ','θανατ','θανατω'],
     animalNeglect: ['παραμελ','πεινα','διψ','αλυσιδ','δεμεν','καταλυμ','ευζω'],
     animalOwner: ['λουρι','συνοδευ','ελευθερ','μικροτσιπ','τσιπ','σημανσ','στειρωσ','dna','ανεμβολιαστ'],
@@ -12,6 +12,16 @@
     animalTheft: ['κλοπ','εκλεψ','αφαιρεσ','αρπαγ'],
     animalNoise: ['γαβγ','υλακ','θορυβ','κοινηησυχ','διαταραξη'],
     animalTransport: ['μεταφορ','μετεφερ','οχημα','φορτηγ','πλοιο','αεροπλανο','ταξιδευ'],
+    animalMutilation: ['ακρωτηριασ','κοψιμοουρασ','κομμενηουρα','κομμενααυτια','φωνητικωνχορδων','ονυχ','δοντι'],
+    animalMedia: ['βιντεο','οπτικοακουσ','φωτογραφ','υλικο','διακιν','παρουσιασ','κατοχη'],
+    animalSexual: ['κτηνοβασ','σεξουαλ','συνευρεσ'],
+    animalDoping: ['ντοπινγκ','doping','αναβολικ','υπερβολικηασκηση','εξαντλητικηασκηση','εκγυμνασ','ουσι'],
+    animalTradition: ['πανηγυρ','παραδοσ','εθιμο','τοπικη','λαϊκη','λαικη'],
+    animalChipAction: ['αφαιρεσ','βγαλε','εβγαλε','αφαιρεθηκε','αφαιρει'],
+    animalEscape: ['δραπέτευ','ξεφυγ','εφυγε','εξοδο','περιφραξ','αυλη'],
+    animalWild: ['αγριαπανιδ','αγριοειδο','αγριο','ενδημ','εξωτικ'],
+    animalBird: ['πουλερικ','ορνιθ','πτηνο','πουλια','πτηνα','κοκορ','παπια','περιστερ'],
+    animalInspection: ['παρεμποδ','αρνηθ','αρνηση','δυσχερ','ελεγχ','επιθεωρ'],
     bite: ['δαγκ','επιθεσ','επιτεθ','δαγκωμα'],
     person: ['ανθρωπ','πολιτ','παθων','τραυματι','σωματικηβλαβη'],
     drug: ['ναρκωτ','εξαρτησιογον','κανναβ','ηρωιν','κοκαιν','μεθαμφεταμ'],
@@ -32,6 +42,51 @@
       id: 'dog-bite', label: 'Πιθανό περιστατικό δαγκώματος ανθρώπου από σκύλο',
       primaryEntryIds: ['zoa-16'], relatedEntryIds: ['zoa-12'],
       notice: 'Η αναγνώριση αφορά θεματικές διατάξεις· το δάγκωμα δεν αποτελεί αυτομάτως ποινικό αδίκημα.'
+    },
+    animalMutilation: {
+      id: 'animal-nontherapeutic-mutilation', label: 'Πιθανό περιστατικό μη θεραπευτικού ακρωτηριασμού ή συμμετοχής ακρωτηριασμένου ζώου σε έκθεση',
+      primaryEntryIds: ['zoa-17'], relatedEntryIds: ['zoa-10', 'zoa-9'],
+      notice: 'Ελέγχεται αν υπήρχε θεραπευτικός σκοπός και, χωριστά, αν το ζώο συμμετείχε σε έκθεση/εκδήλωση. Η εξωτερική εικόνα δεν αρκεί για νομικό χαρακτηρισμό.'
+    },
+    animalMedia: {
+      id: 'animal-violent-audiovisual-material', label: 'Πιθανό περιστατικό υλικού που απεικονίζει βία ή σεξουαλικές πράξεις με ζώα',
+      primaryEntryIds: ['zoa-18'], relatedEntryIds: ['zoa-10'],
+      notice: 'Απαιτούνται τα ειδικά στοιχεία του άρθρου 24 §2, ιδίως το περιεχόμενο και ο σκοπός. Εξετάζεται η εξαίρεση εκπαιδευτικού οπτικοακουστικού υλικού.'
+    },
+    animalDoping: {
+      id: 'animal-doping-or-excessive-exercise', label: 'Πιθανό περιστατικό ντόπινγκ ή υπερβολικής εκγύμνασης ζώου',
+      primaryEntryIds: ['zoa-19'], relatedEntryIds: ['zoa-7'],
+      notice: 'Η χορήγηση ουσίας ή η άσκηση αξιολογείται με βάση τον σκοπό, τον κίνδυνο και τις ειδικές προϋποθέσεις της Σύμβασης.'
+    },
+    animalTradition: {
+      id: 'animal-local-traditional-event', label: 'Εκδήλωση με ζώα στο πλαίσιο τοπικής ή λαϊκής παράδοσης',
+      primaryEntryIds: ['zoa-20'], relatedEntryIds: ['zoa-3', 'zoa-9'],
+      notice: 'Ελέγχονται σωρευτικά η απόφαση δημοτικού συμβουλίου, η παρουσία κτηνιάτρου και οι εκθέσεις πριν και μετά την εκδήλωση.'
+    },
+    animalChipRemoval: {
+      id: 'animal-microchip-removal', label: 'Πιθανή παράνομη αφαίρεση ηλεκτρονικής σήμανσης ζώου',
+      primaryEntryIds: ['zoa-21'], relatedEntryIds: ['zoa-9', 'zoa-12'],
+      notice: 'Ελέγχεται αν υπήρχαν και κτηνιατρική γνωμάτευση αναγκαιότητας και εντολή αρμόδιου εισαγγελέα.'
+    },
+    animalEscape: {
+      id: 'animal-escape-prevention', label: 'Πιθανή παράλειψη μέτρων αποτροπής εξόδου σκύλου από ιδιοκτησία',
+      primaryEntryIds: ['zoa-22'], relatedEntryIds: ['zoa-6', 'zoa-9'],
+      notice: 'Η έξοδος/διαφυγή δεν αποδεικνύει μόνη της παράβαση· εξετάζονται τα πραγματικά μέτρα πρόληψης και η ευθύνη του υπόχρεου.'
+    },
+    animalWild: {
+      id: 'wildlife-possession-or-trade', label: 'Πιθανή κατοχή ή εμπορία είδους άγριας πανίδας',
+      primaryEntryIds: ['zoa-23'], relatedEntryIds: [],
+      notice: 'Απαιτείται ασφαλής ταυτοποίηση είδους και έλεγχος προστατευτικού καθεστώτος, προέλευσης και αδειών από την αρμόδια αρχή.'
+    },
+    animalBirdTrade: {
+      id: 'bird-or-poultry-outdoor-trade', label: 'Πιθανή υπαίθρια πώληση ή μεταφορά πτηνών χωρίς τα απαιτούμενα έγγραφα',
+      primaryEntryIds: ['zoa-24'], relatedEntryIds: ['zoa-13'],
+      notice: 'Οι ακριβείς ισχύουσες κτηνιατρικές/εμπορικές απαιτήσεις δεν έχουν ακόμη πλήρως επαληθευτεί· δεν εμφανίζεται ποσό προστίμου.'
+    },
+    animalInspection: {
+      id: 'animal-inspection-obstruction', label: 'Πιθανή άρνηση ή παρεμπόδιση επίσημου ελέγχου προστασίας ζώων',
+      primaryEntryIds: ['zoa-25'], relatedEntryIds: ['zoa-9'],
+      notice: 'Εξετάζεται αν πρόκειται για επίσημο έλεγχο αρμόδιας αρχής στους τομείς που καλύπτει ο ν. 4235/2014 και αν υπήρξε συγκεκριμένη παρεμπόδιση.'
     },
     animalCruelty: {
       id: 'animal-cruelty', label: 'Πιθανό περιστατικό κακοποίησης ή βάναυσης μεταχείρισης ζώου',
@@ -65,7 +120,7 @@
     },
     animalTransport: {
       id: 'animal-transport', label: 'Πιθανό περιστατικό ακατάλληλης μεταφοράς ή μεταχείρισης ζώου',
-      primaryEntryIds: ['zoa-13'], relatedEntryIds: ['zoa-11'],
+      primaryEntryIds: ['zoa-13'], relatedEntryIds: ['zoa-26', 'zoa-11'],
       notice: 'Η αξιολόγηση εξαρτάται από το μέσο, τις συνθήκες μεταφοράς, την κατάσταση του ζώου και τις εφαρμοστέες ειδικές διατάξεις.'
     },
     drugPersonal: {
@@ -139,6 +194,15 @@
     if (has('dog') && has('bite') && has('person')) return RULES.dog;
 
     if (has('animal')) {
+      if (has('animalChipAction') && hasConcept(words, ['τσιπ','μικροτσιπ','σημανσ'])) return RULES.animalChipRemoval;
+      if (has('animalMutilation')) return RULES.animalMutilation;
+      if (has('animalMedia') && (has('animalHarm') || has('animalSexual'))) return RULES.animalMedia;
+      if (has('animalDoping')) return RULES.animalDoping;
+      if (has('animalTradition')) return RULES.animalTradition;
+      if (has('animalEscape')) return RULES.animalEscape;
+      if (has('animalInspection')) return RULES.animalInspection;
+      if (has('animalBird') && (has('animalTrade') || has('animalTransport'))) return RULES.animalBirdTrade;
+      if (has('animalWild')) return RULES.animalWild;
       if (has('animalHarm')) return RULES.animalCruelty;
       if (has('animalNeglect')) return RULES.animalNeglect;
       if (has('animalTrade')) return RULES.animalTrade;
