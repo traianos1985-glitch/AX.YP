@@ -173,16 +173,26 @@
     }, []);
   }
 
-  function visibleEntries(terms) {
-    var pool = (scopeAll || activeModule === 'all') ? allEntries() : (moduleById(activeModule) ? moduleById(activeModule).items.map(function (item) {
-      return { item: item, module: moduleById(activeModule) };
-    }) : allEntries());
+  function visibleEntries(terms, rawQuery, incidentRule) {
+    var pool;
+    if (incidentRule) {
+      var allowed = incidentRule.primaryEntryIds.concat(incidentRule.relatedEntryIds);
+      pool = allEntries().filter(function (entry) { return allowed.indexOf(entry.item.id) !== -1; });
+    } else {
+      pool = (scopeAll || activeModule === 'all') ? allEntries() : (moduleById(activeModule) ? moduleById(activeModule).items.map(function (item) {
+        return { item: item, module: moduleById(activeModule) };
+      }) : allEntries());
+    }
     var saved = favorites();
     var list = pool.map(function (entry) {
-      return { entry: entry, score: terms.length ? score(entry.item, terms) : 0 };
+      var primary = incidentRule && incidentRule.primaryEntryIds.indexOf(entry.item.id) !== -1;
+      var related = incidentRule && incidentRule.relatedEntryIds.indexOf(entry.item.id) !== -1;
+      var matchedScore = incidentRule ? (primary ? 100 : 25) : (terms.length ? score(entry.item, terms) : 0);
+      return { entry: entry, score: matchedScore, related: !!related };
     }).filter(function (row) {
       var item = row.entry.item;
       if (terms.length && row.score <= 0) return false;
+      if (!incidentRule && terms.length > 2 && !window.AXYPIncidentSearch.hasCoverage(rawQuery, item)) return false;
       if (statusFilter.value !== 'all' && item.status !== statusFilter.value) return false;
       var official = isOfficial(item.source);
       if (sourceFilter.value === 'official' && !official) return false;
@@ -268,7 +278,7 @@
     return wrapper;
   }
 
-  function card(entry, rawQuery) {
+  function card(entry, rawQuery, related) {
     var item = entry.item;
     var official = isOfficial(item.source);
     var article = el('article');
@@ -280,13 +290,14 @@
     article.appendChild(el('span', 'badge ' + (item.status === 'ok' ? 'b-ok' : 'b-wait'), item.status === 'ok' ? 'Επαληθευμένη' : 'Μερική επαλήθευση'));
     article.appendChild(el('span', 'badge ' + (stale ? 'b-old' : 'b-ok'), 'Καταγραφή: ' + item.verified + (stale ? ' · χρειάζεται επαλήθευση' : '')));
     article.appendChild(el('span', 'badge b-info', entry.module.title));
+    if (related) article.appendChild(el('span', 'badge b-info', 'Συμπληρωματική διαδικασία — υπό προϋποθέσεις'));
     article.appendChild(el('span', 'badge b-wait', official ? 'Επίσημη πηγή' : 'Δευτερεύουσα πηγή'));
     if (item.source === 'https://search.et.gr/el/') {
       article.appendChild(el('span', 'badge b-info', 'Επίσημη αναζήτηση ΦΕΚ'));
     }
 
     var dl = el('dl');
-    [['Διάταξη', item.law], ['Ποινή ή πρόστιμο', item.penalty], ['Διαδικασία', item.procedure], ['Σημειώσεις', item.notes]].forEach(function (pair) {
+    [['Διάταξη', item.law], ['Ποινή ή πρόστιμο', item.penalty], ['Διαδικασία / υπηρεσιακές ενέργειες', item.procedure], ['Σημειώσεις', item.notes]].forEach(function (pair) {
       dl.appendChild(el('dt', '', pair[0]));
       dl.appendChild(el('dd', '', pair[1]));
     });
@@ -348,7 +359,8 @@
   function renderResults() {
     var raw = q.value.trim();
     var terms = expandTerms(raw);
-    var list = visibleEntries(terms);
+    var incidentRule = window.AXYPIncidentSearch.classify(raw);
+    var list = visibleEntries(terms, raw, incidentRule);
     out.textContent = '';
     resultCount.textContent = list.length + (list.length === 1 ? ' αποτέλεσμα' : ' αποτελέσματα');
     if (!list.length) {
@@ -356,8 +368,10 @@
       out.appendChild(el('div', 'empty', 'Δοκίμασε διαφορετικές λέξεις-κλειδιά, άλλη ενότητα ή αφαιρέσε τα φίλτρα.'));
       return;
     }
-    hint.textContent = terms.length ? list.length + ' σχετικές εγγραφές σε όλη τη βάση.' : 'Εμφανίζονται ' + list.length + ' εγγραφές της ενότητας.';
-    list.forEach(function (row) { out.appendChild(card(row.entry, raw)); });
+    hint.textContent = incidentRule
+      ? incidentRule.label + '. Εμφανίζονται οι βασικές και οι υπό προϋποθέσεις συμπληρωματικές εγγραφές.'
+      : (terms.length ? list.length + ' σχετικές εγγραφές σε όλη τη βάση.' : 'Εμφανίζονται ' + list.length + ' εγγραφές της ενότητας.');
+    list.forEach(function (row) { out.appendChild(card(row.entry, raw, row.related)); });
   }
 
   function scheduleRender() {
