@@ -5,6 +5,7 @@ const APP_SHELL = [
   "./index.html",
   "./storage.js",
   "./case-folder-storage.js",
+  "./case-folder-storage.js",
   "./data.js",
   "./forms.js",
   "./docx-export.js",
