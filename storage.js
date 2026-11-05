@@ -35,7 +35,8 @@
     'axyp-favorites',
     'axyp-form-profile',
     'axyp-theme',
-    'axyp-privacy'
+    'axyp-privacy',
+    'axyp-narcotics-templates-seeded-v1'
   ];
 
   // Αρχική ανάγνωση από localStorage
@@ -46,27 +47,45 @@
     } catch (_) {}
   });
 
-  // Συγχρονισμός/μεταφορά από IndexedDB
-  openDB().then(function (db) {
+  // Η αρχικοποίηση εκτίθεται ως Promise ώστε οι λειτουργίες που εξαρτώνται
+  // από αποθηκευμένα δεδομένα να περιμένουν να ολοκληρωθεί η ανάγνωση από IndexedDB.
+  var ready = openDB().then(function (db) {
     if (!db) return;
-    try {
-      var tx = db.transaction(STORE_NAME, 'readonly');
-      var store = tx.objectStore(STORE_NAME);
-      KNOWN_KEYS.forEach(function (k) {
-        var req = store.get(k);
-        req.onsuccess = function () {
-          if (req.result !== undefined && req.result !== null) {
-            cache[k] = req.result;
-          } else if (cache[k] !== undefined) {
-            try {
-              var wtx = db.transaction(STORE_NAME, 'readwrite');
-              wtx.objectStore(STORE_NAME).put(cache[k], k);
-            } catch (_) {}
+    return new Promise(function (resolve) {
+      var pendingWrites = [];
+      try {
+        var tx = db.transaction(STORE_NAME, 'readonly');
+        var store = tx.objectStore(STORE_NAME);
+        KNOWN_KEYS.forEach(function (k) {
+          var req = store.get(k);
+          req.onsuccess = function () {
+            if (req.result !== undefined && req.result !== null) {
+              cache[k] = req.result;
+            } else if (cache[k] !== undefined) {
+              pendingWrites.push([k, cache[k]]);
+            }
+          };
+        });
+        tx.oncomplete = function () {
+          if (!pendingWrites.length) return resolve();
+          try {
+            var writeTx = db.transaction(STORE_NAME, 'readwrite');
+            var writeStore = writeTx.objectStore(STORE_NAME);
+            pendingWrites.forEach(function (entry) { writeStore.put(entry[1], entry[0]); });
+            writeTx.oncomplete = resolve;
+            writeTx.onerror = resolve;
+            writeTx.onabort = resolve;
+          } catch (_) {
+            resolve();
           }
         };
-      });
-    } catch (_) {}
-  });
+        tx.onerror = resolve;
+        tx.onabort = resolve;
+      } catch (_) {
+        resolve();
+      }
+    });
+  }).catch(function () {});
 
   function getItem(key) {
     if (cache[key] !== undefined) return cache[key];
@@ -167,6 +186,7 @@
     setItem: setItem,
     removeItem: removeItem,
     clear: clear,
-    checkQuota: checkQuota
+    checkQuota: checkQuota,
+    ready: ready
   };
 })();

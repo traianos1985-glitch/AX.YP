@@ -471,3 +471,7 @@ assert.equal(timeline.examinationStartTime, '05:30')
 assert.equal(timeline.examinationEndTime, '05:35')
 
 console.log('Dossier timeline calculation smoke tests passed.')
+
+
+// Import and execute narcotics templates test suite
+await import('./narcotics-templates.mjs');
