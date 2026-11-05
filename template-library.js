@@ -1,11 +1,67 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
+import { DEFAULT_NARCOTICS_TEMPLATES } from './dossier-templates-data.js';
 
 const KEY = 'axyp-docx-templates';
+const SEED_KEY = 'axyp-narcotics-templates-seeded-v1';
 const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
 const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } catch (_) { return []; } };
 const write = (value) => storage().setItem(KEY, JSON.stringify(value));
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[ch]);
+
+export function ensureDefaultTemplates(storageInstance = storage()) {
+  try {
+    const isSeeded = storageInstance.getItem(SEED_KEY);
+    if (isSeeded) return;
+
+    const existing = (() => {
+      try { return JSON.parse(storageInstance.getItem(KEY) || '[]'); } catch (_) { return []; }
+    })();
+
+    const existingNames = new Set(existing.map((t) => t.name));
+    const toAdd = DEFAULT_NARCOTICS_TEMPLATES.filter((t) => !existingNames.has(t.name));
+
+    if (toAdd.length > 0) {
+      storageInstance.setItem(KEY, JSON.stringify([...existing, ...toAdd]));
+    }
+    storageInstance.setItem(SEED_KEY, 'true');
+  } catch (e) {
+    console.error('Failed to seed default templates:', e);
+  }
+}
+
+export async function initializeDefaultTemplates(storageInstance = storage()) {
+  // Το storage.js ολοκληρώνει πρώτα την ανάγνωση/μεταφορά από IndexedDB.
+  // Έτσι το seed δεν μπορεί να πατήσει πάνω σε νεότερα αποθηκευμένα δεδομένα.
+  if (storageInstance && storageInstance.ready && typeof storageInstance.ready.then === 'function') {
+    await storageInstance.ready;
+  }
+  ensureDefaultTemplates(storageInstance);
+}
+
+export function base64ToUint8(base64) {
+  if (typeof atob === 'function') {
+    const bin = atob(base64);
+    const len = bin.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+  if (typeof Buffer !== 'undefined') {
+    return new Uint8Array(Buffer.from(base64, 'base64'));
+  }
+  throw new Error('No base64 decoding function available');
+}
+
+export function getTemplateParts(template) {
+  if (template.files) {
+    return Object.fromEntries(Object.entries(template.files).map(([name, data]) => [name, new Uint8Array(data)]));
+  }
+  if (template.dataBase64) {
+    return unzipSync(base64ToUint8(template.dataBase64));
+  }
+  return {};
+}
 
 const getCase = () => {
   try {
@@ -235,7 +291,7 @@ function valueFor(path, item) {
   return display(map[path]);
 }
 
-function replaceInXml(xml, template, item) {
+export function replaceInXml(xml, template, item) {
   return xml.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, path) => {
     const mapped = mappingFor(template, path);
     const raw = mapped ? valueFor(mapped, item) : `{{${path}}}`;
@@ -250,16 +306,36 @@ function render() {
   if (!root) return;
   root.textContent = '';
   const currentCase = getCase();
+  const allTemplates = read();
 
-  read().forEach((template, index) => {
+  const narcoticsList = allTemplates.filter((t) => t.category === 'narcotics' || t.name.startsWith('0') || t.name.startsWith('10_'));
+  if (narcoticsList.length > 0) {
+    const section = document.createElement('h3');
+    section.className = 'template-category-heading';
+    section.textContent = `Δικογραφία Ναρκωτικών (${narcoticsList.length} πρότυπα)`;
+    root.appendChild(section);
+  }
+
+  let otherHeadingAdded = false;
+  allTemplates.forEach((template, index) => {
+    const isNarcoticsTemplate = template.category === 'narcotics' || template.name.startsWith('0') || template.name.startsWith('10_');
+    if (!isNarcoticsTemplate && !otherHeadingAdded) {
+      const section = document.createElement('h3');
+      section.className = 'template-category-heading';
+      section.textContent = 'Πρόσθετα / προσαρμοσμένα πρότυπα';
+      root.appendChild(section);
+      otherHeadingAdded = true;
+    }
     const card = document.createElement('article');
     card.className = 'template-file-card template-review-card';
     card.innerHTML =
-      '<div class="template-review-head"><div><strong></strong><p class="muted"></p></div><button type="button" class="text-button remove">Διαγραφή</button></div>' +
+      '<div class="template-review-head"><div><strong></strong><span class="mapping-status" style="margin-left:8px; font-size:0.8rem;"></span><p class="muted"></p></div><button type="button" class="text-button remove">Διαγραφή</button></div>' +
       '<div class="mapping-review"></div>' +
       '<div class="template-review-actions"><span class="mapping-result muted"></span><button type="button" class="mini-button save-mapping">Αποθήκευση αντιστοίχισης</button><button type="button" class="mini-button generate" disabled>Συμπλήρωση Word</button></div>';
 
     card.querySelector('strong').textContent = template.name;
+    const catLabel = template.categoryLabel || (template.category === 'narcotics' || template.name.startsWith('0') || template.name.startsWith('10_') ? 'Δικογραφία Ναρκωτικών' : 'Προσαρμοσμένο');
+    card.querySelector('.mapping-status').textContent = catLabel;
     const caseNote = currentCase && currentCase.title ? ` (ενεργή υπόθεση: «${currentCase.title}»)` : ' (δεν έχει επιλεγεί υπόθεση)';
     card.querySelector('p').textContent = `${template.fields.length} placeholders εντοπίστηκαν${caseNote}.`;
 
@@ -345,13 +421,15 @@ function importTemplate(event) {
   });
 }
 
-async function generate(template) {
+export async function generate(template) {
   const item = getCase();
   if (!item || !item.id) {
-    window.alert('Επίλεξε ρητά την υπόθεση που αφορά το έγγραφο πριν από τη συμπλήρωση.');
+    if (typeof window !== 'undefined' && window.alert) {
+      window.alert('Επίλεξε ρητά την υπόθεση που αφορά το έγγραφο πριν από τη συμπλήρωση.');
+    }
     return;
   }
-  const files = Object.fromEntries(Object.entries(template.files).map(([name, data]) => [name, new Uint8Array(data)]));
+  const files = getTemplateParts(template);
 
   // Αντικατάσταση placeholders σε document.xml, headers και footers
   Object.keys(files).forEach((filename) => {
@@ -385,10 +463,16 @@ async function generate(template) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+
 if (typeof document !== 'undefined') {
   $('template-file')?.addEventListener('change', importTemplate);
   if (typeof window !== 'undefined') {
-    window.TemplateLibrary = { refresh: render };
+    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts };
   }
-  render();
+  initializeDefaultTemplates()
+    .then(render)
+    .catch((error) => {
+      console.error('Template library initialization failed:', error);
+      render();
+    });
 }
