@@ -15,6 +15,7 @@ const files = [
   'security.js',
   'storage.js',
   'template-library.js',
+  'dossier-templates-data.js',
   'templates.js',
   'sw.js',
   'manifest.json',
@@ -39,6 +40,9 @@ function copyStaticFiles() {
           fs.mkdirSync(path.dirname(dest), { recursive: true });
           fs.copyFileSync(file, dest);
         }
+      }
+      if (fs.existsSync('templates')) {
+        fs.cpSync('templates', path.join(outDir, 'templates'), { recursive: true });
       }
       if (fs.existsSync('sources')) {
         fs.cpSync('sources', path.join(outDir, 'sources'), { recursive: true });
