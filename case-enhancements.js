@@ -73,6 +73,7 @@ import { zipSync } from './vendor/fflate.js';
       idDate: ($('offender-id-date') ? $('offender-id-date').value : ''),
       idService: ($('offender-id-service') ? $('offender-id-service').value.trim() : ''),
       taxId: ($('offender-tax-id') ? $('offender-tax-id').value.trim() : ''),
+      taxOffice: ($('offender-tax-office') ? $('offender-tax-office').value.trim() : ''),
       phone: ($('offender-phone') ? $('offender-phone').value.trim() : ''),
       email: ($('offender-email') ? $('offender-email').value.trim() : '')
     };

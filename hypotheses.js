@@ -126,6 +126,8 @@ function uid() {
       people: $('case-people').value.trim(),
       location: ($('case-location') ? $('case-location').value.trim() : ''),
       time: ($('case-time') ? $('case-time').value : ''),
+      incidentDate: ($('case-incident-date') ? $('case-incident-date').value : ''),
+      incidentTime: ($('case-incident-time') ? $('case-incident-time').value : ''),
       prosecutor: ($('case-prosecutor') ? $('case-prosecutor').value.trim() : ''),
       arrestingOfficer: ($('case-arresting-officer') ? $('case-arresting-officer').value.trim() : ''),
       officerA: {
@@ -169,6 +171,7 @@ function uid() {
         idDate: $('offender-id-date').value,
         idService: $('offender-id-service').value.trim(),
         taxId: $('offender-tax-id').value.trim(),
+        taxOffice: $('offender-tax-office').value.trim(),
         phone: $('offender-phone').value.trim(),
         email: $('offender-email').value.trim()
       },
@@ -212,6 +215,27 @@ function uid() {
       },
       health: {
         description: $('case-profile').value === 'health' && $('health-description') ? $('health-description').value.trim() : ''
+      },
+      noise: {
+        description: $('case-profile').value === 'noise' && $('noise-description') ? $('noise-description').value.trim() : '',
+        establishmentName: $('case-profile').value === 'noise' && $('noise-establishment-name') ? $('noise-establishment-name').value.trim() : '',
+        measuredDecibels: $('case-profile').value === 'noise' && $('noise-measured-decibels') ? $('noise-measured-decibels').value.trim() : '',
+        limitDecibels: $('case-profile').value === 'noise' && $('noise-limit-decibels') ? $('noise-limit-decibels').value.trim() : '',
+        legalProvision: $('case-profile').value === 'noise' && $('noise-legal-provision') ? $('noise-legal-provision').value.trim() : '',
+        regulationNumber: $('case-profile').value === 'noise' && $('noise-regulation-number') ? $('noise-regulation-number').value.trim() : ''
+      },
+      owner: {
+        fullName: $('case-profile').value === 'noise' && $('noise-owner-full-name') ? $('noise-owner-full-name').value.trim() : '',
+        fatherName: $('case-profile').value === 'noise' && $('noise-owner-father-name') ? $('noise-owner-father-name').value.trim() : '',
+        motherName: $('case-profile').value === 'noise' && $('noise-owner-mother-name') ? $('noise-owner-mother-name').value.trim() : '',
+        birthDate: $('case-profile').value === 'noise' && $('noise-owner-birth-date') ? $('noise-owner-birth-date').value : '',
+        birthPlace: $('case-profile').value === 'noise' && $('noise-owner-birth-place') ? $('noise-owner-birth-place').value.trim() : '',
+        city: $('case-profile').value === 'noise' && $('noise-owner-city') ? $('noise-owner-city').value.trim() : '',
+        idNumber: $('case-profile').value === 'noise' && $('noise-owner-id-number') ? $('noise-owner-id-number').value.trim() : '',
+        idDate: $('case-profile').value === 'noise' && $('noise-owner-id-date') ? $('noise-owner-id-date').value : '',
+        idService: $('case-profile').value === 'noise' && $('noise-owner-id-service') ? $('noise-owner-id-service').value.trim() : '',
+        taxId: $('case-profile').value === 'noise' && $('noise-owner-tax-id') ? $('noise-owner-tax-id').value.trim() : '',
+        taxOffice: $('case-profile').value === 'noise' && $('noise-owner-tax-office') ? $('noise-owner-tax-office').value.trim() : ''
       },
       notes: $('case-notes').value.trim(),
       completeness: {
@@ -283,6 +307,8 @@ function uid() {
     $('case-people').value = item.people || '';
     if ($('case-location')) $('case-location').value = item.location || '';
     if ($('case-time')) $('case-time').value = item.time || '';
+    if ($('case-incident-date')) $('case-incident-date').value = item.incidentDate || '';
+    if ($('case-incident-time')) $('case-incident-time').value = item.incidentTime || '';
     if ($('case-prosecutor')) $('case-prosecutor').value = item.prosecutor || '';
     if ($('case-arresting-officer')) $('case-arresting-officer').value = item.arrestingOfficer || '';
     var officerA = item.officerA || {};
@@ -302,7 +328,7 @@ function uid() {
     if ($('counterfeit-seizure-start')) $('counterfeit-seizure-start').value = timeline.seizureStartTime || '';
     if ($('counterfeit-seizure-end')) $('counterfeit-seizure-end').value = timeline.seizureEndTime || '';
     if ($('counterfeit-serial-number')) $('counterfeit-serial-number').value = (item.counterfeit && item.counterfeit.serialNumber) || '';
-    $('offender-section-title').textContent = (item.profile === 'narcotics' || item.profile === 'environment' || item.profile === 'health') ? 'Στοιχεία δράστη' : item.profile === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
+    $('offender-section-title').textContent = (item.profile === 'narcotics' || item.profile === 'environment' || item.profile === 'health' || item.profile === 'noise') ? 'Στοιχεία δράστη' : item.profile === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
     var offender = item.profile === 'counterfeit' ? ((item.counterfeit && item.counterfeit.depositor) || {}) : (item.offender || {});
     var offenderA = item.offenderA || {};
     var offenderB = item.offenderB || {};
@@ -333,6 +359,25 @@ function uid() {
     if ($('environment-examination-start')) $('environment-examination-start').value = (item.timeline && item.timeline.examinationStartTime) || '';
     if ($('environment-examination-end')) $('environment-examination-end').value = (item.timeline && item.timeline.examinationEndTime) || '';
     if ($('health-description')) $('health-description').value = (item.health && item.health.description) || '';
+    if ($('noise-description')) $('noise-description').value = (item.noise && item.noise.description) || '';
+    if ($('noise-establishment-name')) $('noise-establishment-name').value = (item.noise && item.noise.establishmentName) || '';
+    if ($('noise-measured-decibels')) $('noise-measured-decibels').value = (item.noise && item.noise.measuredDecibels) || '';
+    if ($('noise-limit-decibels')) $('noise-limit-decibels').value = (item.noise && item.noise.limitDecibels) || '';
+    if ($('noise-legal-provision')) $('noise-legal-provision').value = (item.noise && item.noise.legalProvision) || '';
+    if ($('noise-regulation-number')) $('noise-regulation-number').value = (item.noise && item.noise.regulationNumber) || '';
+    var owner = item.owner || {};
+    if ($('noise-owner-full-name')) $('noise-owner-full-name').value = owner.fullName || '';
+    if ($('noise-owner-father-name')) $('noise-owner-father-name').value = owner.fatherName || '';
+    if ($('noise-owner-mother-name')) $('noise-owner-mother-name').value = owner.motherName || '';
+    if ($('noise-owner-birth-date')) $('noise-owner-birth-date').value = owner.birthDate || '';
+    if ($('noise-owner-birth-place')) $('noise-owner-birth-place').value = owner.birthPlace || '';
+    if ($('noise-owner-city')) $('noise-owner-city').value = owner.city || '';
+    if ($('noise-owner-id-number')) $('noise-owner-id-number').value = owner.idNumber || '';
+    if ($('noise-owner-id-date')) $('noise-owner-id-date').value = owner.idDate || '';
+    if ($('noise-owner-id-service')) $('noise-owner-id-service').value = owner.idService || '';
+    if ($('noise-owner-tax-id')) $('noise-owner-tax-id').value = owner.taxId || '';
+    if ($('noise-owner-tax-office')) $('noise-owner-tax-office').value = owner.taxOffice || '';
+    if ($('noise-fields')) $('noise-fields').hidden = item.profile !== 'noise';
     if ($('health-arrest-start')) $('health-arrest-start').value = (item.timeline && item.timeline.arrestStartTime) || '';
     if ($('health-arrest-end')) $('health-arrest-end').value = (item.timeline && item.timeline.arrestEndTime) || '';
     if ($('health-examination-start')) $('health-examination-start').value = (item.timeline && item.timeline.examinationStartTime) || '';
@@ -349,6 +394,7 @@ function uid() {
     $('offender-id-date').value = offender.idDate || '';
     $('offender-id-service').value = offender.idService || '';
     $('offender-tax-id').value = offender.taxId || '';
+    $('offender-tax-office').value = offender.taxOffice || '';
     $('offender-phone').value = offender.phone || '';
     $('offender-email').value = offender.email || '';
     $('case-evidence').value = item.evidence || '';

@@ -492,6 +492,9 @@ await import('./environment-templates.mjs');
 // Health dossier templates regression tests
 await import('./health-templates.mjs');
 
+// Noise-pollution dossier template regression tests
+await import('./noise-templates.mjs');
+
 // Commerce dossier actor A/B field mapping and generated-document regressions
 await import('./commerce-templates.mjs');
 
