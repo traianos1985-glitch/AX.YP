@@ -1,8 +1,9 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
-import { DEFAULT_NARCOTICS_TEMPLATES } from './dossier-templates-data.js';
+import { DEFAULT_NARCOTICS_TEMPLATES, DEFAULT_COUNTERFEIT_TEMPLATES } from './dossier-templates-data.js';
 
 const KEY = 'axyp-docx-templates';
-const SEED_KEY = 'axyp-narcotics-templates-seeded-v1';
+const NARCOTICS_SEED_KEY = 'axyp-narcotics-templates-seeded-v1';
+const COUNTERFEIT_SEED_KEY = 'axyp-counterfeit-templates-seeded-v1';
 const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
 const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } catch (_) { return []; } };
@@ -11,20 +12,42 @@ const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '
 
 export function ensureDefaultTemplates(storageInstance = storage()) {
   try {
-    const isSeeded = storageInstance.getItem(SEED_KEY);
-    if (isSeeded) return;
-
     const existing = (() => {
       try { return JSON.parse(storageInstance.getItem(KEY) || '[]'); } catch (_) { return []; }
     })();
 
     const existingNames = new Set(existing.map((t) => t.name));
-    const toAdd = DEFAULT_NARCOTICS_TEMPLATES.filter((t) => !existingNames.has(t.name));
+    let updated = [...existing];
+    let hasChanges = false;
 
-    if (toAdd.length > 0) {
-      storageInstance.setItem(KEY, JSON.stringify([...existing, ...toAdd]));
+    // 1. Narcotics templates seeding
+    if (!storageInstance.getItem(NARCOTICS_SEED_KEY)) {
+      const toAddNarcotics = (DEFAULT_NARCOTICS_TEMPLATES || []).filter((t) => !existingNames.has(t.name));
+      if (toAddNarcotics.length > 0) {
+        updated = [...updated, ...toAddNarcotics];
+        toAddNarcotics.forEach((t) => existingNames.add(t.name));
+        hasChanges = true;
+      }
+      storageInstance.setItem(NARCOTICS_SEED_KEY, 'true');
     }
-    storageInstance.setItem(SEED_KEY, 'true');
+
+    // 2. Counterfeit templates seeding. Add the category-specific serial-number
+    // field to the three source documents where the same value is repeated.
+    if (!storageInstance.getItem(COUNTERFEIT_SEED_KEY)) {
+      const toAddCounterfeit = (DEFAULT_COUNTERFEIT_TEMPLATES || [])
+        .filter((t) => !existingNames.has(t.name))
+        .map(prepareCounterfeitTemplate);
+      if (toAddCounterfeit.length > 0) {
+        updated = [...updated, ...toAddCounterfeit];
+        toAddCounterfeit.forEach((t) => existingNames.add(t.name));
+        hasChanges = true;
+      }
+      storageInstance.setItem(COUNTERFEIT_SEED_KEY, 'true');
+    }
+
+    if (hasChanges) {
+      storageInstance.setItem(KEY, JSON.stringify(updated));
+    }
   } catch (e) {
     console.error('Failed to seed default templates:', e);
   }
@@ -37,6 +60,42 @@ export async function initializeDefaultTemplates(storageInstance = storage()) {
     await storageInstance.ready;
   }
   ensureDefaultTemplates(storageInstance);
+}
+
+function uint8ToBase64(bytes) {
+  if (typeof Buffer !== 'undefined') return Buffer.from(bytes).toString('base64');
+  if (typeof btoa === 'function') {
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(binary);
+  }
+  throw new Error('No base64 encoding function available');
+}
+
+function prepareCounterfeitTemplate(template) {
+  const targetIds = new Set(['counterfeit-01', 'counterfeit-02', 'counterfeit-03']);
+  if (!targetIds.has(template.id)) return template;
+  const parts = getTemplateParts(template);
+  const documentPath = 'word/document.xml';
+  if (!parts[documentPath]) throw new Error('Missing main DOCX document for ' + template.id);
+  let xml = normalizeDocxXml(new TextDecoder().decode(parts[documentPath]));
+  if (!xml.includes('{{counterfeit.serialNumber}}')) {
+    const evidenceParagraph = xml.match(/<w:p\b[^>]*>[\s\S]*?\{\{\s*evidence\.quantity\s*\}\}[\s\S]*?<\/w:p>/);
+    if (!evidenceParagraph) throw new Error('Could not locate evidence quantity paragraph in ' + template.id);
+    const serialParagraph = '<w:p><w:pPr><w:pStyle w:val="Normal"/></w:pPr><w:r><w:t xml:space="preserve">Σειριακός αριθμός πλαστού χαρτονομίσματος: {{counterfeit.serialNumber}}</w:t></w:r></w:p>';
+    xml = xml.replace(evidenceParagraph[0], evidenceParagraph[0] + serialParagraph);
+  }
+  parts[documentPath] = new TextEncoder().encode(xml);
+  const bytes = zipSync(parts);
+  return {
+    ...template,
+    dataBase64: uint8ToBase64(bytes),
+    size: bytes.length,
+    fields: [...new Set([...(template.fields || []), 'counterfeit.serialNumber'])],
+    mappings: { ...(template.mappings || {}), 'counterfeit.serialNumber': 'counterfeit.serialNumber' }
+  };
 }
 
 export function base64ToUint8(base64) {
@@ -174,7 +233,36 @@ const FIELD_OPTIONS = [
   { path: 'person.taxId', label: 'Πρόσωπο · Α.Φ.Μ.' },
   { path: 'person.phone', label: 'Πρόσωπο · Τηλέφωνο' },
   { path: 'person.email', label: 'Πρόσωπο · Email' },
+  { path: 'counterfeit.witness.fullName', label: 'Πλαστά · Μάρτυρας · Ονοματεπώνυμο' },
+  { path: 'counterfeit.witness.surname', label: 'Πλαστά · Μάρτυρας · Επώνυμο' },
+  { path: 'counterfeit.witness.name', label: 'Πλαστά · Μάρτυρας · Όνομα' },
+  { path: 'counterfeit.witness.fatherName', label: 'Πλαστά · Μάρτυρας · Πατρώνυμο' },
+  { path: 'counterfeit.witness.motherName', label: 'Πλαστά · Μάρτυρας · Μητρώνυμο' },
+  { path: 'counterfeit.witness.birthDate', label: 'Πλαστά · Μάρτυρας · Ημερομηνία γέννησης' },
+  { path: 'counterfeit.witness.birthPlace', label: 'Πλαστά · Μάρτυρας · Τόπος γέννησης' },
+  { path: 'counterfeit.witness.city', label: 'Πλαστά · Μάρτυρας · Πόλη κατοικίας' },
+  { path: 'counterfeit.witness.address', label: 'Πλαστά · Μάρτυρας · Διεύθυνση' },
+  { path: 'counterfeit.witness.idNumber', label: 'Πλαστά · Μάρτυρας · Αριθμός ταυτότητας' },
+  { path: 'counterfeit.witness.idDate', label: 'Πλαστά · Μάρτυρας · Ημερομηνία έκδοσης ταυτότητας' },
+  { path: 'counterfeit.witness.idService', label: 'Πλαστά · Μάρτυρας · Υπηρεσία έκδοσης' },
+  { path: 'counterfeit.witness.email', label: 'Πλαστά · Μάρτυρας · Email' },
+  { path: 'counterfeit.depositor.fullName', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Ονοματεπώνυμο' },
+  { path: 'counterfeit.depositor.surname', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Επώνυμο' },
+  { path: 'counterfeit.depositor.name', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Όνομα' },
+  { path: 'counterfeit.depositor.fatherName', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Πατρώνυμο' },
+  { path: 'counterfeit.depositor.motherName', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Μητρώνυμο' },
+  { path: 'counterfeit.depositor.birthDate', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Ημερομηνία γέννησης' },
+  { path: 'counterfeit.depositor.birthPlace', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Τόπος γέννησης' },
+  { path: 'counterfeit.depositor.city', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Πόλη κατοικίας' },
+  { path: 'counterfeit.depositor.address', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Διεύθυνση' },
+  { path: 'counterfeit.depositor.idNumber', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Αριθμός ταυτότητας' },
+  { path: 'counterfeit.depositor.idDate', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Ημερομηνία έκδοσης ταυτότητας' },
+  { path: 'counterfeit.depositor.idService', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Υπηρεσία έκδοσης' },
+  { path: 'counterfeit.depositor.taxId', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Α.Φ.Μ.' },
+  { path: 'counterfeit.depositor.phone', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Τηλέφωνο' },
+  { path: 'counterfeit.depositor.email', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Email' },
   { path: 'evidence.quantity', label: 'Ευρήματα · Ποσότητες' },
+  { path: 'counterfeit.serialNumber', label: 'Πλαστό νόμισμα · Σειριακός αριθμός' },
   { path: 'timeline.witness.startTime', label: '1. Κατάθεση · Ώρα έναρξης' },
   { path: 'timeline.witness.endTime', label: "1. Κατάθεση · Ώρα περάτωσης (+5')" },
   { path: 'timeline.arrest.startTime', label: "2. Έκθεση σύλληψης · Ώρα έναρξης (+1')" },
@@ -199,15 +287,20 @@ function mappingFor(template, field) {
   return '';
 }
 
-function valueFor(path, item) {
+export function valueFor(path, item) {
   if (!item) return '—';
   const offender = item.offender || {};
+  const counterfeit = item.counterfeit || {};
+  const witness = counterfeit.witness || {};
+  const depositor = counterfeit.depositor || {};
+  const witnessFullName = [witness.surname, witness.name].filter(Boolean).join(' ');
+  const depositorFullName = [depositor.surname, depositor.name].filter(Boolean).join(' ');
   const officerA = item.officerA || {};
   const officerB = item.officerB || {};
   const officerAFull = [officerA.rank, officerA.surname, officerA.name].filter(Boolean).join(' ');
   const officerBFull = [officerB.rank, officerB.surname, officerB.name].filter(Boolean).join(' ');
   const timeline = item.timeline || {};
-  const computed = computeTimeline(item.time || '');
+  const computed = item.profile === 'narcotics' ? computeTimeline(item.time || '') : {};
   const getTime = (key) => timeline[key] || computed[key] || item[key] || '';
   const map = {
     'case.title': item.title,
@@ -234,6 +327,35 @@ function valueFor(path, item) {
     'officerB.name': officerB.name,
     'officerB.service': officerB.service,
     'evidence.quantity': item.evidence,
+    'counterfeit.serialNumber': item.counterfeit && item.counterfeit.serialNumber,
+    'counterfeit.witness.fullName': witnessFullName,
+    'counterfeit.witness.surname': witness.surname,
+    'counterfeit.witness.name': witness.name,
+    'counterfeit.witness.fatherName': witness.fatherName,
+    'counterfeit.witness.motherName': witness.motherName,
+    'counterfeit.witness.birthDate': witness.birthDate,
+    'counterfeit.witness.birthPlace': witness.birthPlace,
+    'counterfeit.witness.city': witness.city,
+    'counterfeit.witness.address': witness.address,
+    'counterfeit.witness.idNumber': witness.idNumber,
+    'counterfeit.witness.idDate': witness.idDate,
+    'counterfeit.witness.idService': witness.idService,
+    'counterfeit.witness.email': witness.email,
+    'counterfeit.depositor.fullName': depositorFullName,
+    'counterfeit.depositor.surname': depositor.surname,
+    'counterfeit.depositor.name': depositor.name,
+    'counterfeit.depositor.fatherName': depositor.fatherName,
+    'counterfeit.depositor.motherName': depositor.motherName,
+    'counterfeit.depositor.birthDate': depositor.birthDate,
+    'counterfeit.depositor.birthPlace': depositor.birthPlace,
+    'counterfeit.depositor.city': depositor.city,
+    'counterfeit.depositor.address': depositor.address,
+    'counterfeit.depositor.idNumber': depositor.idNumber,
+    'counterfeit.depositor.idDate': depositor.idDate,
+    'counterfeit.depositor.idService': depositor.idService,
+    'counterfeit.depositor.taxId': depositor.taxId,
+    'counterfeit.depositor.phone': depositor.phone,
+    'counterfeit.depositor.email': depositor.email,
     'timeline.witness.startTime': getTime('witnessStartTime'),
     'timeline.witness.endTime': getTime('witnessEndTime'),
     'timeline.arrest.startTime': getTime('arrestStartTime'),
@@ -308,83 +430,95 @@ function render() {
   const currentCase = getCase();
   const allTemplates = read();
 
-  const narcoticsList = allTemplates.filter((t) => t.category === 'narcotics' || t.name.startsWith('0') || t.name.startsWith('10_'));
-  if (narcoticsList.length > 0) {
-    const section = document.createElement('h3');
-    section.className = 'template-category-heading';
-    section.textContent = `Δικογραφία Ναρκωτικών (${narcoticsList.length} πρότυπα)`;
-    root.appendChild(section);
-  }
+  const isCounterfeit = (t) => t.category === 'counterfeit';
+  const isNarcotics = (t) => !isCounterfeit(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
+  const isCustom = (t) => !isCounterfeit(t) && !isNarcotics(t);
 
-  let otherHeadingAdded = false;
-  allTemplates.forEach((template, index) => {
-    const isNarcoticsTemplate = template.category === 'narcotics' || template.name.startsWith('0') || template.name.startsWith('10_');
-    if (!isNarcoticsTemplate && !otherHeadingAdded) {
-      const section = document.createElement('h3');
-      section.className = 'template-category-heading';
-      section.textContent = 'Πρόσθετα / προσαρμοσμένα πρότυπα';
-      root.appendChild(section);
-      otherHeadingAdded = true;
-    }
-    const card = document.createElement('article');
-    card.className = 'template-file-card template-review-card';
-    card.innerHTML =
-      '<div class="template-review-head"><div><strong></strong><span class="mapping-status" style="margin-left:8px; font-size:0.8rem;"></span><p class="muted"></p></div><button type="button" class="text-button remove">Διαγραφή</button></div>' +
-      '<div class="mapping-review"></div>' +
-      '<div class="template-review-actions"><span class="mapping-result muted"></span><button type="button" class="mini-button save-mapping">Αποθήκευση αντιστοίχισης</button><button type="button" class="mini-button generate" disabled>Συμπλήρωση Word</button></div>';
+  const groups = [
+    { title: (count) => `Δικογραφία Ναρκωτικών (${count} πρότυπα)`, items: allTemplates.filter(isNarcotics) },
+    { title: (count) => `Δικογραφία Πλαστών Νομισμάτων (${count} πρότυπα)`, items: allTemplates.filter(isCounterfeit) },
+    { title: (count) => `Πρόσθετα / προσαρμοσμένα πρότυπα (${count})`, items: allTemplates.filter(isCustom) }
+  ];
 
-    card.querySelector('strong').textContent = template.name;
-    const catLabel = template.categoryLabel || (template.category === 'narcotics' || template.name.startsWith('0') || template.name.startsWith('10_') ? 'Δικογραφία Ναρκωτικών' : 'Προσαρμοσμένο');
-    card.querySelector('.mapping-status').textContent = catLabel;
-    const caseNote = currentCase && currentCase.title ? ` (ενεργή υπόθεση: «${currentCase.title}»)` : ' (δεν έχει επιλεγεί υπόθεση)';
-    card.querySelector('p').textContent = `${template.fields.length} placeholders εντοπίστηκαν${caseNote}.`;
+  groups.forEach((group) => {
+    if (!group.items.length) return;
+    const heading = document.createElement('h3');
+    heading.className = 'template-category-heading';
+    heading.textContent = group.title(group.items.length);
+    root.appendChild(heading);
 
-    const mappingRoot = card.querySelector('.mapping-review');
-    template.fields.forEach((field) => {
-      const row = document.createElement('label');
-      row.className = 'mapping-row';
-      row.innerHTML = '<code></code><select><option value="">— Δεν έχει αντιστοιχιστεί —</option></select><output></output>';
-      row.querySelector('code').textContent = `{{${field}}}`;
+    group.items.forEach((template) => {
+      const card = document.createElement('article');
+      card.className = 'template-file-card template-review-card';
+      card.innerHTML =
+        '<div class="template-review-head"><div><strong></strong><span class="mapping-status" style="margin-left:8px; font-size:0.8rem;"></span><p class="muted"></p></div><button type="button" class="text-button remove">Διαγραφή</button></div>' +
+        '<div class="mapping-review"></div>' +
+        '<div class="template-review-actions"><span class="mapping-result muted"></span><button type="button" class="mini-button save-mapping">Αποθήκευση αντιστοίχισης</button><button type="button" class="mini-button generate" disabled>Συμπλήρωση Word</button></div>';
 
-      FIELD_OPTIONS.forEach((option) => {
-        const item = document.createElement('option');
-        item.value = option.path;
-        item.textContent = option.label;
-        row.querySelector('select').appendChild(item);
+      card.querySelector('strong').textContent = template.name;
+      const catLabel = template.categoryLabel || (
+        isCounterfeit(template) ? 'Δικογραφία Πλαστών' :
+        isNarcotics(template) ? 'Δικογραφία Ναρκωτικών' :
+        'Προσαρμοσμένο'
+      );
+      card.querySelector('.mapping-status').textContent = catLabel;
+      const caseNote = currentCase && currentCase.title ? ` (ενεργή υπόθεση: «${currentCase.title}»)` : ' (δεν έχει επιλεγεί υπόθεση)';
+      card.querySelector('p').textContent = `${template.fields.length} placeholders εντοπίστηκαν${caseNote}.`;
+
+      const mappingRoot = card.querySelector('.mapping-review');
+      template.fields.forEach((field) => {
+        const row = document.createElement('label');
+        row.className = 'mapping-row';
+        row.innerHTML = '<code></code><select><option value="">— Δεν έχει αντιστοιχιστεί —</option></select><output></output>';
+        row.querySelector('code').textContent = `{{${field}}}`;
+
+        FIELD_OPTIONS.forEach((option) => {
+          const item = document.createElement('option');
+          item.value = option.path;
+          item.textContent = option.label;
+          row.querySelector('select').appendChild(item);
+        });
+
+        row.querySelector('select').value = mappingFor(template, field);
+        row.querySelector('select').onchange = () => {
+          row.querySelector('output').textContent = display(valueFor(row.querySelector('select').value, getCase()));
+        };
+        row.querySelector('select').dispatchEvent(new Event('change'));
+        mappingRoot.appendChild(row);
       });
 
-      row.querySelector('select').value = mappingFor(template, field);
-      row.querySelector('select').onchange = () => {
-        row.querySelector('output').textContent = display(valueFor(row.querySelector('select').value, getCase()));
+      card.querySelector('.save-mapping').onclick = () => {
+        const mappings = {};
+        [...mappingRoot.querySelectorAll('.mapping-row')].forEach((row, rowIndex) => {
+          mappings[template.fields[rowIndex]] = row.querySelector('select').value;
+        });
+        const all = read();
+        const targetIdx = all.findIndex((t) => (template.id ? t.id === template.id : t.name === template.name));
+        if (targetIdx >= 0) {
+          all[targetIdx].mappings = mappings;
+          all[targetIdx].mappingConfirmedAt = new Date().toISOString();
+          write(all);
+        }
+        card.querySelector('.mapping-result').textContent = 'Η αντιστοίχιση επιβεβαιώθηκε.';
+        card.querySelector('.generate').disabled = false;
       };
-      row.querySelector('select').dispatchEvent(new Event('change'));
-      mappingRoot.appendChild(row);
+
+      card.querySelector('.generate').onclick = () => {
+        const all = read();
+        const current = all.find((t) => (template.id ? t.id === template.id : t.name === template.name)) || template;
+        generate(current);
+      };
+
+      card.querySelector('.remove').onclick = () => {
+        if (!window.confirm('Να διαγραφεί το πρότυπο Word;')) return;
+        const all = read().filter((t) => (template.id ? t.id !== template.id : t.name !== template.name));
+        write(all);
+        render();
+      };
+
+      if (template.mappingConfirmedAt) card.querySelector('.generate').disabled = false;
+      root.appendChild(card);
     });
-
-    card.querySelector('.save-mapping').onclick = () => {
-      const mappings = {};
-      [...mappingRoot.querySelectorAll('.mapping-row')].forEach((row, rowIndex) => {
-        mappings[template.fields[rowIndex]] = row.querySelector('select').value;
-      });
-      const all = read();
-      all[index].mappings = mappings;
-      all[index].mappingConfirmedAt = new Date().toISOString();
-      write(all);
-      card.querySelector('.mapping-result').textContent = 'Η αντιστοίχιση επιβεβαιώθηκε.';
-      card.querySelector('.generate').disabled = false;
-    };
-
-    card.querySelector('.generate').onclick = () => generate(read()[index]);
-    card.querySelector('.remove').onclick = () => {
-      if (!window.confirm('Να διαγραφεί το πρότυπο Word;')) return;
-      const all = read();
-      all.splice(index, 1);
-      write(all);
-      render();
-    };
-
-    if (template.mappingConfirmedAt) card.querySelector('.generate').disabled = false;
-    root.appendChild(card);
   });
 
   if (!root.children.length) root.textContent = 'Δεν έχει εισαχθεί ακόμη πραγματικό πρότυπο Word.';
