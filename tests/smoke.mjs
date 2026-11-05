@@ -485,3 +485,6 @@ await import('./counterfeit-templates.mjs');
 
 // Environment dossier templates regression tests
 await import('./environment-templates.mjs');
+
+// Health dossier templates regression tests
+await import('./health-templates.mjs');

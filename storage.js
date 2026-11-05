@@ -38,7 +38,8 @@
     'axyp-privacy',
     'axyp-narcotics-templates-seeded-v1',
     'axyp-counterfeit-templates-seeded-v1',
-    'axyp-environment-templates-seeded-v1'
+    'axyp-environment-templates-seeded-v1',
+    'axyp-health-templates-seeded-v1'
   ];
 
   // Αρχική ανάγνωση από localStorage

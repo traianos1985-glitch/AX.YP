@@ -1,10 +1,11 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
-import { DEFAULT_NARCOTICS_TEMPLATES, DEFAULT_COUNTERFEIT_TEMPLATES, DEFAULT_ENVIRONMENT_TEMPLATES } from './dossier-templates-data.js';
+import { DEFAULT_NARCOTICS_TEMPLATES, DEFAULT_COUNTERFEIT_TEMPLATES, DEFAULT_ENVIRONMENT_TEMPLATES, DEFAULT_HEALTH_TEMPLATES } from './dossier-templates-data.js';
 
 const KEY = 'axyp-docx-templates';
 const NARCOTICS_SEED_KEY = 'axyp-narcotics-templates-seeded-v1';
 const COUNTERFEIT_SEED_KEY = 'axyp-counterfeit-templates-seeded-v1';
 const ENVIRONMENT_SEED_KEY = 'axyp-environment-templates-seeded-v1';
+const HEALTH_SEED_KEY = 'axyp-health-templates-seeded-v1';
 const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
 const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } catch (_) { return []; } };
@@ -17,16 +18,17 @@ export function ensureDefaultTemplates(storageInstance = storage()) {
       try { return JSON.parse(storageInstance.getItem(KEY) || '[]'); } catch (_) { return []; }
     })();
 
-    const existingNames = new Set(existing.map((t) => t.name));
+    const keyOf = (t) => (t.category ? `${t.category}:${t.name}` : t.name);
+    const existingKeys = new Set(existing.map(keyOf));
     let updated = [...existing];
     let hasChanges = false;
 
     // 1. Narcotics templates seeding
     if (!storageInstance.getItem(NARCOTICS_SEED_KEY)) {
-      const toAddNarcotics = (DEFAULT_NARCOTICS_TEMPLATES || []).filter((t) => !existingNames.has(t.name));
+      const toAddNarcotics = (DEFAULT_NARCOTICS_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
       if (toAddNarcotics.length > 0) {
         updated = [...updated, ...toAddNarcotics];
-        toAddNarcotics.forEach((t) => existingNames.add(t.name));
+        toAddNarcotics.forEach((t) => existingKeys.add(keyOf(t)));
         hasChanges = true;
       }
       storageInstance.setItem(NARCOTICS_SEED_KEY, 'true');
@@ -36,11 +38,11 @@ export function ensureDefaultTemplates(storageInstance = storage()) {
     // field to the three source documents where the same value is repeated.
     if (!storageInstance.getItem(COUNTERFEIT_SEED_KEY)) {
       const toAddCounterfeit = (DEFAULT_COUNTERFEIT_TEMPLATES || [])
-        .filter((t) => !existingNames.has(t.name))
+        .filter((t) => !existingKeys.has(keyOf(t)))
         .map(prepareCounterfeitTemplate);
       if (toAddCounterfeit.length > 0) {
         updated = [...updated, ...toAddCounterfeit];
-        toAddCounterfeit.forEach((t) => existingNames.add(t.name));
+        toAddCounterfeit.forEach((t) => existingKeys.add(keyOf(t)));
         hasChanges = true;
       }
       storageInstance.setItem(COUNTERFEIT_SEED_KEY, 'true');
@@ -48,13 +50,24 @@ export function ensureDefaultTemplates(storageInstance = storage()) {
 
     // 3. Environment templates seeding
     if (!storageInstance.getItem(ENVIRONMENT_SEED_KEY)) {
-      const toAddEnvironment = (DEFAULT_ENVIRONMENT_TEMPLATES || []).filter((t) => !existingNames.has(t.name));
+      const toAddEnvironment = (DEFAULT_ENVIRONMENT_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
       if (toAddEnvironment.length > 0) {
         updated = [...updated, ...toAddEnvironment];
-        toAddEnvironment.forEach((t) => existingNames.add(t.name));
+        toAddEnvironment.forEach((t) => existingKeys.add(keyOf(t)));
         hasChanges = true;
       }
       storageInstance.setItem(ENVIRONMENT_SEED_KEY, 'true');
+    }
+
+    // 4. Health templates seeding
+    if (!storageInstance.getItem(HEALTH_SEED_KEY)) {
+      const toAddHealth = (DEFAULT_HEALTH_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
+      if (toAddHealth.length > 0) {
+        updated = [...updated, ...toAddHealth];
+        toAddHealth.forEach((t) => existingKeys.add(keyOf(t)));
+        hasChanges = true;
+      }
+      storageInstance.setItem(HEALTH_SEED_KEY, 'true');
     }
 
 
@@ -277,6 +290,7 @@ const FIELD_OPTIONS = [
   { path: 'evidence.quantity', label: 'Ευρήματα · Ποσότητες' },
   { path: 'counterfeit.serialNumber', label: 'Πλαστό νόμισμα · Σειριακός αριθμός' },
   { path: 'environment.description', label: 'Ρύπανση · Περιγραφή πράξης / αποβλήτων' },
+  { path: 'health.description', label: 'Υγειονομικός · Περιγραφή παράβασης / εγκατάστασης' },
   { path: 'timeline.witness.startTime', label: '1. Κατάθεση · Ώρα έναρξης' },
   { path: 'timeline.witness.endTime', label: "1. Κατάθεση · Ώρα περάτωσης (+5')" },
   { path: 'timeline.arrest.startTime', label: "2. Έκθεση σύλληψης · Ώρα έναρξης (+1')" },
@@ -343,6 +357,7 @@ export function valueFor(path, item) {
     'evidence.quantity': item.evidence,
     'counterfeit.serialNumber': item.counterfeit && item.counterfeit.serialNumber,
     'environment.description': (item.environment && item.environment.description) || '.............................',
+    'health.description': (item.health && item.health.description) || '.............................',
     'counterfeit.witness.fullName': witnessFullName,
     'counterfeit.witness.surname': witness.surname,
     'counterfeit.witness.name': witness.name,
@@ -446,12 +461,16 @@ function render() {
   const allTemplates = read();
 
   const isCounterfeit = (t) => t.category === 'counterfeit';
-  const isNarcotics = (t) => !isCounterfeit(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
-  const isCustom = (t) => !isCounterfeit(t) && !isNarcotics(t);
+  const isEnvironment = (t) => t.category === 'environment';
+  const isHealth = (t) => t.category === 'health';
+  const isNarcotics = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
+  const isCustom = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNarcotics(t);
 
   const groups = [
     { title: (count) => `Δικογραφία Ναρκωτικών (${count} πρότυπα)`, items: allTemplates.filter(isNarcotics) },
     { title: (count) => `Δικογραφία Πλαστών Νομισμάτων (${count} πρότυπα)`, items: allTemplates.filter(isCounterfeit) },
+    { title: (count) => `Δικογραφία Ρύπανσης Περιβάλλοντος (${count} πρότυπα)`, items: allTemplates.filter(isEnvironment) },
+    { title: (count) => `Δικογραφία Υγειονομικού Κανονισμού (${count} πρότυπα)`, items: allTemplates.filter(isHealth) },
     { title: (count) => `Πρόσθετα / προσαρμοσμένα πρότυπα (${count})`, items: allTemplates.filter(isCustom) }
   ];
 
@@ -473,6 +492,8 @@ function render() {
       card.querySelector('strong').textContent = template.name;
       const catLabel = template.categoryLabel || (
         isCounterfeit(template) ? 'Δικογραφία Πλαστών' :
+        isEnvironment(template) ? 'Ρύπανση περιβάλλοντος' :
+        isHealth(template) ? 'Υγειονομικός κανονισμός' :
         isNarcotics(template) ? 'Δικογραφία Ναρκωτικών' :
         'Προσαρμοσμένο'
       );

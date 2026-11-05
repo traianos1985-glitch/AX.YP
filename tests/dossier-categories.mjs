@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { DOSSIER_CATEGORIES } from '../dossier-categories.js';
 const ids=DOSSIER_CATEGORIES.map(x=>x.id);
 assert.equal(new Set(ids).size,ids.length);
-assert.deepEqual(ids,['narcotics','counterfeit','environment','domestic','migration','traffic','kok','animal','generic']);
+assert.deepEqual(ids,['narcotics','counterfeit','environment','health','domestic','migration','traffic','kok','animal','generic']);
 for(const x of DOSSIER_CATEGORIES) assert.ok(x.label&&x.description&&x.mark);
 const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const hyp=await readFile(new URL('../hypotheses.js',import.meta.url),'utf8');
@@ -47,6 +47,16 @@ assert.match(html,/δεν αποδίδει από μόνη της νομικό �
 assert.doesNotMatch(hyp,/category\.id === 'environment'[\s\S]{0,160}case-offence/);
 assert.doesNotMatch(bundles,/bundle\.profile === 'environment'[\s\S]{0,180}Παράβαση άρθρου 28/);
 
-assert.match(sw,/axyp-v30/);
+assert.equal(html.split('<option value="health">Υγειονομικός κανονισμός</option>').length - 1, 2, 'Health category must exist in both case and bundle selectors');
+assert.match(html,/id="case-health-section"/);
+assert.match(html,/id="health-description"/);
+assert.match(html,/id="case-health-timeline-section"/);
+assert.match(html,/id="health-arrest-start"/);
+assert.match(html,/id="health-examination-start"/);
+assert.match(hyp,/case-health-section/);
+assert.match(hyp,/case-health-timeline-section/);
+assert.ok(hyp.includes("health: {"));
+assert.ok(templateLibrary.includes('health.description'));
+assert.match(sw,/axyp-v31/);
 assert.match(sw,/dossier-categories\.js/);
 console.log('Dossier category navigation tests passed.');
