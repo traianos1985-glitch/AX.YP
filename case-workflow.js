@@ -67,6 +67,7 @@
     var children = Array.prototype.slice.call(form.children);
     var hiddenId = children.find(function (node) { return node.id === 'case-id'; });
     var groups = [makeStep(0), makeStep(1), makeStep(2)];
+    steps = groups;
     if (hiddenId) form.insertBefore(hiddenId, form.firstChild);
     children.forEach(function (node) {
       if (node === hiddenId) return;
@@ -180,9 +181,16 @@
     if (node) node.addEventListener('click', confirmDiscard, true);
   });
   var list = $('cases-list');
-  if (list) list.addEventListener('click', function (event) {
-    if (event.target.closest('.case-card')) confirmDiscard(event);
-  }, true);
+  if (list) {
+    list.addEventListener('click', function (event) {
+      if (event.target.closest('.case-card')) confirmDiscard(event);
+    }, true);
+    list.addEventListener('click', function () { setTimeout(applyCategoryFields, 0); });
+  }
+  var categoryGrid = $('dossier-category-grid');
+  if (categoryGrid) categoryGrid.addEventListener('click', function () { setTimeout(applyCategoryFields, 0); });
+  var newCaseButton = $('dossier-new-case');
+  if (newCaseButton) newCaseButton.addEventListener('click', function () { setTimeout(applyCategoryFields, 0); });
   window.addEventListener('beforeunload', function (event) {
     if (!dirty) return;
     event.preventDefault();
@@ -225,7 +233,10 @@
   });
 
   var formObserver = new MutationObserver(function () {
-    if (!form.hidden) showStep(0, false);
+    if (!form.hidden) {
+      showStep(0, false);
+      applyCategoryFields();
+    }
   });
   formObserver.observe(form, { attributes: true, attributeFilter: ['hidden'] });
   build();
