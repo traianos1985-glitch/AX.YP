@@ -74,7 +74,7 @@ assert.doesNotMatch(hypothesesSource, /Προεπισκόπηση: /);
 assert.doesNotMatch(hypothesesSource, /Αποθηκευμένο έγγραφο: /);
 
 const serviceWorker = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(serviceWorker, /axyp-v33/);
+assert.match(serviceWorker, /const CACHE_NAME = \"axyp-v\\d+\";/, 'Offline cache name must use a versioned axyp-vN identifier');
 assert.ok(serviceWorker.includes('./paremporio-templates.js'), 'Commerce template module must be available offline');
 
 console.log('Commerce dossier mapping and document-access tests passed.');
