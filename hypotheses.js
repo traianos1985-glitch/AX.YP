@@ -18,7 +18,74 @@
     s.setItem(KEY, JSON.stringify(value));
   }
 
-  function uid() {
+    function addMinutes(timeStr, mins) {
+    if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return '';
+    var parts = timeStr.split(':');
+    var h = parseInt(parts[0], 10);
+    var m = parseInt(parts[1], 10);
+    if (isNaN(h) || isNaN(m)) return '';
+    var totalMins = (h * 60 + m + mins) % (24 * 60);
+    if (totalMins < 0) totalMins += 24 * 60;
+    var newH = Math.floor(totalMins / 60);
+    var newM = totalMins % 60;
+    return (newH < 10 ? '0' : '') + newH + ':' + (newM < 10 ? '0' : '') + newM;
+  }
+
+  function computeTimeline(baseTime) {
+    if (!baseTime) return {};
+    var witnessStart = baseTime;
+    var witnessEnd = addMinutes(witnessStart, 5);
+    var arrestStart = addMinutes(witnessEnd, 1);
+    var arrestEnd = addMinutes(arrestStart, 5);
+    var seizureStart = addMinutes(arrestEnd, 1);
+    var seizureEnd = addMinutes(seizureStart, 5);
+    var notificationStart = addMinutes(seizureEnd, 1);
+    var notificationEnd = addMinutes(notificationStart, 5);
+    var weighingStart = addMinutes(notificationEnd, 1);
+    var weighingEnd = addMinutes(weighingStart, 5);
+    var examinationStart = addMinutes(weighingEnd, 1);
+    var examinationEnd = addMinutes(examinationStart, 5);
+    return {
+      witnessStartTime: witnessStart,
+      witnessEndTime: witnessEnd,
+      arrestStartTime: arrestStart,
+      arrestEndTime: arrestEnd,
+      seizureStartTime: seizureStart,
+      seizureEndTime: seizureEnd,
+      notificationStartTime: notificationStart,
+      notificationEndTime: notificationEnd,
+      weighingStartTime: weighingStart,
+      weighingEndTime: weighingEnd,
+      examinationStartTime: examinationStart,
+      examinationEndTime: examinationEnd
+    };
+  }
+
+  function applyTimelineToInputs(timeline, force) {
+    if (!timeline) return;
+    var fields = [
+      ['timeline-witness-start', timeline.witnessStartTime],
+      ['timeline-witness-end', timeline.witnessEndTime],
+      ['timeline-arrest-start', timeline.arrestStartTime],
+      ['timeline-arrest-end', timeline.arrestEndTime],
+      ['timeline-seizure-start', timeline.seizureStartTime],
+      ['timeline-seizure-end', timeline.seizureEndTime],
+      ['timeline-notification-start', timeline.notificationStartTime],
+      ['timeline-notification-end', timeline.notificationEndTime],
+      ['timeline-weighing-start', timeline.weighingStartTime],
+      ['timeline-weighing-end', timeline.weighingEndTime],
+      ['timeline-examination-start', timeline.examinationStartTime],
+      ['timeline-examination-end', timeline.examinationEndTime]
+    ];
+    fields.forEach(function (pair) {
+      var el = $(pair[0]);
+      if (el && (force || !el.value)) {
+        el.value = pair[1] || '';
+      }
+    });
+  }
+
+function uid() {
     return 'yp-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
   }
 
@@ -31,6 +98,36 @@
       protocolNumber: $('case-protocol-number').value.trim(),
       profile: $('case-profile').value,
       people: $('case-people').value.trim(),
+      location: ($('case-location') ? $('case-location').value.trim() : ''),
+      time: ($('case-time') ? $('case-time').value : ''),
+      prosecutor: ($('case-prosecutor') ? $('case-prosecutor').value.trim() : ''),
+      arrestingOfficer: ($('case-arresting-officer') ? $('case-arresting-officer').value.trim() : ''),
+      officerA: {
+        rank: ($('officer-a-rank') ? $('officer-a-rank').value.trim() : ''),
+        surname: ($('officer-a-surname') ? $('officer-a-surname').value.trim() : ''),
+        name: ($('officer-a-name') ? $('officer-a-name').value.trim() : ''),
+        service: ($('officer-a-service') ? $('officer-a-service').value.trim() : '')
+      },
+      officerB: {
+        rank: ($('officer-b-rank') ? $('officer-b-rank').value.trim() : ''),
+        surname: ($('officer-b-surname') ? $('officer-b-surname').value.trim() : ''),
+        name: ($('officer-b-name') ? $('officer-b-name').value.trim() : ''),
+        service: ($('officer-b-service') ? $('officer-b-service').value.trim() : '')
+      },
+      timeline: {
+        witnessStartTime: $('timeline-witness-start') ? $('timeline-witness-start').value : '',
+        witnessEndTime: $('timeline-witness-end') ? $('timeline-witness-end').value : '',
+        arrestStartTime: $('timeline-arrest-start') ? $('timeline-arrest-start').value : '',
+        arrestEndTime: $('timeline-arrest-end') ? $('timeline-arrest-end').value : '',
+        seizureStartTime: $('timeline-seizure-start') ? $('timeline-seizure-start').value : '',
+        seizureEndTime: $('timeline-seizure-end') ? $('timeline-seizure-end').value : '',
+        notificationStartTime: $('timeline-notification-start') ? $('timeline-notification-start').value : '',
+        notificationEndTime: $('timeline-notification-end') ? $('timeline-notification-end').value : '',
+        weighingStartTime: $('timeline-weighing-start') ? $('timeline-weighing-start').value : '',
+        weighingEndTime: $('timeline-weighing-end') ? $('timeline-weighing-end').value : '',
+        examinationStartTime: $('timeline-examination-start') ? $('timeline-examination-start').value : '',
+        examinationEndTime: $('timeline-examination-end') ? $('timeline-examination-end').value : ''
+      },
       offender: {
         surname: $('offender-surname').value.trim(),
         name: $('offender-name').value.trim(),
@@ -80,6 +177,22 @@
     $('case-protocol-number').value = item.protocolNumber || '';
     $('case-profile').value = item.profile || 'generic';
     $('case-people').value = item.people || '';
+    if ($('case-location')) $('case-location').value = item.location || '';
+    if ($('case-time')) $('case-time').value = item.time || '';
+    if ($('case-prosecutor')) $('case-prosecutor').value = item.prosecutor || '';
+    if ($('case-arresting-officer')) $('case-arresting-officer').value = item.arrestingOfficer || '';
+    var officerA = item.officerA || {};
+    if ($('officer-a-rank')) $('officer-a-rank').value = officerA.rank || '';
+    if ($('officer-a-surname')) $('officer-a-surname').value = officerA.surname || '';
+    if ($('officer-a-name')) $('officer-a-name').value = officerA.name || '';
+    if ($('officer-a-service')) $('officer-a-service').value = officerA.service || '';
+    var officerB = item.officerB || {};
+    if ($('officer-b-rank')) $('officer-b-rank').value = officerB.rank || '';
+    if ($('officer-b-surname')) $('officer-b-surname').value = officerB.surname || '';
+    if ($('officer-b-name')) $('officer-b-name').value = officerB.name || '';
+    if ($('officer-b-service')) $('officer-b-service').value = officerB.service || '';
+    var timeline = item.timeline || computeTimeline(item.time || '');
+    applyTimelineToInputs(timeline, true);
     var offender = item.offender || {};
     $('offender-surname').value = offender.surname || '';
     $('offender-name').value = offender.name || '';

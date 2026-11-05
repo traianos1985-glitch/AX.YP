@@ -35,16 +35,74 @@ const normalizeDocxXml = (xml) => {
 const extractFields = (xml) => [...new Set((normalizeDocxXml(xml).match(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g) || []).map((val) => val.replace(/\{\{|\}\}|\s/g, '')))];
 const display = (value) => value || '—';
 
+export function addMinutes(timeStr, mins) {
+  if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return '';
+  const parts = timeStr.split(':');
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  if (isNaN(h) || isNaN(m)) return '';
+  const totalMins = (h * 60 + m + mins) % (24 * 60);
+  const normalized = totalMins < 0 ? totalMins + 24 * 60 : totalMins;
+  const newH = Math.floor(normalized / 60);
+  const newM = normalized % 60;
+  return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+}
+
+export function computeTimeline(baseTime) {
+  if (!baseTime) return {};
+  const witnessStart = baseTime;
+  const witnessEnd = addMinutes(witnessStart, 5);
+  const arrestStart = addMinutes(witnessEnd, 1);
+  const arrestEnd = addMinutes(arrestStart, 5);
+  const seizureStart = addMinutes(arrestEnd, 1);
+  const seizureEnd = addMinutes(seizureStart, 5);
+  const notificationStart = addMinutes(seizureEnd, 1);
+  const notificationEnd = addMinutes(notificationStart, 5);
+  const weighingStart = addMinutes(notificationEnd, 1);
+  const weighingEnd = addMinutes(weighingStart, 5);
+  const examinationStart = addMinutes(weighingEnd, 1);
+  const examinationEnd = addMinutes(examinationStart, 5);
+
+  return {
+    witnessStartTime: witnessStart,
+    witnessEndTime: witnessEnd,
+    arrestStartTime: arrestStart,
+    arrestEndTime: arrestEnd,
+    seizureStartTime: seizureStart,
+    seizureEndTime: seizureEnd,
+    notificationStartTime: notificationStart,
+    notificationEndTime: notificationEnd,
+    weighingStartTime: weighingStart,
+    weighingEndTime: weighingEnd,
+    examinationStartTime: examinationStart,
+    examinationEndTime: examinationEnd
+  };
+}
+
 const FIELD_OPTIONS = [
   { path: 'case.title', label: 'Υπόθεση · Τίτλος' },
   { path: 'case.protocolNumber', label: 'Υπόθεση · Αριθμός Πρωτοκόλλου' },
   { path: 'case.offence', label: 'Υπόθεση · Είδος αδικήματος' },
   { path: 'case.status', label: 'Υπόθεση · Κατάσταση' },
   { path: 'case.date', label: 'Υπόθεση · Ημερομηνία' },
+  { path: 'case.time', label: 'Υπόθεση · Ώρα σύνταξης' },
+  { path: 'case.location', label: 'Υπόθεση · Τόπος / Πόλη σύνταξης' },
+  { path: 'case.prosecutor', label: 'Υπόθεση · Εισαγγελία Πρωτοδικών' },
   { path: 'case.profile', label: 'Υπόθεση · Νομικό προφίλ' },
   { path: 'case.people', label: 'Υπόθεση · Εμπλεκόμενοι / Δράστες' },
   { path: 'case.evidence', label: 'Υπόθεση · Ευρήματα / Ποσότητες' },
   { path: 'case.notes', label: 'Υπόθεση · Σημειώσεις' },
+  { path: 'case.arrestingOfficer', label: 'Υπόθεση · Συλλαβών (Στοιχεία/Υπηρεσία)' },
+  { path: 'officerA.fullName', label: 'Α΄ Ανακριτικός · Βαθμός & Ονοματεπώνυμο' },
+  { path: 'officerA.rank', label: 'Α΄ Ανακριτικός · Βαθμός' },
+  { path: 'officerA.surname', label: 'Α΄ Ανακριτικός · Επώνυμο' },
+  { path: 'officerA.name', label: 'Α΄ Ανακριτικός · Όνομα' },
+  { path: 'officerA.service', label: 'Α΄ Ανακριτικός · Υπηρεσία' },
+  { path: 'officerB.fullName', label: 'Β΄ Ανακριτικός · Βαθμός & Ονοματεπώνυμο' },
+  { path: 'officerB.rank', label: 'Β΄ Ανακριτικός · Βαθμός' },
+  { path: 'officerB.surname', label: 'Β΄ Ανακριτικός · Επώνυμο' },
+  { path: 'officerB.name', label: 'Β΄ Ανακριτικός · Όνομα' },
+  { path: 'officerB.service', label: 'Β΄ Ανακριτικός · Υπηρεσία' },
   { path: 'person.fullName', label: 'Πρόσωπο · Ονοματεπώνυμο' },
   { path: 'person.surname', label: 'Πρόσωπο · Επώνυμο' },
   { path: 'person.name', label: 'Πρόσωπο · Όνομα' },
@@ -60,7 +118,19 @@ const FIELD_OPTIONS = [
   { path: 'person.taxId', label: 'Πρόσωπο · Α.Φ.Μ.' },
   { path: 'person.phone', label: 'Πρόσωπο · Τηλέφωνο' },
   { path: 'person.email', label: 'Πρόσωπο · Email' },
-  { path: 'evidence.quantity', label: 'Ευρήματα · Ποσότητες' }
+  { path: 'evidence.quantity', label: 'Ευρήματα · Ποσότητες' },
+  { path: 'timeline.witness.startTime', label: '1. Κατάθεση · Ώρα έναρξης' },
+  { path: 'timeline.witness.endTime', label: "1. Κατάθεση · Ώρα περάτωσης (+5')" },
+  { path: 'timeline.arrest.startTime', label: "2. Έκθεση σύλληψης · Ώρα έναρξης (+1')" },
+  { path: 'timeline.arrest.endTime', label: "2. Έκθεση σύλληψης · Ώρα περάτωσης (+5')" },
+  { path: 'timeline.seizure.startTime', label: "3. Έκθεση κατάσχεσης · Ώρα έναρξης (+1')" },
+  { path: 'timeline.seizure.endTime', label: "3. Έκθεση κατάσχεσης · Ώρα περάτωσης (+5')" },
+  { path: 'timeline.notification.startTime', label: "4. Έκθεση γνωστοποίησης · Ώρα έναρξης (+1')" },
+  { path: 'timeline.notification.endTime', label: "4. Έκθεση γνωστοποίησης · Ώρα περάτωσης (+5')" },
+  { path: 'timeline.weighing.startTime', label: "5. Έκθεση ζύγισης · Ώρα έναρξης (+1')" },
+  { path: 'timeline.weighing.endTime', label: "5. Έκθεση ζύγισης · Ώρα περάτωσης (+5')" },
+  { path: 'timeline.examination.startTime', label: "6. Έκθεση απολογίας · Ώρα έναρξης (+1')" },
+  { path: 'timeline.examination.endTime', label: "6. Έκθεση απολογίας · Ώρα περάτωσης (+5')" }
 ];
 
 function mappingFor(template, field) {
@@ -76,17 +146,62 @@ function mappingFor(template, field) {
 function valueFor(path, item) {
   if (!item) return '—';
   const offender = item.offender || {};
+  const officerA = item.officerA || {};
+  const officerB = item.officerB || {};
+  const officerAFull = [officerA.rank, officerA.surname, officerA.name].filter(Boolean).join(' ');
+  const officerBFull = [officerB.rank, officerB.surname, officerB.name].filter(Boolean).join(' ');
+  const timeline = item.timeline || {};
+  const computed = computeTimeline(item.time || '');
+  const getTime = (key) => timeline[key] || computed[key] || item[key] || '';
   const map = {
     'case.title': item.title,
     'case.protocolNumber': item.protocolNumber,
     'case.offence': item.offence,
     'case.status': item.status,
     'case.date': item.date,
+    'case.time': item.time,
+    'case.location': item.location,
+    'case.prosecutor': item.prosecutor,
     'case.notes': item.notes,
     'case.profile': item.profile,
     'case.people': item.people,
     'case.evidence': item.evidence,
+    'case.arrestingOfficer': item.arrestingOfficer,
+    'officerA.fullName': officerAFull,
+    'officerA.rank': officerA.rank,
+    'officerA.surname': officerA.surname,
+    'officerA.name': officerA.name,
+    'officerA.service': officerA.service,
+    'officerB.fullName': officerBFull,
+    'officerB.rank': officerB.rank,
+    'officerB.surname': officerB.surname,
+    'officerB.name': officerB.name,
+    'officerB.service': officerB.service,
     'evidence.quantity': item.evidence,
+    'timeline.witness.startTime': getTime('witnessStartTime'),
+    'timeline.witness.endTime': getTime('witnessEndTime'),
+    'timeline.arrest.startTime': getTime('arrestStartTime'),
+    'timeline.arrest.endTime': getTime('arrestEndTime'),
+    'timeline.seizure.startTime': getTime('seizureStartTime'),
+    'timeline.seizure.endTime': getTime('seizureEndTime'),
+    'timeline.notification.startTime': getTime('notificationStartTime'),
+    'timeline.notification.endTime': getTime('notificationEndTime'),
+    'timeline.weighing.startTime': getTime('weighingStartTime'),
+    'timeline.weighing.endTime': getTime('weighingEndTime'),
+    'timeline.examination.startTime': getTime('examinationStartTime'),
+    'timeline.examination.endTime': getTime('examinationEndTime'),
+    'case.witnessStartTime': getTime('witnessStartTime'),
+    'case.witnessEndTime': getTime('witnessEndTime'),
+    'case.arrestStartTime': getTime('arrestStartTime'),
+    'case.arrestEndTime': getTime('arrestEndTime'),
+    'case.seizureStartTime': getTime('seizureStartTime'),
+    'case.seizureEndTime': getTime('seizureEndTime'),
+    'case.notificationStartTime': getTime('notificationStartTime'),
+    'case.notificationEndTime': getTime('notificationEndTime'),
+    'case.weighingStartTime': getTime('weighingStartTime'),
+    'case.weighingEndTime': getTime('weighingEndTime'),
+    'case.examinationStartTime': getTime('examinationStartTime'),
+    'case.examinationEndTime': getTime('examinationEndTime'),
     'person.fullName': [offender.surname, offender.name].filter(Boolean).join(' ') || item.people,
     'person.surname': offender.surname,
     'person.name': offender.name,
@@ -270,6 +385,10 @@ async function generate(template) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-$('template-file')?.addEventListener('change', importTemplate);
-window.TemplateLibrary = { refresh: render };
-render();
+if (typeof document !== 'undefined') {
+  $('template-file')?.addEventListener('change', importTemplate);
+  if (typeof window !== 'undefined') {
+    window.TemplateLibrary = { refresh: render };
+  }
+  render();
+}
