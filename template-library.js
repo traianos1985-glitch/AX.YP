@@ -277,7 +277,6 @@ const FIELD_OPTIONS = [
   { path: 'evidence.quantity', label: 'Ευρήματα · Ποσότητες' },
   { path: 'counterfeit.serialNumber', label: 'Πλαστό νόμισμα · Σειριακός αριθμός' },
   { path: 'environment.description', label: 'Ρύπανση · Περιγραφή πράξης / αποβλήτων' },
-  { path: 'environment.documentation', label: 'Ρύπανση · Αυτοψία / τεχνική τεκμηρίωση (δεν μεταφέρεται στα υπάρχοντα πρότυπα)' },
   { path: 'timeline.witness.startTime', label: '1. Κατάθεση · Ώρα έναρξης' },
   { path: 'timeline.witness.endTime', label: "1. Κατάθεση · Ώρα περάτωσης (+5')" },
   { path: 'timeline.arrest.startTime', label: "2. Έκθεση σύλληψης · Ώρα έναρξης (+1')" },
