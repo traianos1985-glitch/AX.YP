@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { unzipSync, zipSync, strFromU8, strToU8 } from '../vendor/fflate.js';
 import { DEFAULT_NARCOTICS_TEMPLATES } from '../dossier-templates-data.js';
-import { ensureDefaultTemplates, getTemplateParts, computeTimeline, replaceInXml } from '../template-library.js';
+import { ensureDefaultTemplates, initializeDefaultTemplates, getTemplateParts, computeTimeline, replaceInXml } from '../template-library.js';
 
 console.log('--- Starting Narcotics Templates & Auto-loader Test Suite ---');
 
@@ -38,6 +38,32 @@ seededTemplates.forEach((t) => {
   assert.equal(t.category, 'narcotics');
 });
 console.log('✓ Clean installation seeded 10 templates successfully.');
+
+// 1b. Test that seeding waits for IndexedDB hydration before reading or writing templates.
+console.log('1b. Testing delayed IndexedDB hydration...');
+const delayedStorage = createMockStorage();
+let finishHydration;
+delayedStorage.ready = new Promise((resolve) => { finishHydration = resolve; });
+const delayedInitialization = initializeDefaultTemplates(delayedStorage);
+assert.equal(delayedStorage.getItem('axyp-docx-templates'), null, 'Seeding must not run before storage hydration');
+const hydratedExisting = [{
+  id: 'existing-user-template',
+  name: 'CUSTOM_EXISTING.docx',
+  category: 'custom',
+  fields: [],
+  mappings: { retained: true }
+}];
+delayedStorage.setItem('axyp-docx-templates', JSON.stringify(hydratedExisting));
+delayedStorage.setItem('axyp-narcotics-templates-seeded-v1', 'true');
+finishHydration();
+await delayedInitialization;
+assert.deepEqual(
+  JSON.parse(delayedStorage.getItem('axyp-docx-templates')),
+  hydratedExisting,
+  'Hydrated existing templates must remain untouched'
+);
+console.log('✓ Default seeding waits for storage hydration and preserves hydrated data.');
+
 
 // 2. Test second launch / re-initialization (no duplicates)
 console.log('2. Testing second launch (zero duplicates)...');
@@ -92,6 +118,10 @@ assert.equal(existing01.mappings['case.date'], 'custom.date');
 // Total should be 1 custom + 1 existing-01 + 9 newly added default templates = 11
 assert.equal(upgradedTemplates.length, 11, 'Expected 11 total templates after upgrade');
 console.log('✓ Upgrade preserves custom templates and user-modified mappings.');
+
+const storageSource = await readFile(new URL('../storage.js', import.meta.url), 'utf8');
+assert.match(storageSource, /axyp-narcotics-templates-seeded-v1/, 'Seed marker must be included in IndexedDB hydration keys');
+assert.match(storageSource, /ready:\s*ready/, 'Storage must expose its hydration readiness promise');
 
 // 4. Test offline & local-first integrity
 console.log('4. Testing offline and local-first architecture...');
