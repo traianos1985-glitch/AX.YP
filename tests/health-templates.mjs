@@ -157,7 +157,7 @@ const syntheticCase = {
   location: 'Κυπαρισσία',
   evidence: 'μεταλλική ψησταριά με κάρβουνα επί του οδοστρώματος',
   health: {
-    description: 'επί της Ε.Ο. Πύργου-Μεθώνης στο άκρο του οδοστρώματος ψησταριά ήτοι κατά παράβαση του άρθρου 290 Π.Κ. και των διατάξεων του Υγειονομικού Κανονισμού'
+    description: 'Μεταλλική ψησταριά με κάρβουνα τοποθετημένη στο άκρο του οδοστρώματος, σε λειτουργία κατά τον χρόνο του ελέγχου'
   },
   arrestingOfficer: 'Υπαστυνόμος Β΄ Παπαδόπουλος Γεώργιος',
   officerA: {
@@ -238,5 +238,16 @@ assert.equal(valueFor('health.description', syntheticCase), syntheticCase.health
 assert.equal(valueFor('health.description', { health: { description: 'τοποθέτηση ψησταριάς' } }), 'τοποθέτηση ψησταριάς');
 assert.equal(valueFor('health.description', { notes: 'κατάληψη οδοστρώματος' }), '.............................', 'General notes must never silently populate the health violation description');
 assert.equal(valueFor('health.description', {}), '.............................');
+
+// 7. The category and form must remain neutral and must not suggest Article 290 as a default offence.
+const categorySource = await readFile(new URL('../dossier-categories.js', import.meta.url), 'utf8');
+const indexSource = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+assert.match(categorySource, /id:'health',[^\n]*δεν προδικάζει την εφαρμοστέα διάταξη/);
+assert.doesNotMatch(categorySource, /id:'health',[^\n]*άρθρο 290/i);
+assert.match(indexSource, /Η κατηγορία είναι αποκλειστικά οργανωτική και δεν αποδίδει από μόνη της νομικό χαρακτηρισμό/);
+assert.match(indexSource, /Μην προεξοφλείς νομικό χαρακτηρισμό/);
+assert.doesNotMatch(indexSource, /health-description[^\n]*άρθρο 290/i);
+assert.doesNotMatch(syntheticCase.health.description, /άρθρο 290/i);
+console.log('✓ Health category and description remain legally neutral; Article 290 is not suggested as a default.');
 
 console.log('\nAll health test suites passed with 100% success!');
