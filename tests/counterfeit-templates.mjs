@@ -32,12 +32,12 @@ const counterfeitSeeded = seededTemplates.filter((t) => t.category === 'counterf
 assert.equal(counterfeitSeeded.length, 5, 'Expected exactly 5 seeded counterfeit templates');
 for (const id of ['counterfeit-01', 'counterfeit-02', 'counterfeit-03']) {
   const template = counterfeitSeeded.find((item) => item.id === id);
-  assert.ok(template.fields.includes('evidence.serialNumber'), id + ' declares the serial-number field');
-  assert.equal(template.mappings['evidence.serialNumber'], 'evidence.serialNumber');
+  assert.ok(template.fields.includes('counterfeit.serialNumber'), id + ' declares the serial-number field');
+  assert.equal(template.mappings['counterfeit.serialNumber'], 'counterfeit.serialNumber');
   const parts = getTemplateParts(template);
   const xml = strFromU8(parts['word/document.xml']);
   assert.match(xml, /Σειριακός αριθμός πλαστού χαρτονομίσματος:/);
-  assert.ok(xml.includes('{{evidence.serialNumber}}'));
+  assert.ok(xml.includes('{{counterfeit.serialNumber}}'));
 }
 
 const expectedNames = [
@@ -224,7 +224,7 @@ for (const tpl of counterfeitSeeded) {
   console.log(`  ✓ ${tpl.name}: successfully verified (${tpl.fields.length} placeholders).`);
 }
 
-assert.equal(valueFor('evidence.serialNumber', { counterfeit: { serialNumber: 'SERIAL-TEST' } }), 'SERIAL-TEST');
+assert.equal(valueFor('counterfeit.serialNumber', { counterfeit: { serialNumber: 'SERIAL-TEST' } }), 'SERIAL-TEST');
 assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', time: '11:40' }), '', 'Counterfeit must not inherit narcotics auto timeline');
 assert.equal(valueFor('timeline.witness.startTime', { profile: 'narcotics', time: '11:40' }), '11:40', 'Narcotics timeline remains unchanged');
 
