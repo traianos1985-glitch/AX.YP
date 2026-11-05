@@ -207,8 +207,19 @@
     }
   }, true);
 
+  function applyCategoryFields() {
+    var selected = profile ? profile.value : 'generic';
+    var commerce = $('commerce-offenders');
+    if (commerce) commerce.hidden = selected !== 'commerce';
+    var generalPerson = $('offender-section-title');
+    var generalFieldset = generalPerson && generalPerson.closest('fieldset');
+    if (generalFieldset) generalFieldset.hidden = selected === 'commerce';
+    updateSummary();
+  }
+
   var profile = $('case-profile');
-  if (profile) profile.addEventListener('change', updateSummary);
+  if (profile) profile.addEventListener('change', applyCategoryFields);
+  applyCategoryFields();
   ['check-safety', 'check-source', 'check-notify'].forEach(function (id) {
     if ($(id)) $(id).addEventListener('change', updateSummary);
   });
