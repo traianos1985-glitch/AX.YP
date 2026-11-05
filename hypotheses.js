@@ -252,7 +252,7 @@ function uid() {
     $('dossier-dashboard').hidden = true; $('dossier-workspace').hidden = false;
     $('dossier-active-title').textContent = category.label;
     $('dossier-active-description').textContent = category.description + ' Οι υποθέσεις αυτής της κατηγορίας εμφανίζονται μόνο εδώ.';
-    $('case-profile').value = category.id; $('case-timeline-section').hidden = category.id !== 'narcotics';
+    $('case-profile').value = category.id; $('bundle-profile').value = category.id; $('case-timeline-section').hidden = category.id !== 'narcotics';
     $('case-form').hidden = !createNew; $('case-layout').hidden = false;
     if (createNew) { reset(); $('case-profile').value = category.id; $('case-form').hidden = false; }
     else { selectedId = null; $('case-id').value = ''; $('case-detail-empty').hidden = false; $('case-detail-content').hidden = true; }
@@ -263,6 +263,7 @@ function uid() {
     $('case-form').hidden = true; $('case-layout').hidden = true; renderDossierCategories();
   }
   function render() {
+    renderDossierCategories();
     var list = $('cases-list');
     if (!list) return;
     list.textContent = '';
@@ -546,6 +547,8 @@ function uid() {
     getActiveProfileFilter: function () { return activeProfileFilter; }
   };
 
+  $('dossier-back').onclick = showDashboard;
+  $('dossier-new-case').onclick = function () { if (activeProfileFilter) openCategory(activeProfileFilter, true); };
   $('case-form').addEventListener('submit', save);
   $('case-reset').onclick = reset;
   $('case-snapshot').onclick = snapshot;
