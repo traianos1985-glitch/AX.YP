@@ -32,6 +32,6 @@ assert.ok(hyp.includes("witness: {"));
 assert.ok(hyp.includes("depositor: $('case-profile').value === 'counterfeit'"));
 assert.ok(templateLibrary.includes('counterfeit.witness.surname'));
 assert.ok(templateLibrary.includes('counterfeit.depositor.surname'));
-assert.match(sw,/axyp-v27/);
+assert.match(sw,/axyp-v28/);
 assert.match(sw,/dossier-categories\.js/);
 console.log('Dossier category navigation tests passed.');
