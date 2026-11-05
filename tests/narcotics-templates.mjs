@@ -27,7 +27,7 @@ ensureDefaultTemplates(storage1);
 
 const seededTemplates = JSON.parse(storage1.getItem('axyp-docx-templates'));
 
-assert.equal(seededTemplates.length, 15, 'Expected exactly 15 seeded templates (10 narcotics + 5 counterfeit)');
+assert.equal(seededTemplates.length, 19, 'Expected exactly 19 seeded templates (10 narcotics + 5 counterfeit + 4 environment)');
 assert.equal(storage1.getItem('axyp-narcotics-templates-seeded-v1'), 'true');
 
 seededTemplates.forEach((t) => {
@@ -35,10 +35,11 @@ seededTemplates.forEach((t) => {
   assert.ok(t.dataBase64, 'Template must have dataBase64');
   assert.ok(t.mappings, 'Template must have mappings');
   assert.ok(t.mappingConfirmedAt, 'Template mappingConfirmedAt must be pre-confirmed');
-  assert.ok(t.category === 'narcotics' || t.category === 'counterfeit');
+  assert.ok(t.category === 'narcotics' || t.category === 'counterfeit' || t.category === 'environment');
 });
 assert.equal(seededTemplates.filter((t) => t.category === 'narcotics').length, 10);
 assert.equal(seededTemplates.filter((t) => t.category === 'counterfeit').length, 5);
+assert.equal(seededTemplates.filter((t) => t.category === 'environment').length, 4);
 console.log('✓ Clean installation seeded 10 templates successfully.');
 
 // 1b. Test that seeding waits for IndexedDB hydration before reading or writing templates.
@@ -58,6 +59,7 @@ const hydratedExisting = [{
 delayedStorage.setItem('axyp-docx-templates', JSON.stringify(hydratedExisting));
 delayedStorage.setItem('axyp-narcotics-templates-seeded-v1', 'true');
 delayedStorage.setItem('axyp-counterfeit-templates-seeded-v1', 'true');
+delayedStorage.setItem('axyp-environment-templates-seeded-v1', 'true');
 finishHydration();
 await delayedInitialization;
 assert.deepEqual(
@@ -73,15 +75,15 @@ console.log('2. Testing second launch (zero duplicates)...');
 ensureDefaultTemplates(storage1);
 
 const recheckedTemplates = JSON.parse(storage1.getItem('axyp-docx-templates'));
-assert.equal(recheckedTemplates.length, 15, 'Must remain 15 templates without duplication');
+assert.equal(recheckedTemplates.length, 19, 'Must remain 19 templates without duplication');
 
 // Test deletion respect: if user deletes a template, it must not be re-added on next boot
 recheckedTemplates.pop(); // user deletes 1 template
 storage1.setItem('axyp-docx-templates', JSON.stringify(recheckedTemplates));
-assert.equal(JSON.parse(storage1.getItem('axyp-docx-templates')).length, 14);
+assert.equal(JSON.parse(storage1.getItem('axyp-docx-templates')).length, 18);
 
 ensureDefaultTemplates(storage1);
-assert.equal(JSON.parse(storage1.getItem('axyp-docx-templates')).length, 14, 'Deleted template must not be restored');
+assert.equal(JSON.parse(storage1.getItem('axyp-docx-templates')).length, 18, 'Deleted template must not be restored');
 console.log('✓ Second launch creates zero duplicates and respects user deletions.');
 
 // 3. Test retention of custom / manually imported templates and upgrade of existing installation
@@ -119,7 +121,7 @@ assert.equal(existing01.customUserNote, 'user modified version', 'User modificat
 assert.equal(existing01.mappings['case.date'], 'custom.date');
 
 // Total should be 1 custom + 1 existing-01 + 9 newly added default templates = 11
-assert.equal(upgradedTemplates.length, 16, 'Expected 16 total templates after upgrade (1 custom + 1 existing-01 + 9 narcotics + 5 counterfeit)');
+assert.equal(upgradedTemplates.length, 20, 'Expected 20 total templates after upgrade (1 custom + 1 existing-01 + 9 narcotics + 5 counterfeit + 4 environment)');
 console.log('✓ Upgrade preserves custom templates and user-modified mappings.');
 
 const storageSource = await readFile(new URL('../storage.js', import.meta.url), 'utf8');

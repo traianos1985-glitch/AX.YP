@@ -1,9 +1,10 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
-import { DEFAULT_NARCOTICS_TEMPLATES, DEFAULT_COUNTERFEIT_TEMPLATES } from './dossier-templates-data.js';
+import { DEFAULT_NARCOTICS_TEMPLATES, DEFAULT_COUNTERFEIT_TEMPLATES, DEFAULT_ENVIRONMENT_TEMPLATES } from './dossier-templates-data.js';
 
 const KEY = 'axyp-docx-templates';
 const NARCOTICS_SEED_KEY = 'axyp-narcotics-templates-seeded-v1';
 const COUNTERFEIT_SEED_KEY = 'axyp-counterfeit-templates-seeded-v1';
+const ENVIRONMENT_SEED_KEY = 'axyp-environment-templates-seeded-v1';
 const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
 const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } catch (_) { return []; } };
@@ -44,6 +45,18 @@ export function ensureDefaultTemplates(storageInstance = storage()) {
       }
       storageInstance.setItem(COUNTERFEIT_SEED_KEY, 'true');
     }
+
+    // 3. Environment templates seeding
+    if (!storageInstance.getItem(ENVIRONMENT_SEED_KEY)) {
+      const toAddEnvironment = (DEFAULT_ENVIRONMENT_TEMPLATES || []).filter((t) => !existingNames.has(t.name));
+      if (toAddEnvironment.length > 0) {
+        updated = [...updated, ...toAddEnvironment];
+        toAddEnvironment.forEach((t) => existingNames.add(t.name));
+        hasChanges = true;
+      }
+      storageInstance.setItem(ENVIRONMENT_SEED_KEY, 'true');
+    }
+
 
     if (hasChanges) {
       storageInstance.setItem(KEY, JSON.stringify(updated));
@@ -263,6 +276,7 @@ const FIELD_OPTIONS = [
   { path: 'counterfeit.depositor.email', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Email' },
   { path: 'evidence.quantity', label: 'Ευρήματα · Ποσότητες' },
   { path: 'counterfeit.serialNumber', label: 'Πλαστό νόμισμα · Σειριακός αριθμός' },
+  { path: 'environment.description', label: 'Ρύπανση · Περιγραφή πράξης / αποβλήτων' },
   { path: 'timeline.witness.startTime', label: '1. Κατάθεση · Ώρα έναρξης' },
   { path: 'timeline.witness.endTime', label: "1. Κατάθεση · Ώρα περάτωσης (+5')" },
   { path: 'timeline.arrest.startTime', label: "2. Έκθεση σύλληψης · Ώρα έναρξης (+1')" },
@@ -328,6 +342,7 @@ export function valueFor(path, item) {
     'officerB.service': officerB.service,
     'evidence.quantity': item.evidence,
     'counterfeit.serialNumber': item.counterfeit && item.counterfeit.serialNumber,
+    'environment.description': (item.environment && item.environment.description) || item.notes || item.evidence || '.............................',
     'counterfeit.witness.fullName': witnessFullName,
     'counterfeit.witness.surname': witness.surname,
     'counterfeit.witness.name': witness.name,
