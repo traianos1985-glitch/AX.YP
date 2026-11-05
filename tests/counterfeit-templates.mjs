@@ -193,7 +193,7 @@ const syntheticCase = {
   timeline: computeTimeline('11:40')
 };
 
-for (const tpl of DEFAULT_COUNTERFEIT_TEMPLATES) {
+for (const tpl of counterfeitSeeded) {
   const parts = getTemplateParts(tpl);
   assert.ok(parts['word/document.xml'], `Template ${tpl.name} must contain word/document.xml`);
   
@@ -223,5 +223,9 @@ for (const tpl of DEFAULT_COUNTERFEIT_TEMPLATES) {
   assert.ok(reopened['word/document.xml'], `Reopened docx for ${tpl.name} must be valid`);
   console.log(`  ✓ ${tpl.name}: successfully verified (${tpl.fields.length} placeholders).`);
 }
+
+assert.equal(valueFor('evidence.serialNumber', { counterfeit: { serialNumber: 'SERIAL-TEST' } }), 'SERIAL-TEST');
+assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', time: '11:40' }), '', 'Counterfeit must not inherit narcotics auto timeline');
+assert.equal(valueFor('timeline.witness.startTime', { profile: 'narcotics', time: '11:40' }), '11:40', 'Narcotics timeline remains unchanged');
 
 console.log('\nAll 5 counterfeit test suites passed with 100% success!');
