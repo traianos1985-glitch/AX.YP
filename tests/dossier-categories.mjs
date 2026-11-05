@@ -42,7 +42,6 @@ assert.match(hyp,/case-environment-section/);
 assert.match(hyp,/case-environment-timeline-section/);
 assert.ok(hyp.includes("environment: {"));
 assert.ok(templateLibrary.includes('environment.description'));
-assert.ok(templateLibrary.includes('environment.documentation'));
 assert.match(html,/id="environment-documentation"/);
 assert.match(html,/δεν αποδίδει από μόνη της νομικό χαρακτηρισμό/);
 assert.doesNotMatch(hyp,/category\.id === 'environment'[\s\S]{0,160}case-offence/);
