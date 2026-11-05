@@ -6,6 +6,7 @@
   var FAVORITES_KEY = 'axyp-favorites';
   var CHECKS_PREFIX = 'axyp-checks-';
   var WIZARD_CHECKS_KEY = 'axyp-wizard-checks';
+  var RECENT_SEARCHES_KEY = 'axyp-recent-searches';
   var CHECK_LABELS = [
     'Ασφάλεια και αναγκαία βοήθεια',
     'Καταγραφή πραγματικών περιστατικών χωρίς προσωπικά δεδομένα',
@@ -26,6 +27,7 @@
   var hint = document.getElementById('hint');
   var resultCount = document.getElementById('result-count');
   var resultTools = document.querySelector('.result-tools');
+  var filterToggle = document.getElementById('filter-toggle');
   var statusFilter = document.getElementById('status-filter');
   var sourceFilter = document.getElementById('source-filter');
   var sortResults = document.getElementById('sort-results');
@@ -353,12 +355,52 @@
       var nowOn = toggleFavorite(id);
       button.setAttribute('aria-pressed', String(nowOn));
       button.textContent = nowOn ? '★ Αποθηκεύτηκε' : '☆ Αποθήκευση';
+      renderHome();
     };
     return button;
   }
 
+  function recentSearches() {
+    return readJson(RECENT_SEARCHES_KEY, []);
+  }
+
+  function saveRecentSearch(query) {
+    var value = query.trim();
+    if (!value) return;
+    var list = recentSearches().filter(function (entry) { return entry !== value; });
+    list.unshift(value);
+    storageSet(localStorage, RECENT_SEARCHES_KEY, JSON.stringify(list.slice(0, 6)));
+  }
+
+  function setSearch(query) {
+    q.value = query;
+    scopeAll = true;
+    renderTabs();
+    renderResults();
+    q.focus();
+  }
+
+  function renderHome() {
+    var recentRoot = document.getElementById('recent-searches');
+    var favoritesRoot = document.getElementById('home-favorites');
+    if (!recentRoot || !favoritesRoot) return;
+    recentRoot.textContent = '';
+    var recent = recentSearches();
+    if (!recent.length) recentRoot.appendChild(el('p', 'muted', 'Δεν υπάρχουν πρόσφατες αναζητήσεις.'));
+    recent.forEach(function (query) {
+      var button = el('button', '', query); button.type = 'button'; button.onclick = function () { setSearch(query); }; recentRoot.appendChild(button);
+    });
+    favoritesRoot.textContent = '';
+    var saved = favorites().map(function (id) { return allEntries().filter(function (row) { return row.item.id === id; })[0]; }).filter(Boolean).slice(0, 4);
+    if (!saved.length) favoritesRoot.appendChild(el('p', 'muted', 'Δεν έχεις αποθηκεύσει άρθρα.'));
+    saved.forEach(function (row) { var button = el('button', '', row.item.title); button.type = 'button'; button.onclick = function () { setSearch(row.item.title); }; favoritesRoot.appendChild(button); });
+  }
+
   function renderResults() {
     var raw = q.value.trim();
+    var home = document.getElementById('home-dashboard');
+    if (home) home.hidden = Boolean(raw);
+    renderHome();
     out.textContent = '';
     if (!raw) {
       if (resultTools) resultTools.hidden = true;
@@ -370,6 +412,7 @@
       return;
     }
     if (resultTools) resultTools.hidden = false;
+    saveRecentSearch(raw);
     var terms = expandTerms(raw);
     var incidentRule = window.AXYPIncidentSearch.classify(raw);
     var list = visibleEntries(terms, raw, incidentRule);
@@ -510,13 +553,27 @@
       scheduleRender();
     });
     document.querySelectorAll('[data-query]').forEach(function (button) {
-      button.onclick = function () {
-        q.value = button.dataset.query;
-        scopeAll = true;
-        renderResults();
-      };
+      button.onclick = function () { setSearch(button.dataset.query); };
     });
+    document.querySelectorAll('[data-home-mode]').forEach(function (button) {
+      button.onclick = function () { showMode(button.dataset.homeMode); };
+    });
+    document.querySelector('[data-home-focus]').onclick = function () { q.focus(); };
+    document.querySelector('[data-home-favorites]').onclick = function () {
+      var saved = favorites().map(function (id) { return allEntries().filter(function (row) { return row.item.id === id; })[0]; }).filter(Boolean);
+      if (saved.length) setSearch(saved[0].item.title);
+      else q.focus();
+    };
+    document.getElementById('clear-recent').onclick = function () {
+      storageRemove(localStorage, RECENT_SEARCHES_KEY);
+      renderHome();
+    };
     [statusFilter, sourceFilter, sortResults].forEach(function (control) { control.onchange = renderResults; });
+    if (filterToggle) filterToggle.onclick = function () {
+      var open = resultTools.classList.toggle('filters-open');
+      filterToggle.setAttribute('aria-expanded', String(open));
+      filterToggle.textContent = open ? 'Απόκρυψη φίλτρων' : 'Φίλτρα';
+    };
     favoritesOnly.onclick = function () {
       favoritesOnly.setAttribute('aria-pressed', String(favoritesOnly.getAttribute('aria-pressed') !== 'true'));
       renderResults();
