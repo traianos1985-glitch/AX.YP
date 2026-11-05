@@ -1,6 +1,7 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
 import { DEFAULT_NARCOTICS_TEMPLATES, DEFAULT_COUNTERFEIT_TEMPLATES, DEFAULT_ENVIRONMENT_TEMPLATES, DEFAULT_HEALTH_TEMPLATES } from './dossier-templates-data.js';
 import { DEFAULT_NOISE_TEMPLATES } from './noise-templates-data.js';
+import { DEFAULT_CAMPING_TEMPLATES } from './camping-templates-data.js';
 import { DEFAULT_COMMERCE_TEMPLATES } from './paremporio-templates.js';
 
 const KEY = 'axyp-docx-templates';
@@ -9,6 +10,7 @@ const COUNTERFEIT_SEED_KEY = 'axyp-counterfeit-templates-seeded-v1';
 const ENVIRONMENT_SEED_KEY = 'axyp-environment-templates-seeded-v1';
   const HEALTH_SEED_KEY = 'axyp-health-templates-seeded-v1';
   const NOISE_SEED_KEY = 'axyp-noise-templates-seeded-v1';
+  const CAMPING_SEED_KEY = 'axyp-camping-templates-seeded-v1';
   const COMMERCE_SEED_KEY = 'axyp-commerce-templates-seeded-v1';
 const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
@@ -86,7 +88,18 @@ export function ensureDefaultTemplates(storageInstance = storage()) {
       storageInstance.setItem(NOISE_SEED_KEY, 'true');
     }
 
-    // 6. Commerce templates: every document is anonymized and keeps actor A/B fields separate.
+    // 6. Camping templates.
+    if (!storageInstance.getItem(CAMPING_SEED_KEY)) {
+      const toAddCamping = (DEFAULT_CAMPING_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
+      if (toAddCamping.length > 0) {
+        updated = [...updated, ...toAddCamping];
+        toAddCamping.forEach((t) => existingKeys.add(keyOf(t)));
+        hasChanges = true;
+      }
+      storageInstance.setItem(CAMPING_SEED_KEY, 'true');
+    }
+
+    // 7. Commerce templates: every document is anonymized and keeps actor A/B fields separate.
     if (!storageInstance.getItem(COMMERCE_SEED_KEY)) {
       const toAddCommerce = (DEFAULT_COMMERCE_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
       if (toAddCommerce.length > 0) {
@@ -343,6 +356,21 @@ const FIELD_OPTIONS = [
   { path: 'owner.idService', label: 'Ιδιοκτήτης · Υπηρεσία έκδοσης' },
   { path: 'owner.taxId', label: 'Ιδιοκτήτης · Α.Φ.Μ.' },
   { path: 'owner.taxOffice', label: 'Ιδιοκτήτης · Δ.Ο.Υ.' },
+  { path: 'camping.legalProvision', label: 'Camping · Νομική διάταξη' },
+  { path: 'camping.location', label: 'Camping · Τόπος' },
+  { path: 'camping.actDescription', label: 'Camping · Περιγραφή πράξης' },
+  { path: 'camping.actQualifier', label: 'Camping · Χαρακτηρισμός πράξης' },
+  { path: 'camping.outdoorItems', label: 'Camping · Αντικείμενα εκτός οχήματος' },
+  { path: 'camping.noDesignatedSite', label: 'Camping · Μη καθορισμένος χώρος' },
+  { path: 'vehicle.type', label: 'Όχημα · Τύπος' },
+  { path: 'vehicle.registration', label: 'Όχημα · Αριθμός κυκλοφορίας' },
+  { path: 'vehicle.towVehicleRegistration', label: 'Όχημα · Ρυμουλκό / αυτοκίνητο' },
+  { path: 'vehicle.caravanRegistration', label: 'Όχημα · Τροχόσπιτο' },
+  { path: 'interpreter.fullName', label: 'Διερμηνέας · Ονοματεπώνυμο' },
+  { path: 'interpreter.language', label: 'Διερμηνέας · Γλώσσα' },
+  { path: 'person.spouseFullName', label: 'Πρόσωπο · Ονοματεπώνυμο συζύγου' },
+  { path: 'prosecutor.fullName', label: 'Εισαγγελέας · Ονοματεπώνυμο' },
+  { path: 'prosecutor.title', label: 'Εισαγγελέας · Ιδιότητα' },
   { path: 'timeline.witness.startTime', label: '1. Κατάθεση · Ώρα έναρξης' },
   { path: 'timeline.witness.endTime', label: "1. Κατάθεση · Ώρα περάτωσης (+5')" },
   { path: 'timeline.arrest.startTime', label: "2. Έκθεση σύλληψης · Ώρα έναρξης (+1')" },
@@ -437,6 +465,21 @@ export function valueFor(path, item) {
     'owner.idService': item.owner && item.owner.idService,
     'owner.taxId': item.owner && item.owner.taxId,
     'owner.taxOffice': item.owner && item.owner.taxOffice,
+    'camping.legalProvision': item.camping && item.camping.legalProvision,
+    'camping.location': item.camping && item.camping.location,
+    'camping.actDescription': item.camping && item.camping.actDescription,
+    'camping.actQualifier': item.camping && item.camping.actQualifier,
+    'camping.outdoorItems': item.camping && item.camping.outdoorItems,
+    'camping.noDesignatedSite': item.camping && item.camping.noDesignatedSite,
+    'vehicle.type': item.vehicle && item.vehicle.type,
+    'vehicle.registration': item.vehicle && item.vehicle.registration,
+    'vehicle.towVehicleRegistration': item.vehicle && item.vehicle.towVehicleRegistration,
+    'vehicle.caravanRegistration': item.vehicle && item.vehicle.caravanRegistration,
+    'interpreter.fullName': item.interpreter && item.interpreter.fullName,
+    'interpreter.language': item.interpreter && item.interpreter.language,
+    'person.spouseFullName': offender.spouseFullName,
+    'prosecutor.fullName': item.prosecutorPerson && item.prosecutorPerson.fullName,
+    'prosecutor.title': item.prosecutorPerson && item.prosecutorPerson.title,
     'counterfeit.witness.fullName': witnessFullName,
     'counterfeit.witness.surname': witness.surname,
     'counterfeit.witness.name': witness.name,
@@ -544,8 +587,9 @@ function render() {
   const isEnvironment = (t) => t.category === 'environment';
   const isHealth = (t) => t.category === 'health';
   const isNoise = (t) => t.category === 'noise';
-  const isNarcotics = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
-  const isCustom = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isNarcotics(t);
+  const isCamping = (t) => t.category === 'camping';
+  const isNarcotics = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
+  const isCustom = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && !isNarcotics(t);
 
   const groups = [
     { title: (count) => `Δικογραφία Ναρκωτικών (${count} πρότυπα)`, items: allTemplates.filter(isNarcotics) },
@@ -553,6 +597,7 @@ function render() {
     { title: (count) => `Δικογραφία Ρύπανσης Περιβάλλοντος (${count} πρότυπα)`, items: allTemplates.filter(isEnvironment) },
     { title: (count) => `Δικογραφία Υγειονομικού Κανονισμού (${count} πρότυπα)`, items: allTemplates.filter(isHealth) },
     { title: (count) => `Δικογραφία Ηχορύπανσης Κ.Υ.Ε. (${count} πρότυπα)`, items: allTemplates.filter(isNoise) },
+    { title: (count) => `Δικογραφία Παράνομου Camping (${count} πρότυπα)`, items: allTemplates.filter(isCamping) },
     { title: (count) => `Πρόσθετα / προσαρμοσμένα πρότυπα (${count})`, items: allTemplates.filter(isCustom) }
   ];
 

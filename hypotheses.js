@@ -237,6 +237,11 @@ function uid() {
         taxId: $('case-profile').value === 'noise' && $('noise-owner-tax-id') ? $('noise-owner-tax-id').value.trim() : '',
         taxOffice: $('case-profile').value === 'noise' && $('noise-owner-tax-office') ? $('noise-owner-tax-office').value.trim() : ''
       },
+      camping: {
+        legalProvision: $('camping-legal-provision')?.value.trim() || '', location: $('camping-location')?.value.trim() || '', actDescription: $('camping-act-description')?.value.trim() || '', actQualifier: $('camping-act-qualifier')?.value.trim() || '', outdoorItems: $('camping-outdoor-items')?.value.trim() || '', noDesignatedSite: $('camping-no-designated-site')?.value.trim() || ''
+      },
+      vehicle: { type: $('camping-vehicle-type')?.value.trim() || '', registration: $('camping-vehicle-registration')?.value.trim() || '', towVehicleRegistration: $('camping-tow-registration')?.value.trim() || '', caravanRegistration: $('camping-caravan-registration')?.value.trim() || '' },
+      interpreter: { fullName: $('camping-interpreter-full-name')?.value.trim() || '', language: $('camping-interpreter-language')?.value.trim() || '' },
       notes: $('case-notes').value.trim(),
       completeness: {
         safety: $('check-safety').checked,
@@ -378,6 +383,14 @@ function uid() {
     if ($('noise-owner-tax-id')) $('noise-owner-tax-id').value = owner.taxId || '';
     if ($('noise-owner-tax-office')) $('noise-owner-tax-office').value = owner.taxOffice || '';
     if ($('noise-fields')) $('noise-fields').hidden = item.profile !== 'noise';
+    var camping = item.camping || {};
+    [['camping-legal-provision','legalProvision'],['camping-location','location'],['camping-act-description','actDescription'],['camping-act-qualifier','actQualifier'],['camping-outdoor-items','outdoorItems'],['camping-no-designated-site','noDesignatedSite']].forEach(function (pair) { if ($(pair[0])) $(pair[0]).value = camping[pair[1]] || ''; });
+    var vehicle = item.vehicle || {};
+    [['camping-vehicle-type','type'],['camping-vehicle-registration','registration'],['camping-tow-registration','towVehicleRegistration'],['camping-caravan-registration','caravanRegistration']].forEach(function (pair) { if ($(pair[0])) $(pair[0]).value = vehicle[pair[1]] || ''; });
+    var interpreter = item.interpreter || {};
+    if ($('camping-interpreter-full-name')) $('camping-interpreter-full-name').value = interpreter.fullName || '';
+    if ($('camping-interpreter-language')) $('camping-interpreter-language').value = interpreter.language || '';
+    if ($('camping-fields')) $('camping-fields').hidden = item.profile !== 'camping';
     if ($('health-arrest-start')) $('health-arrest-start').value = (item.timeline && item.timeline.arrestStartTime) || '';
     if ($('health-arrest-end')) $('health-arrest-end').value = (item.timeline && item.timeline.arrestEndTime) || '';
     if ($('health-examination-start')) $('health-examination-start').value = (item.timeline && item.timeline.examinationStartTime) || '';

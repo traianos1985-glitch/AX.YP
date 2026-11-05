@@ -27,7 +27,7 @@ ensureDefaultTemplates(storage1);
 
 const seededTemplates = JSON.parse(storage1.getItem('axyp-docx-templates'));
 
-assert.equal(seededTemplates.length, 35, 'Expected exactly 35 seeded templates (10 narcotics + 5 counterfeit + 4 environment + 4 health + 4 noise + 8 commerce)');
+assert.equal(seededTemplates.length, 39, 'Expected exactly 35 seeded templates (10 narcotics + 5 counterfeit + 4 environment + 4 health + 4 noise + 8 commerce)');
 assert.equal(storage1.getItem('axyp-narcotics-templates-seeded-v1'), 'true');
 
 seededTemplates.forEach((t) => {
@@ -35,13 +35,14 @@ seededTemplates.forEach((t) => {
   assert.ok(t.dataBase64, 'Template must have dataBase64');
   assert.ok(t.mappings, 'Template must have mappings');
   assert.ok(t.mappingConfirmedAt, 'Template mappingConfirmedAt must be pre-confirmed');
-  assert.ok(t.category === 'narcotics' || t.category === 'counterfeit' || t.category === 'environment' || t.category === 'health' || t.category === 'noise' || t.category === 'commerce');
+  assert.ok(t.category === 'narcotics' || t.category === 'counterfeit' || t.category === 'environment' || t.category === 'health' || t.category === 'noise' || t.category === 'camping' || t.category === 'commerce');
 });
 assert.equal(seededTemplates.filter((t) => t.category === 'narcotics').length, 10);
 assert.equal(seededTemplates.filter((t) => t.category === 'counterfeit').length, 5);
 assert.equal(seededTemplates.filter((t) => t.category === 'environment').length, 4);
 assert.equal(seededTemplates.filter((t) => t.category === 'health').length, 4);
 assert.equal(seededTemplates.filter((t) => t.category === 'noise').length, 4);
+assert.equal(seededTemplates.filter((t) => t.category === 'camping').length, 4);
 assert.equal(seededTemplates.filter((t) => t.category === 'commerce').length, 8);
 console.log('✓ Clean installation seeded 10 templates successfully.');
 
@@ -65,6 +66,7 @@ delayedStorage.setItem('axyp-counterfeit-templates-seeded-v1', 'true');
 delayedStorage.setItem('axyp-environment-templates-seeded-v1', 'true');
 delayedStorage.setItem('axyp-health-templates-seeded-v1', 'true');
   delayedStorage.setItem('axyp-noise-templates-seeded-v1', 'true');
+  delayedStorage.setItem('axyp-camping-templates-seeded-v1', 'true');
   delayedStorage.setItem('axyp-commerce-templates-seeded-v1', 'true');
   finishHydration();
 await delayedInitialization;
@@ -81,15 +83,15 @@ console.log('2. Testing second launch (zero duplicates)...');
 ensureDefaultTemplates(storage1);
 
 const recheckedTemplates = JSON.parse(storage1.getItem('axyp-docx-templates'));
-assert.equal(recheckedTemplates.length, 35, 'Must remain 35 templates without duplication');
+assert.equal(recheckedTemplates.length, 39, 'Must remain 35 templates without duplication');
 
 // Test deletion respect: if user deletes a template, it must not be re-added on next boot
 recheckedTemplates.pop(); // user deletes 1 template
 storage1.setItem('axyp-docx-templates', JSON.stringify(recheckedTemplates));
-assert.equal(JSON.parse(storage1.getItem('axyp-docx-templates')).length, 34);
+assert.equal(JSON.parse(storage1.getItem('axyp-docx-templates')).length, 38);
 
 ensureDefaultTemplates(storage1);
-assert.equal(JSON.parse(storage1.getItem('axyp-docx-templates')).length, 34, 'Deleted template must not be restored');
+assert.equal(JSON.parse(storage1.getItem('axyp-docx-templates')).length, 38, 'Deleted template must not be restored');
 console.log('✓ Second launch creates zero duplicates and respects user deletions.');
 
 // 3. Test retention of custom / manually imported templates and upgrade of existing installation
@@ -127,12 +129,13 @@ assert.equal(existing01.customUserNote, 'user modified version', 'User modificat
 assert.equal(existing01.mappings['case.date'], 'custom.date');
 
 // Total should be 1 custom + 1 existing-01 + 30 newly added default templates = 32
-assert.equal(upgradedTemplates.length, 36, 'Expected 36 total templates after upgrade (1 custom + 1 existing-01 + 9 narcotics + 5 counterfeit + 4 environment + 4 health + 4 noise + 8 commerce)');
+assert.equal(upgradedTemplates.length, 40, 'Expected 36 total templates after upgrade (1 custom + 1 existing-01 + 9 narcotics + 5 counterfeit + 4 environment + 4 health + 4 noise + 8 commerce)');
 console.log('✓ Upgrade preserves custom templates and user-modified mappings.');
 
 const storageSource = await readFile(new URL('../storage.js', import.meta.url), 'utf8');
 assert.match(storageSource, /axyp-narcotics-templates-seeded-v1/, 'Seed marker must be included in IndexedDB hydration keys');
 assert.match(storageSource, /axyp-noise-templates-seeded-v1/, 'Noise seed marker must be included in IndexedDB hydration keys');
+assert.match(storageSource, /axyp-camping-templates-seeded-v1/, 'Camping seed marker must be included in IndexedDB hydration keys');
 assert.match(storageSource, /ready:\s*ready/, 'Storage must expose its hydration readiness promise');
 
 // 4. Test offline & local-first integrity
