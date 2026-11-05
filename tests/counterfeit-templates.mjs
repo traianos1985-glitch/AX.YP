@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { unzipSync, zipSync, strFromU8, strToU8 } from '../vendor/fflate.js';
 import { DEFAULT_COUNTERFEIT_TEMPLATES } from '../dossier-templates-data.js';
-import { ensureDefaultTemplates, initializeDefaultTemplates, getTemplateParts, computeTimeline, replaceInXml } from '../template-library.js';
+import { ensureDefaultTemplates, initializeDefaultTemplates, getTemplateParts, computeTimeline, replaceInXml, valueFor } from '../template-library.js';
 
 console.log('--- Starting Counterfeit Templates & Auto-loader Test Suite ---');
 
@@ -30,6 +30,15 @@ const seededTemplates = JSON.parse(storage1.getItem('axyp-docx-templates'));
 assert.equal(storage1.getItem('axyp-counterfeit-templates-seeded-v1'), 'true');
 const counterfeitSeeded = seededTemplates.filter((t) => t.category === 'counterfeit');
 assert.equal(counterfeitSeeded.length, 5, 'Expected exactly 5 seeded counterfeit templates');
+for (const id of ['counterfeit-01', 'counterfeit-02', 'counterfeit-03']) {
+  const template = counterfeitSeeded.find((item) => item.id === id);
+  assert.ok(template.fields.includes('evidence.serialNumber'), id + ' declares the serial-number field');
+  assert.equal(template.mappings['evidence.serialNumber'], 'evidence.serialNumber');
+  const parts = getTemplateParts(template);
+  const xml = strFromU8(parts['word/document.xml']);
+  assert.match(xml, /Σειριακός αριθμός πλαστού χαρτονομίσματος:/);
+  assert.match(xml, /\\{\\{evidence\\.serialNumber\\}\\}/);
+}
 
 const expectedNames = [
   '01_ΕΚΘΕΣΗ_ΕΝΟΡΚΗΣ_ΕΞΕΤΑΣΗΣ_ΜΑΡΤΥΡΑ.docx',
@@ -152,6 +161,7 @@ const syntheticCase = {
   time: '11:40',
   location: 'Κυπαρισσία',
   evidence: 'ένα (1) χαρτονόμισμα των πενήντα (50) ευρώ',
+  counterfeit: { serialNumber: 'TEST-SERIAL-123456' },
   arrestingOfficer: 'Υπαστυνόμος Β΄ Παπαδόπουλος Γεώργιος',
   officerA: {
     rank: 'Υπαστυνόμος Β΄',
@@ -196,6 +206,9 @@ for (const tpl of DEFAULT_COUNTERFEIT_TEMPLATES) {
     let xml = strFromU8(parts[filename]);
     if (filename === 'word/document.xml') foundDocument = true;
     xml = replaceInXml(xml, tpl, syntheticCase);
+    if (['counterfeit-01', 'counterfeit-02', 'counterfeit-03'].includes(tpl.id)) {
+      assert.ok(xml.includes('TEST-SERIAL-123456'), tpl.name + ' must repeat the serial number');
+    }
     assert.doesNotMatch(xml, /\{\{\s*[a-zA-Z0-9_.-]+\s*\}\}/, `All placeholders in ${tpl.name} (${filename}) should be filled`);
     parts[filename] = strToU8(xml);
   }
