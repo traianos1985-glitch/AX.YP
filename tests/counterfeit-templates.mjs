@@ -152,14 +152,6 @@ console.log('✓ Offline cache and local-first requirements fully verified.');
 
 // 5. Test that all 5 counterfeit DOCX files unpack and replace placeholders with synthetic data
 console.log('5. Testing unpacking and placeholder replacement across all 5 counterfeit DOCX templates...');
-for (const template of counterfeitSeeded) {
-  const xml = strFromU8(getTemplateParts(template)['word/document.xml']);
-  const roleParagraphs = xml.split('</w:p>')
-    .filter((paragraph) => paragraph.includes('{{person.') || paragraph.includes('{{offender.'))
-    .map((paragraph) => paragraph.replace(/<[^>]+>/g, '').trim())
-    .filter(Boolean);
-  console.log('ROLE-AUDIT', template.id, roleParagraphs.join(' || '));
-}
 
 const syntheticCase = {
   id: 'yp-counterfeit-test-01',
@@ -170,7 +162,26 @@ const syntheticCase = {
   time: '11:40',
   location: 'Κυπαρισσία',
   evidence: 'ένα (1) χαρτονόμισμα των πενήντα (50) ευρώ',
-  counterfeit: { serialNumber: 'TEST-SERIAL-123456' },
+  counterfeit: {
+    serialNumber: 'TEST-SERIAL-123456',
+    witness: {
+      surname: 'WITNESS-SURNAME-TEST', name: 'WITNESS-NAME-TEST',
+      fatherName: 'WITNESS-FATHER-TEST', motherName: 'WITNESS-MOTHER-TEST',
+      birthDate: '1980-01-01', birthPlace: 'WITNESS-BIRTHPLACE-TEST',
+      city: 'WITNESS-CITY-TEST', address: 'WITNESS-ADDRESS-TEST',
+      idNumber: 'WITNESS-ID-TEST', idDate: '2010-01-01',
+      idService: 'WITNESS-SERVICE-TEST', email: 'witness@example.test'
+    },
+    depositor: {
+      surname: 'DEPOSITOR-SURNAME-TEST', name: 'DEPOSITOR-NAME-TEST',
+      fatherName: 'DEPOSITOR-FATHER-TEST', motherName: 'DEPOSITOR-MOTHER-TEST',
+      birthDate: '1990-01-01', birthPlace: 'DEPOSITOR-BIRTHPLACE-TEST',
+      city: 'DEPOSITOR-CITY-TEST', address: 'DEPOSITOR-ADDRESS-TEST',
+      idNumber: 'DEPOSITOR-ID-TEST', idDate: '2015-01-01',
+      idService: 'DEPOSITOR-SERVICE-TEST', taxId: '123456789',
+      phone: '6900000000', email: 'depositor@example.test'
+    }
+  },
   arrestingOfficer: 'Υπαστυνόμος Β΄ Παπαδόπουλος Γεώργιος',
   officerA: {
     rank: 'Υπαστυνόμος Β΄',
@@ -218,6 +229,14 @@ for (const tpl of counterfeitSeeded) {
     if (filename === 'word/document.xml' && ['counterfeit-01', 'counterfeit-02', 'counterfeit-03'].includes(tpl.id)) {
       assert.ok(xml.includes('TEST-SERIAL-123456'), tpl.name + ' must repeat the serial number');
     }
+    if (filename === 'word/document.xml' && ['counterfeit-01', 'counterfeit-02', 'counterfeit-04'].includes(tpl.id)) {
+      assert.ok(xml.includes('WITNESS-SURNAME-TEST') || xml.includes('WITNESS-NAME-TEST'), tpl.name + ' must use witness details');
+      assert.ok(!xml.includes('DEPOSITOR-SURNAME-TEST'), tpl.name + ' must not use ATM depositor details as witness');
+    }
+    if (filename === 'word/document.xml' && ['counterfeit-03', 'counterfeit-05'].includes(tpl.id)) {
+      assert.ok(xml.includes('DEPOSITOR-SURNAME-TEST'), tpl.name + ' must use ATM depositor details');
+      assert.ok(!xml.includes('WITNESS-SURNAME-TEST'), tpl.name + ' must not use witness details as depositor');
+    }
     assert.doesNotMatch(xml, /\{\{\s*[a-zA-Z0-9_.-]+\s*\}\}/, `All placeholders in ${tpl.name} (${filename}) should be filled`);
     parts[filename] = strToU8(xml);
   }
@@ -235,6 +254,8 @@ for (const tpl of counterfeitSeeded) {
 
 assert.equal(valueFor('counterfeit.serialNumber', { counterfeit: { serialNumber: 'SERIAL-TEST' } }), 'SERIAL-TEST');
 assert.equal(valueFor('counterfeit.serialNumber', syntheticCase), 'TEST-SERIAL-123456');
+assert.equal(valueFor('counterfeit.witness.surname', syntheticCase), 'WITNESS-SURNAME-TEST');
+assert.equal(valueFor('counterfeit.depositor.surname', syntheticCase), 'DEPOSITOR-SURNAME-TEST');
 assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', time: '11:40' }), '—', 'Counterfeit must not inherit narcotics auto timeline');
 assert.equal(valueFor('timeline.seizure.startTime', { profile: 'counterfeit', time: '11:40' }), '—', 'Counterfeit seizure time must remain manual');
 assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', timeline: { witnessStartTime: '09:17' } }), '09:17', 'Counterfeit manually entered times must map exactly');
