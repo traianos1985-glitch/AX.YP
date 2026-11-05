@@ -479,3 +479,6 @@ await import('./narcotics-templates.mjs');
 
 // Dossier category navigation regression tests
 await import('./dossier-categories.mjs');
+
+// Counterfeit dossier templates regression tests
+await import('./counterfeit-templates.mjs');

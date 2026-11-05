@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { DOSSIER_CATEGORIES } from '../dossier-categories.js';
 const ids=DOSSIER_CATEGORIES.map(x=>x.id);
 assert.equal(new Set(ids).size,ids.length);
-assert.deepEqual(ids,['narcotics','domestic','migration','traffic','kok','animal','generic']);
+assert.deepEqual(ids,['narcotics','counterfeit','domestic','migration','traffic','kok','animal','generic']);
 for(const x of DOSSIER_CATEGORIES) assert.ok(x.label&&x.description&&x.mark);
 const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const hyp=await readFile(new URL('../hypotheses.js',import.meta.url),'utf8');
@@ -14,6 +14,6 @@ assert.match(html,/id="dossier-dashboard"/); assert.match(html,/id="dossier-cate
 assert.match(html,/id="dossier-workspace"/); assert.match(html,/id="dossier-back"/);
 assert.match(html,/id="dossier-new-case"/); assert.match(html,/id="case-timeline-section"/); assert.match(html,/id="case-investigators-section"/);
 assert.match(hyp,/activeProfileFilter/); assert.match(hyp,/openCategory/); assert.match(hyp,/dossier-back/);
-assert.match(bundles,/getActiveProfileFilter/); assert.match(templateLibrary,/HypothesesView\.refresh/); assert.match(sw,/axyp-v25/);
+assert.match(bundles,/getActiveProfileFilter/); assert.match(templateLibrary,/HypothesesView\.refresh/); assert.match(sw,/axyp-v26/);
 assert.match(sw,/dossier-categories\.js/);
 console.log('Dossier category navigation tests passed.');

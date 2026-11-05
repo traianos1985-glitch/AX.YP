@@ -1,8 +1,9 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
-import { DEFAULT_NARCOTICS_TEMPLATES } from './dossier-templates-data.js';
+import { DEFAULT_NARCOTICS_TEMPLATES, DEFAULT_COUNTERFEIT_TEMPLATES } from './dossier-templates-data.js';
 
 const KEY = 'axyp-docx-templates';
-const SEED_KEY = 'axyp-narcotics-templates-seeded-v1';
+const NARCOTICS_SEED_KEY = 'axyp-narcotics-templates-seeded-v1';
+const COUNTERFEIT_SEED_KEY = 'axyp-counterfeit-templates-seeded-v1';
 const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
 const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } catch (_) { return []; } };
@@ -11,20 +12,39 @@ const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '
 
 export function ensureDefaultTemplates(storageInstance = storage()) {
   try {
-    const isSeeded = storageInstance.getItem(SEED_KEY);
-    if (isSeeded) return;
-
     const existing = (() => {
       try { return JSON.parse(storageInstance.getItem(KEY) || '[]'); } catch (_) { return []; }
     })();
 
     const existingNames = new Set(existing.map((t) => t.name));
-    const toAdd = DEFAULT_NARCOTICS_TEMPLATES.filter((t) => !existingNames.has(t.name));
+    let updated = [...existing];
+    let hasChanges = false;
 
-    if (toAdd.length > 0) {
-      storageInstance.setItem(KEY, JSON.stringify([...existing, ...toAdd]));
+    // 1. Narcotics templates seeding
+    if (!storageInstance.getItem(NARCOTICS_SEED_KEY)) {
+      const toAddNarcotics = (DEFAULT_NARCOTICS_TEMPLATES || []).filter((t) => !existingNames.has(t.name));
+      if (toAddNarcotics.length > 0) {
+        updated = [...updated, ...toAddNarcotics];
+        toAddNarcotics.forEach((t) => existingNames.add(t.name));
+        hasChanges = true;
+      }
+      storageInstance.setItem(NARCOTICS_SEED_KEY, 'true');
     }
-    storageInstance.setItem(SEED_KEY, 'true');
+
+    // 2. Counterfeit templates seeding
+    if (!storageInstance.getItem(COUNTERFEIT_SEED_KEY)) {
+      const toAddCounterfeit = (DEFAULT_COUNTERFEIT_TEMPLATES || []).filter((t) => !existingNames.has(t.name));
+      if (toAddCounterfeit.length > 0) {
+        updated = [...updated, ...toAddCounterfeit];
+        toAddCounterfeit.forEach((t) => existingNames.add(t.name));
+        hasChanges = true;
+      }
+      storageInstance.setItem(COUNTERFEIT_SEED_KEY, 'true');
+    }
+
+    if (hasChanges) {
+      storageInstance.setItem(KEY, JSON.stringify(updated));
+    }
   } catch (e) {
     console.error('Failed to seed default templates:', e);
   }
@@ -308,83 +328,95 @@ function render() {
   const currentCase = getCase();
   const allTemplates = read();
 
-  const narcoticsList = allTemplates.filter((t) => t.category === 'narcotics' || t.name.startsWith('0') || t.name.startsWith('10_'));
-  if (narcoticsList.length > 0) {
-    const section = document.createElement('h3');
-    section.className = 'template-category-heading';
-    section.textContent = `Δικογραφία Ναρκωτικών (${narcoticsList.length} πρότυπα)`;
-    root.appendChild(section);
-  }
+  const isCounterfeit = (t) => t.category === 'counterfeit';
+  const isNarcotics = (t) => !isCounterfeit(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
+  const isCustom = (t) => !isCounterfeit(t) && !isNarcotics(t);
 
-  let otherHeadingAdded = false;
-  allTemplates.forEach((template, index) => {
-    const isNarcoticsTemplate = template.category === 'narcotics' || template.name.startsWith('0') || template.name.startsWith('10_');
-    if (!isNarcoticsTemplate && !otherHeadingAdded) {
-      const section = document.createElement('h3');
-      section.className = 'template-category-heading';
-      section.textContent = 'Πρόσθετα / προσαρμοσμένα πρότυπα';
-      root.appendChild(section);
-      otherHeadingAdded = true;
-    }
-    const card = document.createElement('article');
-    card.className = 'template-file-card template-review-card';
-    card.innerHTML =
-      '<div class="template-review-head"><div><strong></strong><span class="mapping-status" style="margin-left:8px; font-size:0.8rem;"></span><p class="muted"></p></div><button type="button" class="text-button remove">Διαγραφή</button></div>' +
-      '<div class="mapping-review"></div>' +
-      '<div class="template-review-actions"><span class="mapping-result muted"></span><button type="button" class="mini-button save-mapping">Αποθήκευση αντιστοίχισης</button><button type="button" class="mini-button generate" disabled>Συμπλήρωση Word</button></div>';
+  const groups = [
+    { title: (count) => `Δικογραφία Ναρκωτικών (${count} πρότυπα)`, items: allTemplates.filter(isNarcotics) },
+    { title: (count) => `Δικογραφία Πλαστών Νομισμάτων (${count} πρότυπα)`, items: allTemplates.filter(isCounterfeit) },
+    { title: (count) => `Πρόσθετα / προσαρμοσμένα πρότυπα (${count})`, items: allTemplates.filter(isCustom) }
+  ];
 
-    card.querySelector('strong').textContent = template.name;
-    const catLabel = template.categoryLabel || (template.category === 'narcotics' || template.name.startsWith('0') || template.name.startsWith('10_') ? 'Δικογραφία Ναρκωτικών' : 'Προσαρμοσμένο');
-    card.querySelector('.mapping-status').textContent = catLabel;
-    const caseNote = currentCase && currentCase.title ? ` (ενεργή υπόθεση: «${currentCase.title}»)` : ' (δεν έχει επιλεγεί υπόθεση)';
-    card.querySelector('p').textContent = `${template.fields.length} placeholders εντοπίστηκαν${caseNote}.`;
+  groups.forEach((group) => {
+    if (!group.items.length) return;
+    const heading = document.createElement('h3');
+    heading.className = 'template-category-heading';
+    heading.textContent = group.title(group.items.length);
+    root.appendChild(heading);
 
-    const mappingRoot = card.querySelector('.mapping-review');
-    template.fields.forEach((field) => {
-      const row = document.createElement('label');
-      row.className = 'mapping-row';
-      row.innerHTML = '<code></code><select><option value="">— Δεν έχει αντιστοιχιστεί —</option></select><output></output>';
-      row.querySelector('code').textContent = `{{${field}}}`;
+    group.items.forEach((template) => {
+      const card = document.createElement('article');
+      card.className = 'template-file-card template-review-card';
+      card.innerHTML =
+        '<div class="template-review-head"><div><strong></strong><span class="mapping-status" style="margin-left:8px; font-size:0.8rem;"></span><p class="muted"></p></div><button type="button" class="text-button remove">Διαγραφή</button></div>' +
+        '<div class="mapping-review"></div>' +
+        '<div class="template-review-actions"><span class="mapping-result muted"></span><button type="button" class="mini-button save-mapping">Αποθήκευση αντιστοίχισης</button><button type="button" class="mini-button generate" disabled>Συμπλήρωση Word</button></div>';
 
-      FIELD_OPTIONS.forEach((option) => {
-        const item = document.createElement('option');
-        item.value = option.path;
-        item.textContent = option.label;
-        row.querySelector('select').appendChild(item);
+      card.querySelector('strong').textContent = template.name;
+      const catLabel = template.categoryLabel || (
+        isCounterfeit(template) ? 'Δικογραφία Πλαστών' :
+        isNarcotics(template) ? 'Δικογραφία Ναρκωτικών' :
+        'Προσαρμοσμένο'
+      );
+      card.querySelector('.mapping-status').textContent = catLabel;
+      const caseNote = currentCase && currentCase.title ? ` (ενεργή υπόθεση: «${currentCase.title}»)` : ' (δεν έχει επιλεγεί υπόθεση)';
+      card.querySelector('p').textContent = `${template.fields.length} placeholders εντοπίστηκαν${caseNote}.`;
+
+      const mappingRoot = card.querySelector('.mapping-review');
+      template.fields.forEach((field) => {
+        const row = document.createElement('label');
+        row.className = 'mapping-row';
+        row.innerHTML = '<code></code><select><option value="">— Δεν έχει αντιστοιχιστεί —</option></select><output></output>';
+        row.querySelector('code').textContent = `{{${field}}}`;
+
+        FIELD_OPTIONS.forEach((option) => {
+          const item = document.createElement('option');
+          item.value = option.path;
+          item.textContent = option.label;
+          row.querySelector('select').appendChild(item);
+        });
+
+        row.querySelector('select').value = mappingFor(template, field);
+        row.querySelector('select').onchange = () => {
+          row.querySelector('output').textContent = display(valueFor(row.querySelector('select').value, getCase()));
+        };
+        row.querySelector('select').dispatchEvent(new Event('change'));
+        mappingRoot.appendChild(row);
       });
 
-      row.querySelector('select').value = mappingFor(template, field);
-      row.querySelector('select').onchange = () => {
-        row.querySelector('output').textContent = display(valueFor(row.querySelector('select').value, getCase()));
+      card.querySelector('.save-mapping').onclick = () => {
+        const mappings = {};
+        [...mappingRoot.querySelectorAll('.mapping-row')].forEach((row, rowIndex) => {
+          mappings[template.fields[rowIndex]] = row.querySelector('select').value;
+        });
+        const all = read();
+        const targetIdx = all.findIndex((t) => (template.id ? t.id === template.id : t.name === template.name));
+        if (targetIdx >= 0) {
+          all[targetIdx].mappings = mappings;
+          all[targetIdx].mappingConfirmedAt = new Date().toISOString();
+          write(all);
+        }
+        card.querySelector('.mapping-result').textContent = 'Η αντιστοίχιση επιβεβαιώθηκε.';
+        card.querySelector('.generate').disabled = false;
       };
-      row.querySelector('select').dispatchEvent(new Event('change'));
-      mappingRoot.appendChild(row);
+
+      card.querySelector('.generate').onclick = () => {
+        const all = read();
+        const current = all.find((t) => (template.id ? t.id === template.id : t.name === template.name)) || template;
+        generate(current);
+      };
+
+      card.querySelector('.remove').onclick = () => {
+        if (!window.confirm('Να διαγραφεί το πρότυπο Word;')) return;
+        const all = read().filter((t) => (template.id ? t.id !== template.id : t.name !== template.name));
+        write(all);
+        render();
+      };
+
+      if (template.mappingConfirmedAt) card.querySelector('.generate').disabled = false;
+      root.appendChild(card);
     });
-
-    card.querySelector('.save-mapping').onclick = () => {
-      const mappings = {};
-      [...mappingRoot.querySelectorAll('.mapping-row')].forEach((row, rowIndex) => {
-        mappings[template.fields[rowIndex]] = row.querySelector('select').value;
-      });
-      const all = read();
-      all[index].mappings = mappings;
-      all[index].mappingConfirmedAt = new Date().toISOString();
-      write(all);
-      card.querySelector('.mapping-result').textContent = 'Η αντιστοίχιση επιβεβαιώθηκε.';
-      card.querySelector('.generate').disabled = false;
-    };
-
-    card.querySelector('.generate').onclick = () => generate(read()[index]);
-    card.querySelector('.remove').onclick = () => {
-      if (!window.confirm('Να διαγραφεί το πρότυπο Word;')) return;
-      const all = read();
-      all.splice(index, 1);
-      write(all);
-      render();
-    };
-
-    if (template.mappingConfirmedAt) card.querySelector('.generate').disabled = false;
-    root.appendChild(card);
   });
 
   if (!root.children.length) root.textContent = 'Δεν έχει εισαχθεί ακόμη πραγματικό πρότυπο Word.';
