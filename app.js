@@ -622,6 +622,8 @@
 
   function start() {
     document.getElementById('version').textContent = DATA.updated;
+    // Remove search terms left behind by older dashboard builds.
+    storageRemove(localStorage, 'axyp-recent-searches');
     document.getElementById('foot').textContent = 'Τελευταία ενημέρωση βάσης: ' + DATA.updated + '. Εγγραφές χωρίς επαλήθευση από επίσημη πηγή επισημαίνονται.';
     var savedTheme = storageGet(localStorage, THEME_KEY);
     applyTheme(savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'system');
