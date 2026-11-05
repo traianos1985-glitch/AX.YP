@@ -206,7 +206,7 @@ for (const tpl of counterfeitSeeded) {
     let xml = strFromU8(parts[filename]);
     if (filename === 'word/document.xml') foundDocument = true;
     xml = replaceInXml(xml, tpl, syntheticCase);
-    if (['counterfeit-01', 'counterfeit-02', 'counterfeit-03'].includes(tpl.id)) {
+    if (filename === 'word/document.xml' && ['counterfeit-01', 'counterfeit-02', 'counterfeit-03'].includes(tpl.id)) {
       assert.ok(xml.includes('TEST-SERIAL-123456'), tpl.name + ' must repeat the serial number');
     }
     assert.doesNotMatch(xml, /\{\{\s*[a-zA-Z0-9_.-]+\s*\}\}/, `All placeholders in ${tpl.name} (${filename}) should be filled`);
@@ -225,6 +225,7 @@ for (const tpl of counterfeitSeeded) {
 }
 
 assert.equal(valueFor('counterfeit.serialNumber', { counterfeit: { serialNumber: 'SERIAL-TEST' } }), 'SERIAL-TEST');
+assert.equal(valueFor('counterfeit.serialNumber', syntheticCase), 'TEST-SERIAL-123456');
 assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', time: '11:40' }), '', 'Counterfeit must not inherit narcotics auto timeline');
 assert.equal(valueFor('timeline.seizure.startTime', { profile: 'counterfeit', time: '11:40' }), '', 'Counterfeit seizure time must remain manual');
 assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', timeline: { witnessStartTime: '09:17' } }), '09:17', 'Counterfeit manually entered times must map exactly');
