@@ -207,6 +207,17 @@
     return result.sort(function (a, b) { return a.name.localeCompare(b.name, 'el'); });
   }
 
+  async function readDocument(caseId, fileName) {
+    if (!casesDirectory) throw new Error('Δεν έχει επιλεγεί προσωπικός φάκελος εργασίας.');
+    var all = await loadAll();
+    var item = all.find(function (entry) { return entry.id === caseId; });
+    if (!item) throw new Error('Δεν βρέθηκε η επιλεγμένη δικογραφία.');
+    var dossier = await casesDirectory.getDirectoryHandle(item.folderName || folderName(item));
+    var documents = await dossier.getDirectoryHandle('Έγγραφα');
+    var handle = await documents.getFileHandle(fileName);
+    return handle.getFile();
+  }
+
   async function loadAll() {
     if (!casesDirectory) return [];
     var records = [];
@@ -313,6 +324,7 @@
     isConnected: function () { return !!(workspace && casesDirectory); },
     loadAll: loadAll,
     listDocuments: listDocuments,
+    readDocument: readDocument,
     saveCase: saveCase,
     saveSnapshot: saveSnapshot,
     saveDocument: saveDocument

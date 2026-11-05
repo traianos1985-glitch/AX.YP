@@ -57,6 +57,6 @@ assert.match(hyp,/case-health-section/);
 assert.match(hyp,/case-health-timeline-section/);
 assert.ok(hyp.includes("health: {"));
 assert.ok(templateLibrary.includes('health.description'));
-assert.match(sw,/axyp-v31/);
+assert.match(sw,/const CACHE_NAME = \"axyp-v\d+\";/, 'Offline cache name must use a versioned axyp-vN identifier');
 assert.match(sw,/dossier-categories\.js/);
 console.log('Dossier category navigation tests passed.');
