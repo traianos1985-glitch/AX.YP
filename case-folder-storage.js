@@ -191,6 +191,22 @@
     await writable.close();
   }
 
+  async function listDocuments(caseId) {
+    if (!casesDirectory) return [];
+    var all = await loadAll();
+    var item = all.find(function (entry) { return entry.id === caseId; });
+    if (!item) return [];
+    var dossier = await casesDirectory.getDirectoryHandle(item.folderName || folderName(item));
+    var documents = await dossier.getDirectoryHandle('Έγγραφα', { create: true });
+    var result = [];
+    for await (var entry of documents.values()) {
+      if (entry.kind !== 'file') continue;
+      var file = await entry.getFile();
+      result.push({ name: entry.name, size: file.size, type: file.type || 'application/octet-stream', updatedAt: file.lastModified });
+    }
+    return result.sort(function (a, b) { return a.name.localeCompare(b.name, 'el'); });
+  }
+
   async function loadAll() {
     if (!casesDirectory) return [];
     var records = [];
@@ -296,6 +312,7 @@
     connect: connect,
     isConnected: function () { return !!(workspace && casesDirectory); },
     loadAll: loadAll,
+    listDocuments: listDocuments,
     saveCase: saveCase,
     saveSnapshot: saveSnapshot,
     saveDocument: saveDocument

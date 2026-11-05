@@ -588,6 +588,7 @@ function render() {
 }
 
 function importTemplate(event) {
+  if (!window.AXYP_ROLE || !window.AXYP_ROLE.isAdmin()) { event.target.value = ''; return; }
   const file = event.target.files[0];
   if (!file) return;
   file.arrayBuffer().then((buffer) => {

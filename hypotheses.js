@@ -440,12 +440,52 @@ function uid() {
     renderDetail();
   }
 
+  function renderDocuments(item) {
+    var root = $('case-documents');
+    if (!root) return;
+    root.textContent = '';
+    var files = [];
+    try {
+      var bundles = JSON.parse((window.AXYP_STORAGE || localStorage).getItem('axyp-case-bundles') || '[]');
+      var bundle = bundles.find(function (entry) { return entry.id === item.sourceBundleId; });
+      files = (bundle && bundle.documents || []).map(function (file) { return { name: file.name, size: file.size, source: 'Πρότυπο' }; });
+    } catch (_) {}
+    (item.documents || []).forEach(function (file) {
+      if (!files.some(function (entry) { return entry.name === file.name; })) files.push({ name: file.name, size: file.size, source: 'Δικογραφία' });
+    });
+    if (!files.length) { root.textContent = 'Δεν έχουν συνδεθεί ακόμη έγγραφα.'; return; }
+    files.forEach(function (file) {
+      var row = document.createElement('div'); row.className = 'case-document-row';
+      var label = document.createElement('span'); label.textContent = file.name + (file.size ? ' · ' + Math.round(file.size / 1024) + ' KB' : '') + ' · ' + file.source;
+      var preview = document.createElement('button'); preview.type = 'button'; preview.className = 'mini-button'; preview.textContent = 'Προεπισκόπηση';
+      preview.onclick = function () {
+        var target = $('case-document-preview');
+        target.hidden = false;
+        target.textContent = 'Προεπισκόπηση: ' + file.name + '\\n\\nΤο έγγραφο ανοίγει/επεξεργάζεται με Microsoft Word ή άλλο συμβατό Office. Η παραγωγή του τελικού Word γίνεται αφού ελεγχθούν τα στοιχεία της υπόθεσης.';
+      };
+      row.append(label, preview); root.appendChild(row);
+    });
+    if (window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected() && window.AXYP_WORKSPACE.listDocuments) {
+      window.AXYP_WORKSPACE.listDocuments(item.id).then(function (stored) {
+        stored.forEach(function (file) {
+          if (files.some(function (entry) { return entry.name === file.name; })) return;
+          var row = document.createElement('div'); row.className = 'case-document-row';
+          var label = document.createElement('span'); label.textContent = file.name + ' · ' + Math.round(file.size / 1024) + ' KB · Αποθηκευμένο';
+          var preview = document.createElement('button'); preview.type = 'button'; preview.className = 'mini-button'; preview.textContent = 'Προεπισκόπηση';
+          preview.onclick = function () { var target = $('case-document-preview'); target.hidden = false; target.textContent = 'Αποθηκευμένο έγγραφο: ' + file.name + '\\n\\nΓια πλήρη μορφοποιημένη προεπισκόπηση άνοιξέ το με Word. Μπορείς να το επεξεργαστείς και να το αποθηκεύσεις στον ίδιο φάκελο.'; };
+          row.append(label, preview); root.appendChild(row);
+        });
+      }).catch(function () {});
+    }
+  }
+
   function renderDetail() {
     var item = read().filter(function (entry) { return entry.id === selectedId; })[0];
     $('case-detail-empty').hidden = !!item;
     $('case-detail-content').hidden = !item;
     if (!item) return;
     $('case-detail-title').textContent = (item.title || 'Υπόθεση') + ' · ' + (item.snapshots ? item.snapshots.length : 0) + ' snapshot';
+    renderDocuments(item);
     var root = $('case-snapshots');
     root.textContent = '';
     (item.snapshots || []).slice().reverse().forEach(function (snap) {

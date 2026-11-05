@@ -1,6 +1,35 @@
 // Ασφάλεια και ιδιωτικότητα: κοινόχρηστη λειτουργία σε υπηρεσιακό υπολογιστή χωρίς κλείδωμα PIN.
 // Όλοι οι αστυνομικοί έχουν άμεση πρόσβαση στις υποθέσεις της υπηρεσίας.
 (function () {
+  var ADMIN_HASH = '9bb57ad97e489bd8b1485fa383c4ab9db5bfdc88a4ba46f7c808ddc6cec23b02';
+  var role = sessionStorage.getItem('axyp-role') === 'admin' ? 'admin' : 'user';
+  var login = document.getElementById('admin-login');
+  var logout = document.getElementById('admin-logout');
+  var roleStatus = document.getElementById('role-status');
+  function renderRole() {
+    var isAdmin = role === 'admin';
+    if (roleStatus) roleStatus.textContent = 'Ρόλος: ' + (isAdmin ? 'Admin' : 'Χρήστης');
+    if (login) login.hidden = isAdmin;
+    if (logout) logout.hidden = !isAdmin;
+    document.documentElement.dataset.role = role;
+    var templatesMode = document.getElementById('templates-mode');
+    if (templatesMode) templatesMode.hidden = !isAdmin;
+    var importArea = document.querySelector('.template-import');
+    if (importArea) importArea.hidden = !isAdmin;
+  }
+  async function digest(value) {
+    var bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+    return Array.from(new Uint8Array(bytes)).map(function (byte) { return byte.toString(16).padStart(2, '0'); }).join('');
+  }
+  if (login) login.addEventListener('click', async function () {
+    var password = window.prompt('Κωδικός admin');
+    if (password === null) return;
+    if (await digest(password) !== ADMIN_HASH) { window.alert('Λάθος κωδικός admin.'); return; }
+    role = 'admin'; sessionStorage.setItem('axyp-role', role); renderRole();
+  });
+  if (logout) logout.addEventListener('click', function () { role = 'user'; sessionStorage.removeItem('axyp-role'); renderRole(); });
+  window.AXYP_ROLE = { isAdmin: function () { return role === 'admin'; }, render: renderRole };
+  renderRole();
   var lock = document.getElementById('lock-screen');
   if (lock) {
     lock.hidden = true;
