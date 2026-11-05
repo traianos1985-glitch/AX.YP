@@ -88,6 +88,7 @@ delayedStorage.setItem('axyp-narcotics-templates-seeded-v1', 'true');
 delayedStorage.setItem('axyp-counterfeit-templates-seeded-v1', 'true');
 delayedStorage.setItem('axyp-environment-templates-seeded-v1', 'true');
 delayedStorage.setItem('axyp-health-templates-seeded-v1', 'true');
+ delayedStorage.setItem('axyp-commerce-templates-seeded-v1', 'true');
 finishHydration();
 await delayedInitialization;
 assert.deepEqual(
