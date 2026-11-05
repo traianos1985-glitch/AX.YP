@@ -154,7 +154,7 @@ console.log('✓ Offline cache and local-first requirements fully verified.');
 console.log('5. Testing unpacking and placeholder replacement across all 5 counterfeit DOCX templates...');
 for (const template of counterfeitSeeded) {
   const xml = strFromU8(getTemplateParts(template)['word/document.xml']);
-  const roleParagraphs = (xml.match(/<w:p\\b[^>]*>[\\s\\S]*?<\\/w:p>/g) || [])
+  const roleParagraphs = xml.split('</w:p>')
     .filter((paragraph) => paragraph.includes('{{person.') || paragraph.includes('{{offender.'))
     .map((paragraph) => paragraph.replace(/<[^>]+>/g, '').trim())
     .filter(Boolean);
