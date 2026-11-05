@@ -342,7 +342,7 @@ export function valueFor(path, item) {
     'officerB.service': officerB.service,
     'evidence.quantity': item.evidence,
     'counterfeit.serialNumber': item.counterfeit && item.counterfeit.serialNumber,
-    'environment.description': (item.environment && item.environment.description) || item.notes || item.evidence || '.............................',
+    'environment.description': (item.environment && item.environment.description) || '.............................',
     'counterfeit.witness.fullName': witnessFullName,
     'counterfeit.witness.surname': witness.surname,
     'counterfeit.witness.name': witness.name,

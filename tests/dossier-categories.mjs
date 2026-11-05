@@ -42,7 +42,11 @@ assert.match(hyp,/case-environment-section/);
 assert.match(hyp,/case-environment-timeline-section/);
 assert.ok(hyp.includes("environment: {"));
 assert.ok(templateLibrary.includes('environment.description'));
+assert.match(html,/id="environment-documentation"/);
+assert.match(html,/δεν αποδίδει από μόνη της νομικό χαρακτηρισμό/);
+assert.doesNotMatch(hyp,/category\.id === 'environment'[\s\S]{0,160}case-offence/);
+assert.doesNotMatch(bundles,/bundle\.profile === 'environment'[\s\S]{0,180}Παράβαση άρθρου 28/);
 
-assert.match(sw,/axyp-v29/);
+assert.match(sw,/axyp-v30/);
 assert.match(sw,/dossier-categories\.js/);
 console.log('Dossier category navigation tests passed.');

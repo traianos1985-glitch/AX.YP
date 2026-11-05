@@ -181,7 +181,8 @@ function uid() {
         } : {}
       },
       environment: {
-        description: $('case-profile').value === 'environment' && $('environment-description') ? $('environment-description').value.trim() : ''
+        description: $('case-profile').value === 'environment' && $('environment-description') ? $('environment-description').value.trim() : '',
+        documentation: $('case-profile').value === 'environment' && $('environment-documentation') ? $('environment-documentation').value.trim() : ''
       },
       notes: $('case-notes').value.trim(),
       completeness: {
@@ -209,6 +210,7 @@ function uid() {
     $('case-investigators-section').hidden = activeProfileFilter !== 'narcotics' && activeProfileFilter !== 'counterfeit' && activeProfileFilter !== 'environment';
     $('offender-section-title').textContent = (activeProfileFilter === 'narcotics' || activeProfileFilter === 'environment') ? 'Στοιχεία δράστη' : activeProfileFilter === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
     if ($('environment-description')) $('environment-description').value = '';
+    if ($('environment-documentation')) $('environment-documentation').value = '';
     if ($('environment-arrest-start')) $('environment-arrest-start').value = '';
     if ($('environment-arrest-end')) $('environment-arrest-end').value = '';
     if ($('environment-examination-start')) $('environment-examination-start').value = '';
@@ -274,6 +276,7 @@ function uid() {
     if ($('counterfeit-witness-id-service')) $('counterfeit-witness-id-service').value = witness.idService || '';
     if ($('counterfeit-witness-email')) $('counterfeit-witness-email').value = witness.email || '';
     if ($('environment-description')) $('environment-description').value = (item.environment && item.environment.description) || '';
+    if ($('environment-documentation')) $('environment-documentation').value = (item.environment && item.environment.documentation) || '';
     if ($('environment-arrest-start')) $('environment-arrest-start').value = (item.timeline && item.timeline.arrestStartTime) || '';
     if ($('environment-arrest-end')) $('environment-arrest-end').value = (item.timeline && item.timeline.arrestEndTime) || '';
     if ($('environment-examination-start')) $('environment-examination-start').value = (item.timeline && item.timeline.examinationStartTime) || '';
@@ -348,8 +351,6 @@ function uid() {
       $('case-profile').value = category.id;
       if (category.id === 'narcotics') {
         $('case-offence').value = 'Νόμος περί ναρκωτικών';
-      } else if (category.id === 'environment') {
-        $('case-offence').value = 'Παράβαση άρθρου 28 Ν. 1650/1986 «Περί προστασίας του περιβάλλοντος»';
       }
       $('case-form').hidden = false;
     }

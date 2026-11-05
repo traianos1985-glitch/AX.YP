@@ -234,7 +234,21 @@ for (const tpl of environmentSeeded) {
 // 6. Test valueFor helpers
 assert.equal(valueFor('environment.description', syntheticCase), syntheticCase.environment.description);
 assert.equal(valueFor('environment.description', { environment: { description: 'ρύπανση ρέματος' } }), 'ρύπανση ρέματος');
-assert.equal(valueFor('environment.description', { notes: 'απόρριψη μπαζών' }), 'απόρριψη μπαζών');
+assert.equal(valueFor('environment.description', { notes: 'απόρριψη μπαζών', evidence: 'μπάζα' }), '.............................', 'General notes and evidence must never silently populate the environmental act description');
+assert.equal(valueFor('environment.description', { environment: { description: '' }, notes: 'γενικές σημειώσεις' }), '.............................');
 assert.equal(valueFor('environment.description', {}), '.............................');
+
+// 7. Verify environmental evidence remains separately stored and is not substituted into act descriptions.
+const hypothesisSource = await readFile(new URL('../hypotheses.js', import.meta.url), 'utf8');
+const bundleSource = await readFile(new URL('../case-bundles.js', import.meta.url), 'utf8');
+const htmlSource = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+assert.match(htmlSource, /id="environment-documentation"/);
+assert.match(hypothesisSource, /documentation:.*environment-documentation/);
+assert.match(hypothesisSource, /environment-documentation.*item\.environment && item\.environment\.documentation/);
+assert.doesNotMatch(hypothesisSource, /category\.id === 'environment'[\s\S]{0,160}case-offence/);
+assert.doesNotMatch(bundleSource, /bundle\.profile === 'environment'[\s\S]{0,180}Παράβαση άρθρου 28/);
+assert.match(htmlSource, /δεν αποδίδει από μόνη της νομικό χαρακτηρισμό/);
+assert.match(htmlSource, /Δεν εφαρμόζεται αυτομάτως σε κάθε απόρριψη/);
+console.log('✓ Environmental description, technical documentation and legal guidance are kept distinct.');
 
 console.log('\nAll environment test suites passed with 100% success!');
