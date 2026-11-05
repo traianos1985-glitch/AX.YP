@@ -405,10 +405,7 @@
     if (!raw) {
       if (resultTools) resultTools.hidden = true;
       resultCount.textContent = 'Έτοιμο για αναζήτηση';
-      hint.textContent = 'Πληκτρολόγησε λέξεις-κλειδιά ή επίλεξε μία γρήγορη αναζήτηση για να εμφανιστούν τα σχετικά άρθρα.';
-      var start = el('div', 'search-start');
-      start.innerHTML = '<strong>Ξεκίνα από εδώ</strong><span>Περιέγραψε σύντομα το περιστατικό και θα εμφανιστούν μόνο οι σχετικές διατάξεις.</span>';
-      out.appendChild(start);
+      hint.textContent = 'Επίλεξε μία γρήγορη αναζήτηση ή άνοιξε μία από τις βασικές ενότητες.';
       return;
     }
     if (resultTools) resultTools.hidden = false;

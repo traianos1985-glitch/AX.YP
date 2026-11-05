@@ -75,6 +75,9 @@ assert.match(caseEnhancements, /if \(!id\) return null/)
 assert.doesNotMatch(caseEnhancements, /return list\[0\]/)
 
 
+// Dashboard should not repeat the introductory card already replaced by the home dashboard.
+assert.doesNotMatch(app, /search-start/)
+
 // Regression checks for the personal-workspace workflow and privacy contract.
 const workspaceSource = await readFile(new URL('../case-folder-storage.js', import.meta.url), 'utf8')
 const usageGuide = await readFile(new URL('../ΟΔΗΓΙΕΣ-ΧΡΗΣΗΣ.md', import.meta.url), 'utf8')
