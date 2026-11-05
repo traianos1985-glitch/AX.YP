@@ -25,6 +25,7 @@
   var out = document.getElementById('out');
   var hint = document.getElementById('hint');
   var resultCount = document.getElementById('result-count');
+  var resultTools = document.querySelector('.result-tools');
   var statusFilter = document.getElementById('status-filter');
   var sourceFilter = document.getElementById('source-filter');
   var sortResults = document.getElementById('sort-results');
@@ -358,10 +359,20 @@
 
   function renderResults() {
     var raw = q.value.trim();
+    out.textContent = '';
+    if (!raw) {
+      if (resultTools) resultTools.hidden = true;
+      resultCount.textContent = 'Έτοιμο για αναζήτηση';
+      hint.textContent = 'Πληκτρολόγησε λέξεις-κλειδιά ή επίλεξε μία γρήγορη αναζήτηση για να εμφανιστούν τα σχετικά άρθρα.';
+      var start = el('div', 'search-start');
+      start.innerHTML = '<strong>Ξεκίνα από εδώ</strong><span>Περιέγραψε σύντομα το περιστατικό και θα εμφανιστούν μόνο οι σχετικές διατάξεις.</span>';
+      out.appendChild(start);
+      return;
+    }
+    if (resultTools) resultTools.hidden = false;
     var terms = expandTerms(raw);
     var incidentRule = window.AXYPIncidentSearch.classify(raw);
     var list = visibleEntries(terms, raw, incidentRule);
-    out.textContent = '';
     resultCount.textContent = list.length + (list.length === 1 ? ' αποτέλεσμα' : ' αποτελέσματα');
     if (!list.length) {
       hint.textContent = terms.length ? 'Δεν βρέθηκε καταχωρισμένη εγγραφή. Δοκίμασε άλλες λέξεις-κλειδιά.' : 'Δεν υπάρχουν εγγραφές με τα επιλεγμένα φίλτρα.';
