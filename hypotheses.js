@@ -165,6 +165,8 @@ function uid() {
     $('case-date').value = new Date().toISOString().slice(0, 10);
     if (activeProfileFilter) $('case-profile').value = activeProfileFilter;
     $('case-timeline-section').hidden = activeProfileFilter !== 'narcotics';
+    $('case-investigators-section').hidden = activeProfileFilter !== 'narcotics';
+    $('offender-section-title').textContent = activeProfileFilter === 'narcotics' ? 'Στοιχεία δράστη' : 'Στοιχεία εμπλεκόμενου προσώπου';
     selectedId = null;
     renderDetail();
   }
@@ -254,7 +256,7 @@ function uid() {
     $('dossier-dashboard').hidden = true; $('dossier-workspace').hidden = false;
     $('dossier-active-title').textContent = category.label;
     $('dossier-active-description').textContent = category.description + ' Οι υποθέσεις αυτής της κατηγορίας εμφανίζονται μόνο εδώ.';
-    $('case-profile').value = category.id; $('bundle-profile').value = category.id; $('case-timeline-section').hidden = category.id !== 'narcotics';
+    $('case-profile').value = category.id; $('bundle-profile').value = category.id; $('case-timeline-section').hidden = category.id !== 'narcotics'; $('case-investigators-section').hidden = category.id !== 'narcotics'; $('offender-section-title').textContent = category.id === 'narcotics' ? 'Στοιχεία δράστη' : 'Στοιχεία εμπλεκόμενου προσώπου';
     $('case-form').hidden = !createNew; $('case-layout').hidden = false;
     if (createNew) { reset(); $('case-profile').value = category.id; $('case-form').hidden = false; }
     else { selectedId = null; $('case-id').value = ''; $('case-detail-empty').hidden = false; $('case-detail-content').hidden = true; }
