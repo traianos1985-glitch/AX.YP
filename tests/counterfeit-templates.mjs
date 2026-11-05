@@ -226,8 +226,8 @@ for (const tpl of counterfeitSeeded) {
 
 assert.equal(valueFor('counterfeit.serialNumber', { counterfeit: { serialNumber: 'SERIAL-TEST' } }), 'SERIAL-TEST');
 assert.equal(valueFor('counterfeit.serialNumber', syntheticCase), 'TEST-SERIAL-123456');
-assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', time: '11:40' }), '', 'Counterfeit must not inherit narcotics auto timeline');
-assert.equal(valueFor('timeline.seizure.startTime', { profile: 'counterfeit', time: '11:40' }), '', 'Counterfeit seizure time must remain manual');
+assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', time: '11:40' }), '—', 'Counterfeit must not inherit narcotics auto timeline');
+assert.equal(valueFor('timeline.seizure.startTime', { profile: 'counterfeit', time: '11:40' }), '—', 'Counterfeit seizure time must remain manual');
 assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', timeline: { witnessStartTime: '09:17' } }), '09:17', 'Counterfeit manually entered times must map exactly');
 assert.equal(valueFor('timeline.witness.startTime', { profile: 'narcotics', time: '11:40' }), '11:40', 'Narcotics timeline remains unchanged');
 
