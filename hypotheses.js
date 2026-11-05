@@ -163,7 +163,7 @@ function uid() {
           idService: $('counterfeit-witness-id-service') ? $('counterfeit-witness-id-service').value.trim() : '',
           email: $('counterfeit-witness-email') ? $('counterfeit-witness-email').value.trim() : ''
         },
-        suspect: $('case-profile').value === 'counterfeit' ? {
+        depositor: $('case-profile').value === 'counterfeit' ? {
           surname: $('offender-surname').value.trim(),
           name: $('offender-name').value.trim(),
           fatherName: $('offender-father-name').value.trim(),
@@ -202,7 +202,7 @@ function uid() {
     $('case-counterfeit-witness-section').hidden = activeProfileFilter !== 'counterfeit';
     $('case-counterfeit-timeline-section').hidden = activeProfileFilter !== 'counterfeit';
     $('case-investigators-section').hidden = activeProfileFilter !== 'narcotics' && activeProfileFilter !== 'counterfeit';
-    $('offender-section-title').textContent = activeProfileFilter === 'narcotics' ? 'Στοιχεία δράστη' : activeProfileFilter === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα' : 'Στοιχεία εμπλεκόμενου προσώπου';
+    $('offender-section-title').textContent = activeProfileFilter === 'narcotics' ? 'Στοιχεία δράστη' : activeProfileFilter === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
     selectedId = null;
     renderDetail();
   }
@@ -246,8 +246,8 @@ function uid() {
     if ($('counterfeit-seizure-start')) $('counterfeit-seizure-start').value = timeline.seizureStartTime || '';
     if ($('counterfeit-seizure-end')) $('counterfeit-seizure-end').value = timeline.seizureEndTime || '';
     if ($('counterfeit-serial-number')) $('counterfeit-serial-number').value = (item.counterfeit && item.counterfeit.serialNumber) || '';
-    $('offender-section-title').textContent = item.profile === 'narcotics' ? 'Στοιχεία δράστη' : item.profile === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα' : 'Στοιχεία εμπλεκόμενου προσώπου';
-    var offender = item.profile === 'counterfeit' ? ((item.counterfeit && item.counterfeit.suspect) || {}) : (item.offender || {});
+    $('offender-section-title').textContent = item.profile === 'narcotics' ? 'Στοιχεία δράστη' : item.profile === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
+    var offender = item.profile === 'counterfeit' ? ((item.counterfeit && item.counterfeit.depositor) || {}) : (item.offender || {});
     var witness = (item.counterfeit && item.counterfeit.witness) || {};
     if ($('counterfeit-witness-surname')) $('counterfeit-witness-surname').value = witness.surname || '';
     if ($('counterfeit-witness-name')) $('counterfeit-witness-name').value = witness.name || '';
@@ -322,7 +322,7 @@ function uid() {
     $('case-counterfeit-witness-section').hidden = category.id !== 'counterfeit';
     $('case-counterfeit-timeline-section').hidden = category.id !== 'counterfeit';
     $('case-investigators-section').hidden = category.id !== 'narcotics' && category.id !== 'counterfeit';
-    $('offender-section-title').textContent = category.id === 'narcotics' ? 'Στοιχεία δράστη' : category.id === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα' : 'Στοιχεία εμπλεκόμενου προσώπου';
+    $('offender-section-title').textContent = category.id === 'narcotics' ? 'Στοιχεία δράστη' : category.id === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
     $('case-form').hidden = !createNew; $('case-layout').hidden = false;
     if (createNew) { reset(); $('case-profile').value = category.id; $('case-form').hidden = false; }
     else { selectedId = null; $('case-id').value = ''; $('case-detail-empty').hidden = false; $('case-detail-content').hidden = true; }
