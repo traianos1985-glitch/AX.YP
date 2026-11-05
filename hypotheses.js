@@ -129,6 +129,10 @@ function uid() {
       incidentDate: ($('case-incident-date') ? $('case-incident-date').value : ''),
       incidentTime: ($('case-incident-time') ? $('case-incident-time').value : ''),
       prosecutor: ($('case-prosecutor') ? $('case-prosecutor').value.trim() : ''),
+      prosecutorPerson: {
+        fullName: $('camping-prosecutor-full-name') ? $('camping-prosecutor-full-name').value.trim() : '',
+        title: $('camping-prosecutor-title') ? $('camping-prosecutor-title').value.trim() : ''
+      },
       arrestingOfficer: ($('case-arresting-officer') ? $('case-arresting-officer').value.trim() : ''),
       officerA: {
         rank: ($('officer-a-rank') ? $('officer-a-rank').value.trim() : ''),
@@ -172,6 +176,8 @@ function uid() {
         idService: $('offender-id-service').value.trim(),
         taxId: $('offender-tax-id').value.trim(),
         taxOffice: $('offender-tax-office').value.trim(),
+        postalCode: $('offender-postal-code') ? $('offender-postal-code').value.trim() : '',
+        nationality: $('offender-nationality') ? $('offender-nationality').value.trim() : '',
         phone: $('offender-phone').value.trim(),
         email: $('offender-email').value.trim()
       },
@@ -241,7 +247,14 @@ function uid() {
         legalProvision: $('camping-legal-provision')?.value.trim() || '', location: $('camping-location')?.value.trim() || '', actDescription: $('camping-act-description')?.value.trim() || '', actQualifier: $('camping-act-qualifier')?.value.trim() || '', outdoorItems: $('camping-outdoor-items')?.value.trim() || '', noDesignatedSite: $('camping-no-designated-site')?.value.trim() || ''
       },
       vehicle: { type: $('camping-vehicle-type')?.value.trim() || '', registration: $('camping-vehicle-registration')?.value.trim() || '', towVehicleRegistration: $('camping-tow-registration')?.value.trim() || '', caravanRegistration: $('camping-caravan-registration')?.value.trim() || '' },
-      interpreter: { fullName: $('camping-interpreter-full-name')?.value.trim() || '', language: $('camping-interpreter-language')?.value.trim() || '' },
+      interpreter: {
+        fullName: $('camping-interpreter-full-name')?.value.trim() || '', language: $('camping-interpreter-language')?.value.trim() || '',
+        fatherName: $('camping-interpreter-father-name')?.value.trim() || '', motherName: $('camping-interpreter-mother-name')?.value.trim() || '',
+        birthDate: $('camping-interpreter-birth-date')?.value || '', birthPlace: $('camping-interpreter-birth-place')?.value.trim() || '',
+        city: $('camping-interpreter-city')?.value.trim() || '', idNumber: $('camping-interpreter-id-number')?.value.trim() || '',
+        idDate: $('camping-interpreter-id-date')?.value || '', idService: $('camping-interpreter-id-service')?.value.trim() || '',
+        nationality: $('camping-interpreter-nationality')?.value.trim() || ''
+      },
       notes: $('case-notes').value.trim(),
       completeness: {
         safety: $('check-safety').checked,
@@ -270,7 +283,8 @@ function uid() {
     if ($('case-environment-timeline-section')) $('case-environment-timeline-section').hidden = activeProfileFilter !== 'environment';
     if ($('case-health-section')) $('case-health-section').hidden = activeProfileFilter !== 'health';
     if ($('case-health-timeline-section')) $('case-health-timeline-section').hidden = activeProfileFilter !== 'health';
-    $('case-investigators-section').hidden = activeProfileFilter !== 'narcotics' && activeProfileFilter !== 'counterfeit' && activeProfileFilter !== 'environment' && activeProfileFilter !== 'health';
+    if ($('camping-fields')) $('camping-fields').hidden = activeProfileFilter !== 'camping';
+    $('case-investigators-section').hidden = !['narcotics', 'counterfeit', 'environment', 'health', 'camping'].includes(activeProfileFilter);
     $('offender-section-title').textContent = (activeProfileFilter === 'narcotics' || activeProfileFilter === 'environment' || activeProfileFilter === 'health') ? 'Στοιχεία δράστη' : activeProfileFilter === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
     if ($('environment-description')) $('environment-description').value = '';
     if ($('environment-documentation')) $('environment-documentation').value = '';
@@ -308,7 +322,8 @@ function uid() {
     if ($('case-environment-timeline-section')) $('case-environment-timeline-section').hidden = item.profile !== 'environment';
     if ($('case-health-section')) $('case-health-section').hidden = item.profile !== 'health';
     if ($('case-health-timeline-section')) $('case-health-timeline-section').hidden = item.profile !== 'health';
-    $('case-investigators-section').hidden = item.profile !== 'narcotics' && item.profile !== 'counterfeit' && item.profile !== 'environment' && item.profile !== 'health';
+    if ($('camping-fields')) $('camping-fields').hidden = item.profile !== 'camping';
+    $('case-investigators-section').hidden = !['narcotics', 'counterfeit', 'environment', 'health', 'camping'].includes(item.profile);
     $('case-people').value = item.people || '';
     if ($('case-location')) $('case-location').value = item.location || '';
     if ($('case-time')) $('case-time').value = item.time || '';
@@ -390,6 +405,10 @@ function uid() {
     var interpreter = item.interpreter || {};
     if ($('camping-interpreter-full-name')) $('camping-interpreter-full-name').value = interpreter.fullName || '';
     if ($('camping-interpreter-language')) $('camping-interpreter-language').value = interpreter.language || '';
+    [['camping-interpreter-father-name','fatherName'],['camping-interpreter-mother-name','motherName'],['camping-interpreter-birth-date','birthDate'],['camping-interpreter-birth-place','birthPlace'],['camping-interpreter-city','city'],['camping-interpreter-id-number','idNumber'],['camping-interpreter-id-date','idDate'],['camping-interpreter-id-service','idService'],['camping-interpreter-nationality','nationality']].forEach(function (pair) { if ($(pair[0])) $(pair[0]).value = interpreter[pair[1]] || ''; });
+    var prosecutorPerson = item.prosecutorPerson || {};
+    if ($('camping-prosecutor-full-name')) $('camping-prosecutor-full-name').value = prosecutorPerson.fullName || '';
+    if ($('camping-prosecutor-title')) $('camping-prosecutor-title').value = prosecutorPerson.title || '';
     if ($('camping-fields')) $('camping-fields').hidden = item.profile !== 'camping';
     if ($('health-arrest-start')) $('health-arrest-start').value = (item.timeline && item.timeline.arrestStartTime) || '';
     if ($('health-arrest-end')) $('health-arrest-end').value = (item.timeline && item.timeline.arrestEndTime) || '';
@@ -408,6 +427,8 @@ function uid() {
     $('offender-id-service').value = offender.idService || '';
     $('offender-tax-id').value = offender.taxId || '';
     $('offender-tax-office').value = offender.taxOffice || '';
+    if ($('offender-postal-code')) $('offender-postal-code').value = offender.postalCode || '';
+    if ($('offender-nationality')) $('offender-nationality').value = offender.nationality || '';
     $('offender-phone').value = offender.phone || '';
     $('offender-email').value = offender.email || '';
     $('case-evidence').value = item.evidence || '';
@@ -460,7 +481,8 @@ function uid() {
     if ($('case-environment-timeline-section')) $('case-environment-timeline-section').hidden = category.id !== 'environment';
     if ($('case-health-section')) $('case-health-section').hidden = category.id !== 'health';
     if ($('case-health-timeline-section')) $('case-health-timeline-section').hidden = category.id !== 'health';
-    $('case-investigators-section').hidden = category.id !== 'narcotics' && category.id !== 'counterfeit' && category.id !== 'environment' && category.id !== 'health';
+    if ($('camping-fields')) $('camping-fields').hidden = category.id !== 'camping';
+    $('case-investigators-section').hidden = !['narcotics', 'counterfeit', 'environment', 'health', 'camping'].includes(category.id);
     $('offender-section-title').textContent = (category.id === 'narcotics' || category.id === 'environment' || category.id === 'health') ? 'Στοιχεία δράστη' : category.id === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
     $('case-form').hidden = !createNew; $('case-layout').hidden = false;
     if (createNew) {
