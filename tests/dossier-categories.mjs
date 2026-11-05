@@ -12,7 +12,7 @@ const templateLibrary=await readFile(new URL('../template-library.js',import.met
 const sw=await readFile(new URL('../sw.js',import.meta.url),'utf8');
 assert.match(html,/id="dossier-dashboard"/); assert.match(html,/id="dossier-category-grid"/);
 assert.match(html,/id="dossier-workspace"/); assert.match(html,/id="dossier-back"/);
-assert.match(html,/id="dossier-new-case"/); assert.match(html,/id="case-timeline-section"/);
+assert.match(html,/id="dossier-new-case"/); assert.match(html,/id="case-timeline-section"/); assert.match(html,/id="case-investigators-section"/);
 assert.match(hyp,/activeProfileFilter/); assert.match(hyp,/openCategory/); assert.match(hyp,/dossier-back/);
 assert.match(bundles,/getActiveProfileFilter/); assert.match(templateLibrary,/HypothesesView\.refresh/); assert.match(sw,/axyp-v25/);
 assert.match(sw,/dossier-categories\.js/);
