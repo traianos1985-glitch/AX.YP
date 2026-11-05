@@ -448,3 +448,26 @@ assert.match(responseGuide.procedure, /εισαγγελικών αρχών/)
 assert.match(responseGuide.notes, /δεν αποτελεί πλήρες επιχειρησιακό πρωτόκολλο/)
 assert.equal(responseGuide.status, 'partial')
 assert.equal(responseGuide.source, 'https://www.astynomia.gr/')
+
+
+// Timeline sequence and interval calculation tests
+const { computeTimeline, addMinutes } = await import('../template-library.js')
+assert.equal(addMinutes('05:00', 5), '05:05')
+assert.equal(addMinutes('05:05', 1), '05:06')
+assert.equal(addMinutes('23:58', 5), '00:03')
+
+const timeline = computeTimeline('05:00')
+assert.equal(timeline.witnessStartTime, '05:00')
+assert.equal(timeline.witnessEndTime, '05:05')
+assert.equal(timeline.arrestStartTime, '05:06')
+assert.equal(timeline.arrestEndTime, '05:11')
+assert.equal(timeline.seizureStartTime, '05:12')
+assert.equal(timeline.seizureEndTime, '05:17')
+assert.equal(timeline.notificationStartTime, '05:18')
+assert.equal(timeline.notificationEndTime, '05:23')
+assert.equal(timeline.weighingStartTime, '05:24')
+assert.equal(timeline.weighingEndTime, '05:29')
+assert.equal(timeline.examinationStartTime, '05:30')
+assert.equal(timeline.examinationEndTime, '05:35')
+
+console.log('Dossier timeline calculation smoke tests passed.')

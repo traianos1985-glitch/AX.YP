@@ -30,6 +30,36 @@ import { zipSync } from './vendor/fflate.js';
     item.protocolNumber = ($('case-protocol-number') ? $('case-protocol-number').value.trim() : '');
     item.profile = ($('case-profile') ? $('case-profile').value : 'generic');
     item.people = ($('case-people') ? $('case-people').value.trim() : '');
+    item.location = ($('case-location') ? $('case-location').value.trim() : '');
+    item.time = ($('case-time') ? $('case-time').value : '');
+    item.prosecutor = ($('case-prosecutor') ? $('case-prosecutor').value.trim() : '');
+    item.arrestingOfficer = ($('case-arresting-officer') ? $('case-arresting-officer').value.trim() : '');
+    item.officerA = {
+      rank: ($('officer-a-rank') ? $('officer-a-rank').value.trim() : ''),
+      surname: ($('officer-a-surname') ? $('officer-a-surname').value.trim() : ''),
+      name: ($('officer-a-name') ? $('officer-a-name').value.trim() : ''),
+      service: ($('officer-a-service') ? $('officer-a-service').value.trim() : '')
+    };
+    item.officerB = {
+      rank: ($('officer-b-rank') ? $('officer-b-rank').value.trim() : ''),
+      surname: ($('officer-b-surname') ? $('officer-b-surname').value.trim() : ''),
+      name: ($('officer-b-name') ? $('officer-b-name').value.trim() : ''),
+      service: ($('officer-b-service') ? $('officer-b-service').value.trim() : '')
+    };
+    item.timeline = {
+      witnessStartTime: ($('timeline-witness-start') ? $('timeline-witness-start').value : ''),
+      witnessEndTime: ($('timeline-witness-end') ? $('timeline-witness-end').value : ''),
+      arrestStartTime: ($('timeline-arrest-start') ? $('timeline-arrest-start').value : ''),
+      arrestEndTime: ($('timeline-arrest-end') ? $('timeline-arrest-end').value : ''),
+      seizureStartTime: ($('timeline-seizure-start') ? $('timeline-seizure-start').value : ''),
+      seizureEndTime: ($('timeline-seizure-end') ? $('timeline-seizure-end').value : ''),
+      notificationStartTime: ($('timeline-notification-start') ? $('timeline-notification-start').value : ''),
+      notificationEndTime: ($('timeline-notification-end') ? $('timeline-notification-end').value : ''),
+      weighingStartTime: ($('timeline-weighing-start') ? $('timeline-weighing-start').value : ''),
+      weighingEndTime: ($('timeline-weighing-end') ? $('timeline-weighing-end').value : ''),
+      examinationStartTime: ($('timeline-examination-start') ? $('timeline-examination-start').value : ''),
+      examinationEndTime: ($('timeline-examination-end') ? $('timeline-examination-end').value : '')
+    };
     item.offender = {
       surname: ($('offender-surname') ? $('offender-surname').value.trim() : ''),
       name: ($('offender-name') ? $('offender-name').value.trim() : ''),
@@ -66,6 +96,38 @@ import { zipSync } from './vendor/fflate.js';
     if (!item) return;
     if ($('case-profile')) $('case-profile').value = item.profile || 'generic';
     if ($('case-people')) $('case-people').value = item.people || '';
+    if ($('case-location')) $('case-location').value = item.location || '';
+    if ($('case-time')) $('case-time').value = item.time || '';
+    if ($('case-prosecutor')) $('case-prosecutor').value = item.prosecutor || '';
+    if ($('case-arresting-officer')) $('case-arresting-officer').value = item.arrestingOfficer || '';
+    var officerA = item.officerA || {};
+    if ($('officer-a-rank')) $('officer-a-rank').value = officerA.rank || '';
+    if ($('officer-a-surname')) $('officer-a-surname').value = officerA.surname || '';
+    if ($('officer-a-name')) $('officer-a-name').value = officerA.name || '';
+    if ($('officer-a-service')) $('officer-a-service').value = officerA.service || '';
+    var officerB = item.officerB || {};
+    if ($('officer-b-rank')) $('officer-b-rank').value = officerB.rank || '';
+    if ($('officer-b-surname')) $('officer-b-surname').value = officerB.surname || '';
+    if ($('officer-b-name')) $('officer-b-name').value = officerB.name || '';
+    if ($('officer-b-service')) $('officer-b-service').value = officerB.service || '';
+    var timeline = item.timeline || {};
+    var timeFields = [
+      ['timeline-witness-start', timeline.witnessStartTime],
+      ['timeline-witness-end', timeline.witnessEndTime],
+      ['timeline-arrest-start', timeline.arrestStartTime],
+      ['timeline-arrest-end', timeline.arrestEndTime],
+      ['timeline-seizure-start', timeline.seizureStartTime],
+      ['timeline-seizure-end', timeline.seizureEndTime],
+      ['timeline-notification-start', timeline.notificationStartTime],
+      ['timeline-notification-end', timeline.notificationEndTime],
+      ['timeline-weighing-start', timeline.weighingStartTime],
+      ['timeline-weighing-end', timeline.weighingEndTime],
+      ['timeline-examination-start', timeline.examinationStartTime],
+      ['timeline-examination-end', timeline.examinationEndTime]
+    ];
+    timeFields.forEach(function (pair) {
+      if ($(pair[0]) && pair[1]) $(pair[0]).value = pair[1];
+    });
     if ($('case-evidence')) $('case-evidence').value = item.evidence || '';
     var checks = item.checks || [];
     var completeness = item.completeness || {};
@@ -86,11 +148,28 @@ import { zipSync } from './vendor/fflate.js';
       return;
     }
     var offender = item.offender || {};
+    var officerA = item.officerA || {};
+    var officerB = item.officerB || {};
+    var officerAFull = [officerA.rank, officerA.surname, officerA.name].filter(Boolean).join(' ');
+    var officerBFull = [officerB.rank, officerB.surname, officerB.name].filter(Boolean).join(' ');
     var rows = [
       ['Αριθμός Πρωτοκόλλου Δικογραφίας', item.protocolNumber || '—'],
       ['Νομικό προφίλ', $('case-profile') ? $('case-profile').selectedOptions[0].textContent : 'Γενική'],
       ['Κατάσταση', item.status || 'Νέα'],
       ['Ημερομηνία', item.date || '—'],
+      ['Τόπος / Πόλη σύνταξης', item.location || '—'],
+      ['Ώρα σύνταξης', item.time || '—'],
+      ['Εισαγγελία Πρωτοδικών', item.prosecutor || '—'],
+      ['Α΄ Ανακριτικός Υπάλληλος', officerAFull || '—'],
+      ['Υπηρεσία Α΄ Ανακριτικού', officerA.service || '—'],
+      ['Β΄ Ανακριτικός Υπάλληλος', officerBFull || '—'],
+      ['Υπηρεσία Β΄ Ανακριτικού', officerB.service || '—'],
+      ['Συλλαβών αστυνομικός', item.arrestingOfficer || '—'],
+      ['1. Κατάθεση (Έναρξη / Περάτωση)', (item.timeline && item.timeline.witnessStartTime ? item.timeline.witnessStartTime + ' – ' + item.timeline.witnessEndTime : '—')],
+      ['2. Έκθεση Σύλληψης (Έναρξη / Περάτωση)', (item.timeline && item.timeline.arrestStartTime ? item.timeline.arrestStartTime + ' – ' + item.timeline.arrestEndTime : '—')],
+      ['3. Κατάσχεση (Έναρξη / Περάτωση)', (item.timeline && item.timeline.seizureStartTime ? item.timeline.seizureStartTime + ' – ' + item.timeline.seizureEndTime : '—')],
+      ['4. Γνωστοποίηση (Έναρξη / Περάτωση)', (item.timeline && item.timeline.notificationStartTime ? item.timeline.notificationStartTime + ' – ' + item.timeline.notificationEndTime : '—')],
+      ['5. Έκθεση Ζύγισης (Έναρξη / Περάτωση)', (item.timeline && item.timeline.weighingStartTime ? item.timeline.weighingStartTime + ' – ' + item.timeline.weighingEndTime : '—')],
       ['Επώνυμο δράστη', offender.surname || '—'],
       ['Όνομα δράστη', offender.name || '—'],
       ['Πατρώνυμο', offender.fatherName || '—'],
