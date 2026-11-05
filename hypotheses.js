@@ -163,6 +163,8 @@ function uid() {
     $('case-form').reset();
     $('case-id').value = '';
     $('case-date').value = new Date().toISOString().slice(0, 10);
+    if (activeProfileFilter) $('case-profile').value = activeProfileFilter;
+    $('case-timeline-section').hidden = activeProfileFilter !== 'narcotics';
     selectedId = null;
     renderDetail();
   }
