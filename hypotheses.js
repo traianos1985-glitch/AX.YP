@@ -119,16 +119,16 @@ function uid() {
       timeline: {
         witnessStartTime: $('case-profile').value === 'counterfeit' ? ($('counterfeit-witness-start') ? $('counterfeit-witness-start').value : '') : ($('timeline-witness-start') ? $('timeline-witness-start').value : ''),
         witnessEndTime: $('case-profile').value === 'counterfeit' ? ($('counterfeit-witness-end') ? $('counterfeit-witness-end').value : '') : ($('timeline-witness-end') ? $('timeline-witness-end').value : ''),
-        arrestStartTime: $('case-profile').value === 'environment' ? ($('environment-arrest-start') ? $('environment-arrest-start').value : '') : ($('timeline-arrest-start') ? $('timeline-arrest-start').value : ''),
-        arrestEndTime: $('case-profile').value === 'environment' ? ($('environment-arrest-end') ? $('environment-arrest-end').value : '') : ($('timeline-arrest-end') ? $('timeline-arrest-end').value : ''),
+        arrestStartTime: $('case-profile').value === 'health' ? ($('health-arrest-start') ? $('health-arrest-start').value : '') : ($('case-profile').value === 'environment' ? ($('environment-arrest-start') ? $('environment-arrest-start').value : '') : ($('timeline-arrest-start') ? $('timeline-arrest-start').value : '')),
+        arrestEndTime: $('case-profile').value === 'health' ? ($('health-arrest-end') ? $('health-arrest-end').value : '') : ($('case-profile').value === 'environment' ? ($('environment-arrest-end') ? $('environment-arrest-end').value : '') : ($('timeline-arrest-end') ? $('timeline-arrest-end').value : '')),
         seizureStartTime: $('case-profile').value === 'counterfeit' ? ($('counterfeit-seizure-start') ? $('counterfeit-seizure-start').value : '') : ($('timeline-seizure-start') ? $('timeline-seizure-start').value : ''),
         seizureEndTime: $('case-profile').value === 'counterfeit' ? ($('counterfeit-seizure-end') ? $('counterfeit-seizure-end').value : '') : ($('timeline-seizure-end') ? $('timeline-seizure-end').value : ''),
         notificationStartTime: $('timeline-notification-start') ? $('timeline-notification-start').value : '',
         notificationEndTime: $('timeline-notification-end') ? $('timeline-notification-end').value : '',
         weighingStartTime: $('timeline-weighing-start') ? $('timeline-weighing-start').value : '',
         weighingEndTime: $('timeline-weighing-end') ? $('timeline-weighing-end').value : '',
-        examinationStartTime: $('case-profile').value === 'environment' ? ($('environment-examination-start') ? $('environment-examination-start').value : '') : ($('timeline-examination-start') ? $('timeline-examination-start').value : ''),
-        examinationEndTime: $('case-profile').value === 'environment' ? ($('environment-examination-end') ? $('environment-examination-end').value : '') : ($('timeline-examination-end') ? $('timeline-examination-end').value : '')
+        examinationStartTime: $('case-profile').value === 'health' ? ($('health-examination-start') ? $('health-examination-start').value : '') : ($('case-profile').value === 'environment' ? ($('environment-examination-start') ? $('environment-examination-start').value : '') : ($('timeline-examination-start') ? $('timeline-examination-start').value : '')),
+        examinationEndTime: $('case-profile').value === 'health' ? ($('health-examination-end') ? $('health-examination-end').value : '') : ($('case-profile').value === 'environment' ? ($('environment-examination-end') ? $('environment-examination-end').value : '') : ($('timeline-examination-end') ? $('timeline-examination-end').value : ''))
       },
       offender: $('case-profile').value === 'counterfeit' ? {} : {
         surname: $('offender-surname').value.trim(),
@@ -184,6 +184,9 @@ function uid() {
         description: $('case-profile').value === 'environment' && $('environment-description') ? $('environment-description').value.trim() : '',
         documentation: $('case-profile').value === 'environment' && $('environment-documentation') ? $('environment-documentation').value.trim() : ''
       },
+      health: {
+        description: $('case-profile').value === 'health' && $('health-description') ? $('health-description').value.trim() : ''
+      },
       notes: $('case-notes').value.trim(),
       completeness: {
         safety: $('check-safety').checked,
@@ -207,14 +210,21 @@ function uid() {
     $('case-counterfeit-timeline-section').hidden = activeProfileFilter !== 'counterfeit';
     if ($('case-environment-section')) $('case-environment-section').hidden = activeProfileFilter !== 'environment';
     if ($('case-environment-timeline-section')) $('case-environment-timeline-section').hidden = activeProfileFilter !== 'environment';
-    $('case-investigators-section').hidden = activeProfileFilter !== 'narcotics' && activeProfileFilter !== 'counterfeit' && activeProfileFilter !== 'environment';
-    $('offender-section-title').textContent = (activeProfileFilter === 'narcotics' || activeProfileFilter === 'environment') ? 'Στοιχεία δράστη' : activeProfileFilter === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
+    if ($('case-health-section')) $('case-health-section').hidden = activeProfileFilter !== 'health';
+    if ($('case-health-timeline-section')) $('case-health-timeline-section').hidden = activeProfileFilter !== 'health';
+    $('case-investigators-section').hidden = activeProfileFilter !== 'narcotics' && activeProfileFilter !== 'counterfeit' && activeProfileFilter !== 'environment' && activeProfileFilter !== 'health';
+    $('offender-section-title').textContent = (activeProfileFilter === 'narcotics' || activeProfileFilter === 'environment' || activeProfileFilter === 'health') ? 'Στοιχεία δράστη' : activeProfileFilter === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
     if ($('environment-description')) $('environment-description').value = '';
     if ($('environment-documentation')) $('environment-documentation').value = '';
     if ($('environment-arrest-start')) $('environment-arrest-start').value = '';
     if ($('environment-arrest-end')) $('environment-arrest-end').value = '';
     if ($('environment-examination-start')) $('environment-examination-start').value = '';
     if ($('environment-examination-end')) $('environment-examination-end').value = '';
+    if ($('health-description')) $('health-description').value = '';
+    if ($('health-arrest-start')) $('health-arrest-start').value = '';
+    if ($('health-arrest-end')) $('health-arrest-end').value = '';
+    if ($('health-examination-start')) $('health-examination-start').value = '';
+    if ($('health-examination-end')) $('health-examination-end').value = '';
     selectedId = null;
     renderDetail();
   }
@@ -237,7 +247,9 @@ function uid() {
     $('case-counterfeit-timeline-section').hidden = item.profile !== 'counterfeit';
     if ($('case-environment-section')) $('case-environment-section').hidden = item.profile !== 'environment';
     if ($('case-environment-timeline-section')) $('case-environment-timeline-section').hidden = item.profile !== 'environment';
-    $('case-investigators-section').hidden = item.profile !== 'narcotics' && item.profile !== 'counterfeit' && item.profile !== 'environment';
+    if ($('case-health-section')) $('case-health-section').hidden = item.profile !== 'health';
+    if ($('case-health-timeline-section')) $('case-health-timeline-section').hidden = item.profile !== 'health';
+    $('case-investigators-section').hidden = item.profile !== 'narcotics' && item.profile !== 'counterfeit' && item.profile !== 'environment' && item.profile !== 'health';
     $('case-people').value = item.people || '';
     if ($('case-location')) $('case-location').value = item.location || '';
     if ($('case-time')) $('case-time').value = item.time || '';
@@ -260,7 +272,7 @@ function uid() {
     if ($('counterfeit-seizure-start')) $('counterfeit-seizure-start').value = timeline.seizureStartTime || '';
     if ($('counterfeit-seizure-end')) $('counterfeit-seizure-end').value = timeline.seizureEndTime || '';
     if ($('counterfeit-serial-number')) $('counterfeit-serial-number').value = (item.counterfeit && item.counterfeit.serialNumber) || '';
-    $('offender-section-title').textContent = (item.profile === 'narcotics' || item.profile === 'environment') ? 'Στοιχεία δράστη' : item.profile === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
+    $('offender-section-title').textContent = (item.profile === 'narcotics' || item.profile === 'environment' || item.profile === 'health') ? 'Στοιχεία δράστη' : item.profile === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
     var offender = item.profile === 'counterfeit' ? ((item.counterfeit && item.counterfeit.depositor) || {}) : (item.offender || {});
     var witness = (item.counterfeit && item.counterfeit.witness) || {};
     if ($('counterfeit-witness-surname')) $('counterfeit-witness-surname').value = witness.surname || '';
@@ -281,6 +293,11 @@ function uid() {
     if ($('environment-arrest-end')) $('environment-arrest-end').value = (item.timeline && item.timeline.arrestEndTime) || '';
     if ($('environment-examination-start')) $('environment-examination-start').value = (item.timeline && item.timeline.examinationStartTime) || '';
     if ($('environment-examination-end')) $('environment-examination-end').value = (item.timeline && item.timeline.examinationEndTime) || '';
+    if ($('health-description')) $('health-description').value = (item.health && item.health.description) || '';
+    if ($('health-arrest-start')) $('health-arrest-start').value = (item.timeline && item.timeline.arrestStartTime) || '';
+    if ($('health-arrest-end')) $('health-arrest-end').value = (item.timeline && item.timeline.arrestEndTime) || '';
+    if ($('health-examination-start')) $('health-examination-start').value = (item.timeline && item.timeline.examinationStartTime) || '';
+    if ($('health-examination-end')) $('health-examination-end').value = (item.timeline && item.timeline.examinationEndTime) || '';
     $('offender-surname').value = offender.surname || '';
     $('offender-name').value = offender.name || '';
     $('offender-father-name').value = offender.fatherName || '';
@@ -343,8 +360,10 @@ function uid() {
     $('case-counterfeit-timeline-section').hidden = category.id !== 'counterfeit';
     if ($('case-environment-section')) $('case-environment-section').hidden = category.id !== 'environment';
     if ($('case-environment-timeline-section')) $('case-environment-timeline-section').hidden = category.id !== 'environment';
-    $('case-investigators-section').hidden = category.id !== 'narcotics' && category.id !== 'counterfeit' && category.id !== 'environment';
-    $('offender-section-title').textContent = (category.id === 'narcotics' || category.id === 'environment') ? 'Στοιχεία δράστη' : category.id === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
+    if ($('case-health-section')) $('case-health-section').hidden = category.id !== 'health';
+    if ($('case-health-timeline-section')) $('case-health-timeline-section').hidden = category.id !== 'health';
+    $('case-investigators-section').hidden = category.id !== 'narcotics' && category.id !== 'counterfeit' && category.id !== 'environment' && category.id !== 'health';
+    $('offender-section-title').textContent = (category.id === 'narcotics' || category.id === 'environment' || category.id === 'health') ? 'Στοιχεία δράστη' : category.id === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
     $('case-form').hidden = !createNew; $('case-layout').hidden = false;
     if (createNew) {
       reset();

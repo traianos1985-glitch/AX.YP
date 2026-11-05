@@ -75,6 +75,7 @@ function useBundle(bundle) {
     id: `yp-${Date.now().toString(36)}`,
     title: `Νέα υπόθεση από «${bundle.title}»`,
     offence: bundle.profile === 'narcotics' ? 'Νόμος περί ναρκωτικών' : '',
+
     status: 'Νέα',
     date: new Date().toISOString().slice(0, 10),
     profile: bundle.profile,

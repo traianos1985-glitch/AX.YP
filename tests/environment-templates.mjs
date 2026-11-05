@@ -66,6 +66,7 @@ delayedStorage.setItem('axyp-docx-templates', JSON.stringify(hydratedExisting));
 delayedStorage.setItem('axyp-narcotics-templates-seeded-v1', 'true');
 delayedStorage.setItem('axyp-counterfeit-templates-seeded-v1', 'true');
 delayedStorage.setItem('axyp-environment-templates-seeded-v1', 'true');
+delayedStorage.setItem('axyp-health-templates-seeded-v1', 'true');
 finishHydration();
 await delayedInitialization;
 assert.deepEqual(
@@ -97,6 +98,7 @@ console.log('3. Testing upgrade of existing narcotics & counterfeit installation
 const storageUpgrade = createMockStorage({
   'axyp-narcotics-templates-seeded-v1': 'true',
   'axyp-counterfeit-templates-seeded-v1': 'true',
+  'axyp-health-templates-seeded-v1': 'true',
   'axyp-docx-templates': JSON.stringify([
     {
       id: 'narcotics-01',
