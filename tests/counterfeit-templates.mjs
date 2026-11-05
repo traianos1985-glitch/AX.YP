@@ -37,7 +37,7 @@ for (const id of ['counterfeit-01', 'counterfeit-02', 'counterfeit-03']) {
   const parts = getTemplateParts(template);
   const xml = strFromU8(parts['word/document.xml']);
   assert.match(xml, /Σειριακός αριθμός πλαστού χαρτονομίσματος:/);
-  assert.match(xml, /\\{\\{evidence\\.serialNumber\\}\\}/);
+  assert.ok(xml.includes('{{evidence.serialNumber}}'));
 }
 
 const expectedNames = [
