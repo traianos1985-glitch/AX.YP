@@ -75,6 +75,12 @@ assert.match(caseEnhancements, /if \(!id\) return null/)
 assert.doesNotMatch(caseEnhancements, /return list\[0\]/)
 
 
+// Dashboard search history must not persist potentially sensitive incident queries.
+assert.match(app, /var recentSearchesList = \[\]/)
+assert.match(app, /event\.key === 'Enter'/)
+assert.doesNotMatch(app, /RECENT_SEARCHES_KEY|axyp-recent-searches/)
+assert.match(app, /recentSearchesList = \[\]/)
+
 // Regression checks for the personal-workspace workflow and privacy contract.
 const workspaceSource = await readFile(new URL('../case-folder-storage.js', import.meta.url), 'utf8')
 const usageGuide = await readFile(new URL('../ΟΔΗΓΙΕΣ-ΧΡΗΣΗΣ.md', import.meta.url), 'utf8')
