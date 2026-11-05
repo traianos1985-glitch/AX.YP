@@ -81,6 +81,7 @@ assert.match(app, /event\.key === 'Enter'/)
 assert.doesNotMatch(app, /storageSet\(localStorage,\s*['"]axyp-recent-searches['"]/)
 assert.match(app, /storageRemove\(localStorage,\s*['"]axyp-recent-searches['"]\)/)
 assert.match(app, /recentSearchesList = \[\]/)
+assert.doesNotMatch(app, /search-start/)
 
 // Regression checks for the personal-workspace workflow and privacy contract.
 const workspaceSource = await readFile(new URL('../case-folder-storage.js', import.meta.url), 'utf8')
