@@ -18,6 +18,7 @@ const expectedCounts = {
   environment: 4,
   health: 4,
   noise: 4,
+  camping: 4,
   commerce: 8
 };
 
@@ -124,5 +125,32 @@ const noiseDocx = unzipSync(buildDocx(noiseTemplate, syntheticCase));
 const noiseXml = new TextDecoder().decode(noiseDocx['word/document.xml']);
 assert.ok(noiseXml.includes('TEST &amp; &lt;NOISE&gt; &quot;DESCRIPTION&quot;'), 'User-entered text must be XML-escaped in generated Word content');
 
-assert.equal(generated, 35, 'All built-in dossier templates must use the production DOCX generation path');
+const campingCase = {
+  ...syntheticCase,
+  profile: 'camping',
+  offender: { ...syntheticCase.offender, postalCode: 'TEST-POSTAL', nationality: 'TEST-NATIONALITY' },
+  camping: { legalProvision: 'TEST-CAMPING-LAW', location: 'TEST-CAMPING-LOCATION', actDescription: 'TEST-CAMPING-ACT', actQualifier: 'TEST-CAMPING-QUALIFIER', outdoorItems: 'TEST-OUTDOOR-ITEMS', noDesignatedSite: 'TEST-NO-DESIGNATED-SITE' },
+  vehicle: { type: 'TEST-VEHICLE-TYPE', registration: 'TEST-REGISTRATION', towVehicleRegistration: 'TEST-TOW-REG', caravanRegistration: 'TEST-CARAVAN-REG' },
+  interpreter: { fullName: 'TEST-INTERPRETER-NAME', language: 'TEST-INTERPRETER-LANGUAGE', fatherName: 'TEST-INTERPRETER-FATHER', motherName: 'TEST-INTERPRETER-MOTHER', birthDate: '1985-02-03', birthPlace: 'TEST-INTERPRETER-BIRTH', city: 'TEST-INTERPRETER-CITY', idNumber: 'TEST-INTERPRETER-ID', idDate: '2010-04-05', idService: 'TEST-INTERPRETER-SERVICE', nationality: 'TEST-INTERPRETER-NATIONALITY' },
+  prosecutorPerson: { fullName: 'TEST-PROSECUTOR-NAME', title: 'TEST-PROSECUTOR-TITLE' }
+};
+for (const template of templates.filter((entry) => entry.category === 'camping')) {
+  const parts = unzipSync(buildDocx(template, campingCase));
+  const xml = new TextDecoder().decode(parts['word/document.xml']);
+  for (const marker of ['TEST-CAMPING-LOCATION', 'TEST-PERSON-SURNAME']) {
+    if (template.id !== 'camping-03') assert.ok(xml.includes(marker), `${template.id} must map ${marker}`);
+  }
+  if (template.id === 'camping-01') {
+    for (const marker of ['TEST-INTERPRETER-FATHER', 'TEST-INTERPRETER-NATIONALITY', 'TEST-INTERPRETER-ID', 'TEST-INTERPRETER-LANGUAGE']) {
+      assert.ok(xml.includes(marker), `camping-01 must map ${marker}`);
+    }
+  }
+  if (template.id === 'camping-02') {
+    assert.ok(xml.includes('TEST-PROSECUTOR-NAME'));
+    assert.ok(xml.includes('TEST-PROSECUTOR-TITLE'));
+    assert.ok(xml.includes('TEST-POSTAL'));
+    assert.ok(xml.includes('TEST-NATIONALITY'));
+  }
+}
+assert.equal(generated, 39, 'All built-in dossier templates must use the production DOCX generation path');
 console.log(`Production DOCX generation regression passed for all ${generated} built-in templates.`);
