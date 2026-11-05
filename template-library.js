@@ -30,6 +30,15 @@ export function ensureDefaultTemplates(storageInstance = storage()) {
   }
 }
 
+export async function initializeDefaultTemplates(storageInstance = storage()) {
+  // Το storage.js ολοκληρώνει πρώτα την ανάγνωση/μεταφορά από IndexedDB.
+  // Έτσι το seed δεν μπορεί να πατήσει πάνω σε νεότερα αποθηκευμένα δεδομένα.
+  if (storageInstance && storageInstance.ready && typeof storageInstance.ready.then === 'function') {
+    await storageInstance.ready;
+  }
+  ensureDefaultTemplates(storageInstance);
+}
+
 export function base64ToUint8(base64) {
   if (typeof atob === 'function') {
     const bin = atob(base64);
@@ -456,10 +465,14 @@ export async function generate(template) {
 
 
 if (typeof document !== 'undefined') {
-  ensureDefaultTemplates();
   $('template-file')?.addEventListener('change', importTemplate);
   if (typeof window !== 'undefined') {
-    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, generate, getTemplateParts };
+    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts };
   }
-  render();
+  initializeDefaultTemplates()
+    .then(render)
+    .catch((error) => {
+      console.error('Template library initialization failed:', error);
+      render();
+    });
 }
