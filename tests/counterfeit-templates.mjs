@@ -190,7 +190,7 @@ const syntheticCase = {
     taxId: '012345678',
     email: 'test@example.com'
   },
-  timeline: computeTimeline('11:40')
+  timeline: { witnessStartTime: '11:40', witnessEndTime: '11:45', seizureStartTime: '11:46', seizureEndTime: '11:51' }
 };
 
 for (const tpl of counterfeitSeeded) {
@@ -226,6 +226,8 @@ for (const tpl of counterfeitSeeded) {
 
 assert.equal(valueFor('counterfeit.serialNumber', { counterfeit: { serialNumber: 'SERIAL-TEST' } }), 'SERIAL-TEST');
 assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', time: '11:40' }), '', 'Counterfeit must not inherit narcotics auto timeline');
+assert.equal(valueFor('timeline.seizure.startTime', { profile: 'counterfeit', time: '11:40' }), '', 'Counterfeit seizure time must remain manual');
+assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', timeline: { witnessStartTime: '09:17' } }), '09:17', 'Counterfeit manually entered times must map exactly');
 assert.equal(valueFor('timeline.witness.startTime', { profile: 'narcotics', time: '11:40' }), '11:40', 'Narcotics timeline remains unchanged');
 
 console.log('\nAll 5 counterfeit test suites passed with 100% success!');
