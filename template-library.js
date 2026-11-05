@@ -674,6 +674,22 @@ function importTemplate(event) {
   });
 }
 
+export function buildDocx(template, item) {
+  if (!template || !item) throw new Error('Template and case data are required');
+  const files = getTemplateParts(template);
+
+  // Use the same production replacement path for the main document,
+  // headers, footers, footnotes and any other Word XML part.
+  Object.keys(files).forEach((filename) => {
+    if (filename.startsWith('word/') && filename.endsWith('.xml')) {
+      const xml = new TextDecoder().decode(files[filename]);
+      files[filename] = new TextEncoder().encode(replaceInXml(xml, template, item));
+    }
+  });
+
+  return zipSync(files);
+}
+
 export async function generate(template) {
   const item = getCase();
   if (!item || !item.id) {
@@ -682,17 +698,7 @@ export async function generate(template) {
     }
     return;
   }
-  const files = getTemplateParts(template);
-
-  // Αντικατάσταση placeholders σε document.xml, headers και footers
-  Object.keys(files).forEach((filename) => {
-    if (filename.startsWith('word/') && filename.endsWith('.xml')) {
-      const xml = new TextDecoder().decode(files[filename]);
-      files[filename] = new TextEncoder().encode(replaceInXml(xml, template, item));
-    }
-  });
-
-  const blob = new Blob([zipSync(files)], {
+  const blob = new Blob([buildDocx(template, item)], {
     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
   });
   const fileName = (item.title ? item.title.replace(/[\\/:*?"<>|]+/g, '-') : 'ypothesi') + '-' + template.name;
