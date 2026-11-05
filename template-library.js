@@ -81,10 +81,10 @@ function prepareCounterfeitTemplate(template) {
   const documentPath = 'word/document.xml';
   if (!parts[documentPath]) throw new Error('Missing main DOCX document for ' + template.id);
   let xml = normalizeDocxXml(new TextDecoder().decode(parts[documentPath]));
-  if (!xml.includes('{{evidence.serialNumber}}')) {
+  if (!xml.includes('{{counterfeit.serialNumber}}')) {
     const evidenceParagraph = xml.match(/<w:p\b[^>]*>[\s\S]*?\{\{\s*evidence\.quantity\s*\}\}[\s\S]*?<\/w:p>/);
     if (!evidenceParagraph) throw new Error('Could not locate evidence quantity paragraph in ' + template.id);
-    const serialParagraph = '<w:p><w:pPr><w:pStyle w:val="Normal"/></w:pPr><w:r><w:t xml:space="preserve">Σειριακός αριθμός πλαστού χαρτονομίσματος: {{evidence.serialNumber}}</w:t></w:r></w:p>';
+    const serialParagraph = '<w:p><w:pPr><w:pStyle w:val="Normal"/></w:pPr><w:r><w:t xml:space="preserve">Σειριακός αριθμός πλαστού χαρτονομίσματος: {{counterfeit.serialNumber}}</w:t></w:r></w:p>';
     xml = xml.replace(evidenceParagraph[0], evidenceParagraph[0] + serialParagraph);
   }
   parts[documentPath] = new TextEncoder().encode(xml);
@@ -93,8 +93,8 @@ function prepareCounterfeitTemplate(template) {
     ...template,
     dataBase64: uint8ToBase64(bytes),
     size: bytes.length,
-    fields: [...new Set([...(template.fields || []), 'evidence.serialNumber'])],
-    mappings: { ...(template.mappings || {}), 'evidence.serialNumber': 'evidence.serialNumber' }
+    fields: [...new Set([...(template.fields || []), 'counterfeit.serialNumber'])],
+    mappings: { ...(template.mappings || {}), 'counterfeit.serialNumber': 'counterfeit.serialNumber' }
   };
 }
 
@@ -234,7 +234,7 @@ const FIELD_OPTIONS = [
   { path: 'person.phone', label: 'Πρόσωπο · Τηλέφωνο' },
   { path: 'person.email', label: 'Πρόσωπο · Email' },
   { path: 'evidence.quantity', label: 'Ευρήματα · Ποσότητες' },
-  { path: 'evidence.serialNumber', label: 'Πλαστό νόμισμα · Σειριακός αριθμός' },
+  { path: 'counterfeit.serialNumber', label: 'Πλαστό νόμισμα · Σειριακός αριθμός' },
   { path: 'timeline.witness.startTime', label: '1. Κατάθεση · Ώρα έναρξης' },
   { path: 'timeline.witness.endTime', label: "1. Κατάθεση · Ώρα περάτωσης (+5')" },
   { path: 'timeline.arrest.startTime', label: "2. Έκθεση σύλληψης · Ώρα έναρξης (+1')" },
@@ -294,7 +294,7 @@ export function valueFor(path, item) {
     'officerB.name': officerB.name,
     'officerB.service': officerB.service,
     'evidence.quantity': item.evidence,
-    'evidence.serialNumber': item.counterfeit && item.counterfeit.serialNumber,
+    'counterfeit.serialNumber': item.counterfeit && item.counterfeit.serialNumber,
     'timeline.witness.startTime': getTime('witnessStartTime'),
     'timeline.witness.endTime': getTime('witnessEndTime'),
     'timeline.arrest.startTime': getTime('arrestStartTime'),
