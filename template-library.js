@@ -307,7 +307,16 @@ function render() {
     root.appendChild(section);
   }
 
+  let otherHeadingAdded = false;
   allTemplates.forEach((template, index) => {
+    const isNarcoticsTemplate = template.category === 'narcotics' || template.name.startsWith('0') || template.name.startsWith('10_');
+    if (!isNarcoticsTemplate && !otherHeadingAdded) {
+      const section = document.createElement('h3');
+      section.className = 'template-category-heading';
+      section.textContent = 'Πρόσθετα / προσαρμοσμένα πρότυπα';
+      root.appendChild(section);
+      otherHeadingAdded = true;
+    }
     const card = document.createElement('article');
     card.className = 'template-file-card template-review-card';
     card.innerHTML =
