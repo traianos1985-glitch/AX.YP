@@ -6,6 +6,7 @@
   var FAVORITES_KEY = 'axyp-favorites';
   var CHECKS_PREFIX = 'axyp-checks-';
   var WIZARD_CHECKS_KEY = 'axyp-wizard-checks';
+  var RECENT_SEARCHES_KEY = 'axyp-recent-searches';
   var CHECK_LABELS = [
     'Ασφάλεια και αναγκαία βοήθεια',
     'Καταγραφή πραγματικών περιστατικών χωρίς προσωπικά δεδομένα',
@@ -44,8 +45,6 @@
   var debounceTimer = null;
   var privacyOn = storageGet(localStorage, PRIVACY_KEY) === '1';
   var indexCache = {};
-  // Recent searches stay in memory only; raw incident queries must not persist in localStorage.
-  var recentSearchesList = [];
 
   function storageGet(storage, key) {
     try { return storage.getItem(key); } catch (e) { return null; }
@@ -362,19 +361,18 @@
   }
 
   function recentSearches() {
-    return recentSearchesList.slice();
+    return readJson(RECENT_SEARCHES_KEY, []);
   }
 
   function saveRecentSearch(query) {
     var value = query.trim();
     if (!value) return;
-    recentSearchesList = recentSearchesList.filter(function (entry) { return entry !== value; });
-    recentSearchesList.unshift(value);
-    recentSearchesList = recentSearchesList.slice(0, 6);
+    var list = recentSearches().filter(function (entry) { return entry !== value; });
+    list.unshift(value);
+    storageSet(localStorage, RECENT_SEARCHES_KEY, JSON.stringify(list.slice(0, 6)));
   }
 
   function setSearch(query) {
-    saveRecentSearch(query);
     q.value = query;
     scopeAll = true;
     renderTabs();
@@ -411,6 +409,7 @@
       return;
     }
     if (resultTools) resultTools.hidden = false;
+    saveRecentSearch(raw);
     var terms = expandTerms(raw);
     var incidentRule = window.AXYPIncidentSearch.classify(raw);
     var list = visibleEntries(terms, raw, incidentRule);
@@ -550,12 +549,6 @@
       renderTabs();
       scheduleRender();
     });
-    q.addEventListener('keydown', function (event) {
-      if (event.key === 'Enter' && !event.isComposing) {
-        saveRecentSearch(q.value);
-        renderHome();
-      }
-    });
     document.querySelectorAll('[data-query]').forEach(function (button) {
       button.onclick = function () { setSearch(button.dataset.query); };
     });
@@ -569,7 +562,7 @@
       else q.focus();
     };
     document.getElementById('clear-recent').onclick = function () {
-      recentSearchesList = [];
+      storageRemove(localStorage, RECENT_SEARCHES_KEY);
       renderHome();
     };
     [statusFilter, sourceFilter, sortResults].forEach(function (control) { control.onchange = renderResults; });
@@ -609,7 +602,6 @@
     window.addEventListener('online', function () { setConnection(true); });
     window.addEventListener('offline', function () { setConnection(false); });
     window.addEventListener('pagehide', function () {
-      recentSearchesList = [];
       if (!privacyOn) return;
       q.value = '';
       wizardSearch.value = '';
@@ -619,8 +611,6 @@
 
   function start() {
     document.getElementById('version').textContent = DATA.updated;
-    // Remove search terms left behind by older dashboard builds.
-    storageRemove(localStorage, 'axyp-recent-searches');
     document.getElementById('foot').textContent = 'Τελευταία ενημέρωση βάσης: ' + DATA.updated + '. Εγγραφές χωρίς επαλήθευση από επίσημη πηγή επισημαίνονται.';
     var savedTheme = storageGet(localStorage, THEME_KEY);
     applyTheme(savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'system');
