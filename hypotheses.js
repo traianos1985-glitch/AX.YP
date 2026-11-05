@@ -91,7 +91,31 @@ function uid() {
     return 'yp-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
   }
 
+  function ensureCommerceOffenderFields() {
+    if ($('commerce-offenders')) return;
+    var form = $('case-form');
+    if (!form) return;
+    var section = document.createElement('div');
+    section.id = 'commerce-offenders';
+    section.className = 'commerce-offenders case-wide';
+    section.hidden = $('case-profile')?.value !== 'commerce';
+    section.innerHTML = '<div class="section-heading"><div><p class="eyebrow">Αυτοτελή στοιχεία</p><h3>Δύο δράστες παρεμπορίου</h3><p class="muted">Τα στοιχεία των δύο προσώπων παραμένουν σε χωριστά πεδία και μεταφέρονται μόνο στα αντίστοιχα πρότυπα.</p></div></div>' +
+      '<div class="offender-grid"><fieldset><legend>Δράστης Α</legend><label>Ονοματεπώνυμο<input id="commerce-offender-a-full-name" autocomplete="off"></label><label>Αριθμός ταυτότητας<input id="commerce-offender-a-id" autocomplete="off"></label><label>Διεύθυνση<input id="commerce-offender-a-address" autocomplete="street-address"></label></fieldset>' +
+      '<fieldset><legend>Δράστης Β</legend><label>Ονοματεπώνυμο<input id="commerce-offender-b-full-name" autocomplete="off"></label><label>Αριθμός ταυτότητας<input id="commerce-offender-b-id" autocomplete="off"></label><label>Διεύθυνση<input id="commerce-offender-b-address" autocomplete="street-address"></label></fieldset></div>';
+    form.insertBefore(section, form.querySelector('.profile-actions'));
+  }
+
+  function commerceOffender(prefix) {
+    ensureCommerceOffenderFields();
+    return {
+      fullName: $(prefix + '-full-name') ? $(prefix + '-full-name').value.trim() : '',
+      idNumber: $(prefix + '-id') ? $(prefix + '-id').value.trim() : '',
+      address: $(prefix + '-address') ? $(prefix + '-address').value.trim() : ''
+    };
+  }
+
   function values() {
+    ensureCommerceOffenderFields();
     return {
       title: $('case-title').value.trim(),
       offence: $('case-offence').value.trim(),
@@ -130,6 +154,8 @@ function uid() {
         examinationStartTime: $('case-profile').value === 'health' ? ($('health-examination-start') ? $('health-examination-start').value : '') : ($('case-profile').value === 'environment' ? ($('environment-examination-start') ? $('environment-examination-start').value : '') : ($('timeline-examination-start') ? $('timeline-examination-start').value : '')),
         examinationEndTime: $('case-profile').value === 'health' ? ($('health-examination-end') ? $('health-examination-end').value : '') : ($('case-profile').value === 'environment' ? ($('environment-examination-end') ? $('environment-examination-end').value : '') : ($('timeline-examination-end') ? $('timeline-examination-end').value : ''))
       },
+      offenderA: commerceOffender('commerce-offender-a'),
+      offenderB: commerceOffender('commerce-offender-b'),
       offender: $('case-profile').value === 'counterfeit' ? {} : {
         surname: $('offender-surname').value.trim(),
         name: $('offender-name').value.trim(),
@@ -200,10 +226,13 @@ function uid() {
   }
 
   function reset() {
+    ensureCommerceOffenderFields();
     $('case-form').reset();
     $('case-id').value = '';
     $('case-date').value = new Date().toISOString().slice(0, 10);
     if (activeProfileFilter) $('case-profile').value = activeProfileFilter;
+    ensureCommerceOffenderFields();
+    if ($('commerce-offenders')) $('commerce-offenders').hidden = activeProfileFilter !== 'commerce';
     $('case-timeline-section').hidden = activeProfileFilter !== 'narcotics';
     $('case-counterfeit-section').hidden = activeProfileFilter !== 'counterfeit';
     $('case-counterfeit-witness-section').hidden = activeProfileFilter !== 'counterfeit';
@@ -230,6 +259,7 @@ function uid() {
   }
 
   function select(id) {
+    ensureCommerceOffenderFields();
     selectedId = id;
     var item = read().filter(function (entry) { return entry.id === id; })[0];
     if (!item) return;
@@ -274,6 +304,15 @@ function uid() {
     if ($('counterfeit-serial-number')) $('counterfeit-serial-number').value = (item.counterfeit && item.counterfeit.serialNumber) || '';
     $('offender-section-title').textContent = (item.profile === 'narcotics' || item.profile === 'environment' || item.profile === 'health') ? 'Στοιχεία δράστη' : item.profile === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
     var offender = item.profile === 'counterfeit' ? ((item.counterfeit && item.counterfeit.depositor) || {}) : (item.offender || {});
+    var offenderA = item.offenderA || {};
+    var offenderB = item.offenderB || {};
+    if ($('commerce-offenders')) $('commerce-offenders').hidden = item.profile !== 'commerce';
+    if ($('commerce-offender-a-full-name')) $('commerce-offender-a-full-name').value = offenderA.fullName || '';
+    if ($('commerce-offender-a-id')) $('commerce-offender-a-id').value = offenderA.idNumber || '';
+    if ($('commerce-offender-a-address')) $('commerce-offender-a-address').value = offenderA.address || '';
+    if ($('commerce-offender-b-full-name')) $('commerce-offender-b-full-name').value = offenderB.fullName || '';
+    if ($('commerce-offender-b-id')) $('commerce-offender-b-id').value = offenderB.idNumber || '';
+    if ($('commerce-offender-b-address')) $('commerce-offender-b-address').value = offenderB.address || '';
     var witness = (item.counterfeit && item.counterfeit.witness) || {};
     if ($('counterfeit-witness-surname')) $('counterfeit-witness-surname').value = witness.surname || '';
     if ($('counterfeit-witness-name')) $('counterfeit-witness-name').value = witness.name || '';
