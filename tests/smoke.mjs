@@ -475,3 +475,7 @@ console.log('Dossier timeline calculation smoke tests passed.')
 
 // Import and execute narcotics templates test suite
 await import('./narcotics-templates.mjs');
+
+
+// Dossier category navigation regression tests
+await import('./dossier-categories.mjs');

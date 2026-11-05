@@ -470,7 +470,7 @@ if (typeof document !== 'undefined') {
     window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts };
   }
   initializeDefaultTemplates()
-    .then(render)
+    .then(() => { render(); if (window.HypothesesView) window.HypothesesView.refresh(); })
     .catch((error) => {
       console.error('Template library initialization failed:', error);
       render();

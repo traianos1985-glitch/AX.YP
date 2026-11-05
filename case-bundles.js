@@ -10,9 +10,10 @@ function render() {
   const root = $('bundles-list');
   if (!root) return;
   root.textContent = '';
-  const bundles = read();
+  const activeProfile = window.HypothesesView && window.HypothesesView.getActiveProfileFilter ? window.HypothesesView.getActiveProfileFilter() : null;
+  const bundles = read().filter((bundle) => !activeProfile || bundle.profile === activeProfile);
   if (!bundles.length) {
-    root.textContent = 'Δεν έχει αποθηκευτεί ακόμη ολοκληρωμένη δικογραφία-πρότυπο.';
+    root.textContent = activeProfile ? 'Δεν υπάρχει ακόμη αποθηκευμένο πρότυπο για αυτή την κατηγορία.' : 'Δεν έχει αποθηκευτεί ακόμη ολοκληρωμένη δικογραφία-πρότυπο.';
     return;
   }
   bundles.forEach((bundle, index) => {

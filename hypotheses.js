@@ -1,6 +1,8 @@
+import { DOSSIER_CATEGORIES } from './dossier-categories.js';
 (function () {
   var KEY = 'axyp-hypotheses';
   var selectedId = null;
+  var activeProfileFilter = null;
   var storage = window.AXYP_STORAGE || localStorage;
   var $ = function (id) { return document.getElementById(id); };
 
@@ -161,6 +163,10 @@ function uid() {
     $('case-form').reset();
     $('case-id').value = '';
     $('case-date').value = new Date().toISOString().slice(0, 10);
+    if (activeProfileFilter) $('case-profile').value = activeProfileFilter;
+    $('case-timeline-section').hidden = activeProfileFilter !== 'narcotics';
+    $('case-investigators-section').hidden = activeProfileFilter !== 'narcotics';
+    $('offender-section-title').textContent = activeProfileFilter === 'narcotics' ? 'Στοιχεία δράστη' : 'Στοιχεία εμπλεκόμενου προσώπου';
     selectedId = null;
     renderDetail();
   }
@@ -170,6 +176,7 @@ function uid() {
     var item = read().filter(function (entry) { return entry.id === id; })[0];
     if (!item) return;
     $('case-id').value = item.id;
+    $('case-form').hidden = false;
     $('case-title').value = item.title || '';
     $('case-offence').value = item.offence || '';
     $('case-status').value = item.status || 'Νέα';
@@ -217,15 +224,55 @@ function uid() {
     render();
   }
 
+
+  function readTemplates() {
+    try { return JSON.parse((window.AXYP_STORAGE || localStorage).getItem('axyp-docx-templates') || '[]'); } catch (e) { return []; }
+  }
+  function renderDossierCategories() {
+    var root = $('dossier-category-grid'); if (!root) return;
+    root.textContent = '';
+    var items = read(), templates = readTemplates();
+    DOSSIER_CATEGORIES.forEach(function (category) {
+      var caseCount = items.filter(function (item) { return (item.profile || 'generic') === category.id; }).length;
+      var templateCount = templates.filter(function (item) { return item.category === category.id || item.profile === category.id; }).length;
+      var card = document.createElement('article'); card.className = 'dossier-category';
+      var top = document.createElement('div'); top.className = 'dossier-category-top';
+      var mark = document.createElement('span'); mark.className = 'dossier-category-mark'; mark.textContent = category.mark;
+      var heading = document.createElement('div'), title = document.createElement('h3'), desc = document.createElement('p');
+      title.textContent = category.label; desc.textContent = category.description; heading.append(title, desc); top.append(mark, heading);
+      var stats = document.createElement('div'); stats.className = 'dossier-category-stats';
+      var count = document.createElement('span'); count.className = 'dossier-stat'; count.textContent = caseCount + (caseCount === 1 ? ' υπόθεση' : ' υποθέσεις');
+      var docs = document.createElement('span'); docs.className = 'dossier-stat'; docs.textContent = templateCount + (templateCount === 1 ? ' πρότυπο Word' : ' πρότυπα Word'); stats.append(count, docs);
+      var note = document.createElement('p'); note.className = 'dossier-category-note'; note.textContent = templateCount ? 'Διαθέσιμα πρότυπα για αυτή την κατηγορία.' : 'Τα επίσημα έγγραφα και πρότυπα θα προστεθούν όταν τα ανεβάσεις.';
+      var actions = document.createElement('div'); actions.className = 'dossier-category-actions';
+      var open = document.createElement('button'); open.type = 'button'; open.textContent = 'Προβολή'; open.onclick = function () { openCategory(category.id, false); };
+      var create = document.createElement('button'); create.type = 'button'; create.className = 'primary'; create.textContent = '+ Νέα υπόθεση'; create.onclick = function () { openCategory(category.id, true); };
+      actions.append(open, create); card.append(top, stats, note, actions); root.appendChild(card);
+    });
+  }
+  function openCategory(profile, createNew) {
+    var category = DOSSIER_CATEGORIES.find(function (entry) { return entry.id === profile; }) || DOSSIER_CATEGORIES[DOSSIER_CATEGORIES.length - 1];
+    activeProfileFilter = category.id;
+    $('dossier-dashboard').hidden = true; $('dossier-workspace').hidden = false;
+    $('dossier-active-title').textContent = category.label;
+    $('dossier-active-description').textContent = category.description + ' Οι υποθέσεις αυτής της κατηγορίας εμφανίζονται μόνο εδώ.';
+    $('case-profile').value = category.id; $('bundle-profile').value = category.id; $('case-timeline-section').hidden = category.id !== 'narcotics'; $('case-investigators-section').hidden = category.id !== 'narcotics'; $('offender-section-title').textContent = category.id === 'narcotics' ? 'Στοιχεία δράστη' : 'Στοιχεία εμπλεκόμενου προσώπου';
+    $('case-form').hidden = !createNew; $('case-layout').hidden = false;
+    if (createNew) { reset(); $('case-profile').value = category.id; $('case-form').hidden = false; }
+    else { selectedId = null; $('case-id').value = ''; $('case-detail-empty').hidden = false; $('case-detail-content').hidden = true; }
+    render(); if (window.CaseBundles) CaseBundles.refresh();
+  }
+  function showDashboard() {
+    activeProfileFilter = null; $('dossier-dashboard').hidden = false; $('dossier-workspace').hidden = true;
+    $('case-form').hidden = true; $('case-layout').hidden = true; renderDossierCategories();
+  }
   function render() {
+    renderDossierCategories();
     var list = $('cases-list');
     if (!list) return;
     list.textContent = '';
-    var items = read();
-    if (!items.length) {
-      list.appendChild(document.createTextNode('Δεν υπάρχει ακόμη αποθηκευμένη υπόθεση.'));
-      return;
-    }
+    var items = read().filter(function (item) { return !activeProfileFilter || (item.profile || 'generic') === activeProfileFilter; });
+    if (!items.length) { var empty = document.createElement('div'); empty.className = 'dossier-category-empty'; empty.textContent = activeProfileFilter ? 'Δεν υπάρχει ακόμη αποθηκευμένη υπόθεση σε αυτή την κατηγορία. Πάτησε «Νέα υπόθεση» για να ξεκινήσεις.' : 'Δεν υπάρχει ακόμη αποθηκευμένη υπόθεση.'; list.appendChild(empty); renderDetail(); return; }
     items.forEach(function (item) {
       var card = document.createElement('button');
       card.type = 'button';
@@ -498,9 +545,14 @@ function uid() {
 
   window.HypothesesView = {
     refresh: render,
-    getSelectedId: function () { return selectedId; }
+    getSelectedId: function () { return selectedId; },
+    openCategory: openCategory,
+    showDashboard: showDashboard,
+    getActiveProfileFilter: function () { return activeProfileFilter; }
   };
 
+  $('dossier-back').onclick = showDashboard;
+  $('dossier-new-case').onclick = function () { if (activeProfileFilter) openCategory(activeProfileFilter, true); };
   $('case-form').addEventListener('submit', save);
   $('case-reset').onclick = reset;
   $('case-snapshot').onclick = snapshot;
@@ -509,5 +561,6 @@ function uid() {
   $('full-backup').onclick = fullBackup;
   $('full-restore').onchange = restoreBackup;
   reset();
+  showDashboard();
   render();
 })();
