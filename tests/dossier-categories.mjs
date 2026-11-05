@@ -48,6 +48,6 @@ assert.match(html,/δεν αποδίδει από μόνη της νομικό �
 assert.doesNotMatch(hyp,/category\.id === 'environment'[\s\S]{0,160}case-offence/);
 assert.doesNotMatch(bundles,/bundle\.profile === 'environment'[\s\S]{0,180}Παράβαση άρθρου 28/);
 
-assert.match(sw,/axyp-v29/);
+assert.match(sw,/axyp-v30/);
 assert.match(sw,/dossier-categories\.js/);
 console.log('Dossier category navigation tests passed.');
