@@ -25,7 +25,7 @@ assert.ok(hyp.includes("item.profile === 'narcotics' ? computeTimeline"));
 assert.match(hyp,/case-counterfeit-section/);
 assert.match(hyp,/case-counterfeit-timeline-section/);
 assert.ok(hyp.includes("category.id !== 'narcotics' && category.id !== 'counterfeit'"));
-assert.ok(templateLibrary.includes('evidence.serialNumber'));
+assert.ok(templateLibrary.includes('counterfeit.serialNumber'));
 assert.match(sw,/axyp-v27/);
 assert.match(sw,/dossier-categories\.js/);
 console.log('Dossier category navigation tests passed.');
