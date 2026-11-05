@@ -1,5 +1,6 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
 import { DEFAULT_NARCOTICS_TEMPLATES, DEFAULT_COUNTERFEIT_TEMPLATES, DEFAULT_ENVIRONMENT_TEMPLATES, DEFAULT_HEALTH_TEMPLATES } from './dossier-templates-data.js';
+import { DEFAULT_NOISE_TEMPLATES } from './noise-templates-data.js';
 import { DEFAULT_COMMERCE_TEMPLATES } from './paremporio-templates.js';
 
 const KEY = 'axyp-docx-templates';
@@ -7,6 +8,7 @@ const NARCOTICS_SEED_KEY = 'axyp-narcotics-templates-seeded-v1';
 const COUNTERFEIT_SEED_KEY = 'axyp-counterfeit-templates-seeded-v1';
 const ENVIRONMENT_SEED_KEY = 'axyp-environment-templates-seeded-v1';
   const HEALTH_SEED_KEY = 'axyp-health-templates-seeded-v1';
+  const NOISE_SEED_KEY = 'axyp-noise-templates-seeded-v1';
   const COMMERCE_SEED_KEY = 'axyp-commerce-templates-seeded-v1';
 const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
@@ -73,7 +75,18 @@ export function ensureDefaultTemplates(storageInstance = storage()) {
     }
 
 
-    // 5. Commerce templates: every document is anonymized and keeps actor A/B fields separate.
+    // 5. Noise-pollution templates for health-interest establishments.
+    if (!storageInstance.getItem(NOISE_SEED_KEY)) {
+      const toAddNoise = (DEFAULT_NOISE_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
+      if (toAddNoise.length > 0) {
+        updated = [...updated, ...toAddNoise];
+        toAddNoise.forEach((t) => existingKeys.add(keyOf(t)));
+        hasChanges = true;
+      }
+      storageInstance.setItem(NOISE_SEED_KEY, 'true');
+    }
+
+    // 6. Commerce templates: every document is anonymized and keeps actor A/B fields separate.
     if (!storageInstance.getItem(COMMERCE_SEED_KEY)) {
       const toAddCommerce = (DEFAULT_COMMERCE_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
       if (toAddCommerce.length > 0) {
@@ -240,6 +253,8 @@ const FIELD_OPTIONS = [
   { path: 'case.status', label: 'Υπόθεση · Κατάσταση' },
   { path: 'case.date', label: 'Υπόθεση · Ημερομηνία' },
   { path: 'case.time', label: 'Υπόθεση · Ώρα σύνταξης' },
+  { path: 'incident.date', label: 'Συμβάν · Ημερομηνία' },
+  { path: 'incident.time', label: 'Συμβάν · Ώρα' },
   { path: 'case.location', label: 'Υπόθεση · Τόπος / Πόλη σύνταξης' },
   { path: 'case.prosecutor', label: 'Υπόθεση · Εισαγγελία Πρωτοδικών' },
   { path: 'case.profile', label: 'Υπόθεση · Νομικό προφίλ' },
@@ -276,6 +291,7 @@ const FIELD_OPTIONS = [
   { path: 'person.idDate', label: 'Πρόσωπο · Ημερομηνία έκδοσης ταυτότητας' },
   { path: 'person.idService', label: 'Πρόσωπο · Υπηρεσία έκδοσης' },
   { path: 'person.taxId', label: 'Πρόσωπο · Α.Φ.Μ.' },
+  { path: 'person.taxOffice', label: 'Πρόσωπο · Δ.Ο.Υ.' },
   { path: 'person.phone', label: 'Πρόσωπο · Τηλέφωνο' },
   { path: 'person.email', label: 'Πρόσωπο · Email' },
   { path: 'counterfeit.witness.fullName', label: 'Πλαστά · Μάρτυρας · Ονοματεπώνυμο' },
@@ -310,6 +326,23 @@ const FIELD_OPTIONS = [
   { path: 'counterfeit.serialNumber', label: 'Πλαστό νόμισμα · Σειριακός αριθμός' },
   { path: 'environment.description', label: 'Ρύπανση · Περιγραφή πράξης / αποβλήτων' },
   { path: 'health.description', label: 'Υγειονομικός · Περιγραφή παράβασης / εγκατάστασης' },
+  { path: 'noise.description', label: 'Ηχορύπανση · Περιγραφή παράβασης' },
+  { path: 'noise.establishmentName', label: 'Ηχορύπανση · Κατάστημα' },
+  { path: 'noise.measuredDecibels', label: 'Ηχορύπανση · Μετρηθείσα ένταση' },
+  { path: 'noise.limitDecibels', label: 'Ηχορύπανση · Επιτρεπόμενο όριο' },
+  { path: 'noise.legalProvision', label: 'Ηχορύπανση · Νομική διάταξη' },
+  { path: 'noise.regulationNumber', label: 'Ηχορύπανση · Αριθμός απόφασης' },
+  { path: 'owner.fullName', label: 'Ιδιοκτήτης · Ονοματεπώνυμο' },
+  { path: 'owner.fatherName', label: 'Ιδιοκτήτης · Πατρώνυμο' },
+  { path: 'owner.motherName', label: 'Ιδιοκτήτης · Μητρώνυμο' },
+  { path: 'owner.birthDate', label: 'Ιδιοκτήτης · Ημερομηνία γέννησης' },
+  { path: 'owner.birthPlace', label: 'Ιδιοκτήτης · Τόπος γέννησης' },
+  { path: 'owner.city', label: 'Ιδιοκτήτης · Πόλη κατοικίας' },
+  { path: 'owner.idNumber', label: 'Ιδιοκτήτης · Αριθμός ταυτότητας' },
+  { path: 'owner.idDate', label: 'Ιδιοκτήτης · Ημερομηνία έκδοσης ταυτότητας' },
+  { path: 'owner.idService', label: 'Ιδιοκτήτης · Υπηρεσία έκδοσης' },
+  { path: 'owner.taxId', label: 'Ιδιοκτήτης · Α.Φ.Μ.' },
+  { path: 'owner.taxOffice', label: 'Ιδιοκτήτης · Δ.Ο.Υ.' },
   { path: 'timeline.witness.startTime', label: '1. Κατάθεση · Ώρα έναρξης' },
   { path: 'timeline.witness.endTime', label: "1. Κατάθεση · Ώρα περάτωσης (+5')" },
   { path: 'timeline.arrest.startTime', label: "2. Έκθεση σύλληψης · Ώρα έναρξης (+1')" },
@@ -358,6 +391,8 @@ export function valueFor(path, item) {
     'case.status': item.status,
     'case.date': item.date,
     'case.time': item.time,
+    'incident.date': item.incidentDate || item.date,
+    'incident.time': item.incidentTime || item.time,
     'case.location': item.location,
     'case.prosecutor': item.prosecutor,
     'case.notes': item.notes,
@@ -385,6 +420,23 @@ export function valueFor(path, item) {
     'counterfeit.serialNumber': item.counterfeit && item.counterfeit.serialNumber,
     'environment.description': (item.environment && item.environment.description) || '.............................',
     'health.description': (item.health && item.health.description) || '.............................',
+    'noise.description': (item.noise && item.noise.description) || item.notes,
+    'noise.establishmentName': item.noise && item.noise.establishmentName,
+    'noise.measuredDecibels': item.noise && item.noise.measuredDecibels,
+    'noise.limitDecibels': item.noise && item.noise.limitDecibels,
+    'noise.legalProvision': item.noise && item.noise.legalProvision,
+    'noise.regulationNumber': item.noise && item.noise.regulationNumber,
+    'owner.fullName': item.owner && item.owner.fullName,
+    'owner.fatherName': item.owner && item.owner.fatherName,
+    'owner.motherName': item.owner && item.owner.motherName,
+    'owner.birthDate': item.owner && item.owner.birthDate,
+    'owner.birthPlace': item.owner && item.owner.birthPlace,
+    'owner.city': item.owner && item.owner.city,
+    'owner.idNumber': item.owner && item.owner.idNumber,
+    'owner.idDate': item.owner && item.owner.idDate,
+    'owner.idService': item.owner && item.owner.idService,
+    'owner.taxId': item.owner && item.owner.taxId,
+    'owner.taxOffice': item.owner && item.owner.taxOffice,
     'counterfeit.witness.fullName': witnessFullName,
     'counterfeit.witness.surname': witness.surname,
     'counterfeit.witness.name': witness.name,
@@ -450,6 +502,7 @@ export function valueFor(path, item) {
     'person.idDate': offender.idDate,
     'person.idService': offender.idService,
     'person.taxId': offender.taxId,
+    'person.taxOffice': offender.taxOffice,
     'person.phone': offender.phone,
     'person.email': offender.email,
     'offender.surname': offender.surname,
@@ -490,14 +543,16 @@ function render() {
   const isCounterfeit = (t) => t.category === 'counterfeit';
   const isEnvironment = (t) => t.category === 'environment';
   const isHealth = (t) => t.category === 'health';
-  const isNarcotics = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
-  const isCustom = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNarcotics(t);
+  const isNoise = (t) => t.category === 'noise';
+  const isNarcotics = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
+  const isCustom = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isNarcotics(t);
 
   const groups = [
     { title: (count) => `Δικογραφία Ναρκωτικών (${count} πρότυπα)`, items: allTemplates.filter(isNarcotics) },
     { title: (count) => `Δικογραφία Πλαστών Νομισμάτων (${count} πρότυπα)`, items: allTemplates.filter(isCounterfeit) },
     { title: (count) => `Δικογραφία Ρύπανσης Περιβάλλοντος (${count} πρότυπα)`, items: allTemplates.filter(isEnvironment) },
     { title: (count) => `Δικογραφία Υγειονομικού Κανονισμού (${count} πρότυπα)`, items: allTemplates.filter(isHealth) },
+    { title: (count) => `Δικογραφία Ηχορύπανσης Κ.Υ.Ε. (${count} πρότυπα)`, items: allTemplates.filter(isNoise) },
     { title: (count) => `Πρόσθετα / προσαρμοσμένα πρότυπα (${count})`, items: allTemplates.filter(isCustom) }
   ];
 

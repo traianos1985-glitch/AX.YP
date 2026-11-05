@@ -9,7 +9,7 @@
   var labels = ['Βασικά στοιχεία', 'Πρόσωπα και ειδικά στοιχεία', 'Έλεγχος και ολοκλήρωση'];
   var basicIds = new Set([
     'case-title', 'case-offence', 'case-status', 'case-date', 'case-people',
-    'case-protocol-number', 'case-location', 'case-time', 'case-prosecutor',
+    'case-protocol-number', 'case-location', 'case-time', 'case-incident-date', 'case-incident-time', 'case-prosecutor',
     'case-arresting-officer'
   ]);
   var $ = function (id) { return document.getElementById(id); };
@@ -219,6 +219,8 @@
     var selected = profile ? profile.value : 'generic';
     var commerce = $('commerce-offenders');
     if (commerce) commerce.hidden = selected !== 'commerce';
+    var noiseFields = $('noise-fields');
+    if (noiseFields) noiseFields.hidden = selected !== 'noise';
     var generalPerson = $('offender-section-title');
     var generalFieldset = generalPerson && generalPerson.closest('fieldset');
     if (generalFieldset) generalFieldset.hidden = selected === 'commerce';
