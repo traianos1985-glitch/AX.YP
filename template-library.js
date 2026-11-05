@@ -1,11 +1,13 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
 import { DEFAULT_NARCOTICS_TEMPLATES, DEFAULT_COUNTERFEIT_TEMPLATES, DEFAULT_ENVIRONMENT_TEMPLATES, DEFAULT_HEALTH_TEMPLATES } from './dossier-templates-data.js';
+import { DEFAULT_COMMERCE_TEMPLATES } from './paremporio-templates.js';
 
 const KEY = 'axyp-docx-templates';
 const NARCOTICS_SEED_KEY = 'axyp-narcotics-templates-seeded-v1';
 const COUNTERFEIT_SEED_KEY = 'axyp-counterfeit-templates-seeded-v1';
 const ENVIRONMENT_SEED_KEY = 'axyp-environment-templates-seeded-v1';
-const HEALTH_SEED_KEY = 'axyp-health-templates-seeded-v1';
+  const HEALTH_SEED_KEY = 'axyp-health-templates-seeded-v1';
+  const COMMERCE_SEED_KEY = 'axyp-commerce-templates-seeded-v1';
 const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
 const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } catch (_) { return []; } };
@@ -70,6 +72,17 @@ export function ensureDefaultTemplates(storageInstance = storage()) {
       storageInstance.setItem(HEALTH_SEED_KEY, 'true');
     }
 
+
+    // 5. Commerce templates: every document is anonymized and keeps actor A/B fields separate.
+    if (!storageInstance.getItem(COMMERCE_SEED_KEY)) {
+      const toAddCommerce = (DEFAULT_COMMERCE_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
+      if (toAddCommerce.length > 0) {
+        updated = [...updated, ...toAddCommerce];
+        toAddCommerce.forEach((t) => existingKeys.add(keyOf(t)));
+        hasChanges = true;
+      }
+      storageInstance.setItem(COMMERCE_SEED_KEY, 'true');
+    }
 
     if (hasChanges) {
       storageInstance.setItem(KEY, JSON.stringify(updated));
@@ -244,6 +257,12 @@ const FIELD_OPTIONS = [
   { path: 'officerB.surname', label: 'Β΄ Ανακριτικός · Επώνυμο' },
   { path: 'officerB.name', label: 'Β΄ Ανακριτικός · Όνομα' },
   { path: 'officerB.service', label: 'Β΄ Ανακριτικός · Υπηρεσία' },
+  { path: 'offenderA.fullName', label: 'Δράστης Α · Ονοματεπώνυμο' },
+  { path: 'offenderA.idNumber', label: 'Δράστης Α · Αριθμός ταυτότητας' },
+  { path: 'offenderA.address', label: 'Δράστης Α · Διεύθυνση' },
+  { path: 'offenderB.fullName', label: 'Δράστης Β · Ονοματεπώνυμο' },
+  { path: 'offenderB.idNumber', label: 'Δράστης Β · Αριθμός ταυτότητας' },
+  { path: 'offenderB.address', label: 'Δράστης Β · Διεύθυνση' },
   { path: 'person.fullName', label: 'Πρόσωπο · Ονοματεπώνυμο' },
   { path: 'person.surname', label: 'Πρόσωπο · Επώνυμο' },
   { path: 'person.name', label: 'Πρόσωπο · Όνομα' },
@@ -318,6 +337,8 @@ function mappingFor(template, field) {
 export function valueFor(path, item) {
   if (!item) return '—';
   const offender = item.offender || {};
+  const offenderA = item.offenderA || offender;
+  const offenderB = item.offenderB || {};
   const counterfeit = item.counterfeit || {};
   const witness = counterfeit.witness || {};
   const depositor = counterfeit.depositor || {};
@@ -354,6 +375,12 @@ export function valueFor(path, item) {
     'officerB.surname': officerB.surname,
     'officerB.name': officerB.name,
     'officerB.service': officerB.service,
+    'offenderA.fullName': [offenderA.surname, offenderA.name].filter(Boolean).join(' '),
+    'offenderA.idNumber': offenderA.idNumber,
+    'offenderA.address': offenderA.address,
+    'offenderB.fullName': [offenderB.surname, offenderB.name].filter(Boolean).join(' '),
+    'offenderB.idNumber': offenderB.idNumber,
+    'offenderB.address': offenderB.address,
     'evidence.quantity': item.evidence,
     'counterfeit.serialNumber': item.counterfeit && item.counterfeit.serialNumber,
     'environment.description': (item.environment && item.environment.description) || '.............................',
