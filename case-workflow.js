@@ -221,6 +221,8 @@
     if (commerce) commerce.hidden = selected !== 'commerce';
     var noiseFields = $('noise-fields');
     if (noiseFields) noiseFields.hidden = selected !== 'noise';
+    var campingFields = $('camping-fields');
+    if (campingFields) campingFields.hidden = selected !== 'camping';
     var generalPerson = $('offender-section-title');
     var generalFieldset = generalPerson && generalPerson.closest('fieldset');
     if (generalFieldset) generalFieldset.hidden = selected === 'commerce';
