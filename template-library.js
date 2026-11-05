@@ -233,6 +233,34 @@ const FIELD_OPTIONS = [
   { path: 'person.taxId', label: 'Πρόσωπο · Α.Φ.Μ.' },
   { path: 'person.phone', label: 'Πρόσωπο · Τηλέφωνο' },
   { path: 'person.email', label: 'Πρόσωπο · Email' },
+  { path: 'counterfeit.witness.fullName', label: 'Πλαστά · Μάρτυρας · Ονοματεπώνυμο' },
+  { path: 'counterfeit.witness.surname', label: 'Πλαστά · Μάρτυρας · Επώνυμο' },
+  { path: 'counterfeit.witness.name', label: 'Πλαστά · Μάρτυρας · Όνομα' },
+  { path: 'counterfeit.witness.fatherName', label: 'Πλαστά · Μάρτυρας · Πατρώνυμο' },
+  { path: 'counterfeit.witness.motherName', label: 'Πλαστά · Μάρτυρας · Μητρώνυμο' },
+  { path: 'counterfeit.witness.birthDate', label: 'Πλαστά · Μάρτυρας · Ημερομηνία γέννησης' },
+  { path: 'counterfeit.witness.birthPlace', label: 'Πλαστά · Μάρτυρας · Τόπος γέννησης' },
+  { path: 'counterfeit.witness.city', label: 'Πλαστά · Μάρτυρας · Πόλη κατοικίας' },
+  { path: 'counterfeit.witness.address', label: 'Πλαστά · Μάρτυρας · Διεύθυνση' },
+  { path: 'counterfeit.witness.idNumber', label: 'Πλαστά · Μάρτυρας · Αριθμός ταυτότητας' },
+  { path: 'counterfeit.witness.idDate', label: 'Πλαστά · Μάρτυρας · Ημερομηνία έκδοσης ταυτότητας' },
+  { path: 'counterfeit.witness.idService', label: 'Πλαστά · Μάρτυρας · Υπηρεσία έκδοσης' },
+  { path: 'counterfeit.witness.email', label: 'Πλαστά · Μάρτυρας · Email' },
+  { path: 'counterfeit.depositor.fullName', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Ονοματεπώνυμο' },
+  { path: 'counterfeit.depositor.surname', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Επώνυμο' },
+  { path: 'counterfeit.depositor.name', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Όνομα' },
+  { path: 'counterfeit.depositor.fatherName', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Πατρώνυμο' },
+  { path: 'counterfeit.depositor.motherName', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Μητρώνυμο' },
+  { path: 'counterfeit.depositor.birthDate', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Ημερομηνία γέννησης' },
+  { path: 'counterfeit.depositor.birthPlace', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Τόπος γέννησης' },
+  { path: 'counterfeit.depositor.city', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Πόλη κατοικίας' },
+  { path: 'counterfeit.depositor.address', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Διεύθυνση' },
+  { path: 'counterfeit.depositor.idNumber', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Αριθμός ταυτότητας' },
+  { path: 'counterfeit.depositor.idDate', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Ημερομηνία έκδοσης ταυτότητας' },
+  { path: 'counterfeit.depositor.idService', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Υπηρεσία έκδοσης' },
+  { path: 'counterfeit.depositor.taxId', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Α.Φ.Μ.' },
+  { path: 'counterfeit.depositor.phone', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Τηλέφωνο' },
+  { path: 'counterfeit.depositor.email', label: 'Πλαστά · Καταθέτης στο ΑΤΜ · Email' },
   { path: 'evidence.quantity', label: 'Ευρήματα · Ποσότητες' },
   { path: 'counterfeit.serialNumber', label: 'Πλαστό νόμισμα · Σειριακός αριθμός' },
   { path: 'timeline.witness.startTime', label: '1. Κατάθεση · Ώρα έναρξης' },
@@ -262,6 +290,11 @@ function mappingFor(template, field) {
 export function valueFor(path, item) {
   if (!item) return '—';
   const offender = item.offender || {};
+  const counterfeit = item.counterfeit || {};
+  const witness = counterfeit.witness || {};
+  const depositor = counterfeit.depositor || {};
+  const witnessFullName = [witness.surname, witness.name].filter(Boolean).join(' ');
+  const depositorFullName = [depositor.surname, depositor.name].filter(Boolean).join(' ');
   const officerA = item.officerA || {};
   const officerB = item.officerB || {};
   const officerAFull = [officerA.rank, officerA.surname, officerA.name].filter(Boolean).join(' ');
