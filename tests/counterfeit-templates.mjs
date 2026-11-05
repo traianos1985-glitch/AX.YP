@@ -30,6 +30,17 @@ const seededTemplates = JSON.parse(storage1.getItem('axyp-docx-templates'));
 assert.equal(storage1.getItem('axyp-counterfeit-templates-seeded-v1'), 'true');
 const counterfeitSeeded = seededTemplates.filter((t) => t.category === 'counterfeit');
 assert.equal(counterfeitSeeded.length, 5, 'Expected exactly 5 seeded counterfeit templates');
+const roleMappings = {
+  'counterfeit-01': ['person.surname', 'counterfeit.witness.surname'],
+  'counterfeit-02': ['person.surname', 'counterfeit.witness.surname'],
+  'counterfeit-03': ['person.surname', 'counterfeit.depositor.surname'],
+  'counterfeit-04': ['person.fullName', 'counterfeit.witness.fullName'],
+  'counterfeit-05': ['person.surname', 'counterfeit.depositor.surname']
+};
+for (const [id, [placeholder, target]] of Object.entries(roleMappings)) {
+  const template = counterfeitSeeded.find((item) => item.id === id);
+  assert.equal(template.mappings[placeholder], target, id + ' must map the documented person role separately');
+}
 for (const id of ['counterfeit-01', 'counterfeit-02', 'counterfeit-03']) {
   const template = counterfeitSeeded.find((item) => item.id === id);
   assert.ok(template.fields.includes('counterfeit.serialNumber'), id + ' declares the serial-number field');
@@ -256,6 +267,7 @@ assert.equal(valueFor('counterfeit.serialNumber', { counterfeit: { serialNumber:
 assert.equal(valueFor('counterfeit.serialNumber', syntheticCase), 'TEST-SERIAL-123456');
 assert.equal(valueFor('counterfeit.witness.surname', syntheticCase), 'WITNESS-SURNAME-TEST');
 assert.equal(valueFor('counterfeit.depositor.surname', syntheticCase), 'DEPOSITOR-SURNAME-TEST');
+assert.equal(valueFor('counterfeit.witness.fullName', syntheticCase), 'WITNESS-SURNAME-TEST WITNESS-NAME-TEST');
 assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', time: '11:40' }), '—', 'Counterfeit must not inherit narcotics auto timeline');
 assert.equal(valueFor('timeline.seizure.startTime', { profile: 'counterfeit', time: '11:40' }), '—', 'Counterfeit seizure time must remain manual');
 assert.equal(valueFor('timeline.witness.startTime', { profile: 'counterfeit', timeline: { witnessStartTime: '09:17' } }), '09:17', 'Counterfeit manually entered times must map exactly');
