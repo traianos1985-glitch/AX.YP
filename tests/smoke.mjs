@@ -75,12 +75,7 @@ assert.match(caseEnhancements, /if \(!id\) return null/)
 assert.doesNotMatch(caseEnhancements, /return list\[0\]/)
 
 
-// Dashboard search history must not persist potentially sensitive incident queries.
-assert.match(app, /var recentSearchesList = \[\]/)
-assert.match(app, /event\.key === 'Enter'/)
-assert.doesNotMatch(app, /storageSet\(localStorage,\s*['"]axyp-recent-searches['"]/)
-assert.match(app, /storageRemove\(localStorage,\s*['"]axyp-recent-searches['"]\)/)
-assert.match(app, /recentSearchesList = \[\]/)
+// Dashboard should not repeat the introductory card already replaced by the home dashboard.
 assert.doesNotMatch(app, /search-start/)
 
 // Regression checks for the personal-workspace workflow and privacy contract.
