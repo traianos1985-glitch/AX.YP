@@ -31,9 +31,12 @@ export function ensureDefaultTemplates(storageInstance = storage()) {
       storageInstance.setItem(NARCOTICS_SEED_KEY, 'true');
     }
 
-    // 2. Counterfeit templates seeding
+    // 2. Counterfeit templates seeding. Add the category-specific serial-number
+    // field to the three source documents where the same value is repeated.
     if (!storageInstance.getItem(COUNTERFEIT_SEED_KEY)) {
-      const toAddCounterfeit = (DEFAULT_COUNTERFEIT_TEMPLATES || []).filter((t) => !existingNames.has(t.name));
+      const toAddCounterfeit = (DEFAULT_COUNTERFEIT_TEMPLATES || [])
+        .filter((t) => !existingNames.has(t.name))
+        .map(prepareCounterfeitTemplate);
       if (toAddCounterfeit.length > 0) {
         updated = [...updated, ...toAddCounterfeit];
         toAddCounterfeit.forEach((t) => existingNames.add(t.name));
@@ -57,6 +60,42 @@ export async function initializeDefaultTemplates(storageInstance = storage()) {
     await storageInstance.ready;
   }
   ensureDefaultTemplates(storageInstance);
+}
+
+function uint8ToBase64(bytes) {
+  if (typeof Buffer !== 'undefined') return Buffer.from(bytes).toString('base64');
+  if (typeof btoa === 'function') {
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(binary);
+  }
+  throw new Error('No base64 encoding function available');
+}
+
+function prepareCounterfeitTemplate(template) {
+  const targetIds = new Set(['counterfeit-01', 'counterfeit-02', 'counterfeit-03']);
+  if (!targetIds.has(template.id)) return template;
+  const parts = getTemplateParts(template);
+  const documentPath = 'word/document.xml';
+  if (!parts[documentPath]) throw new Error('Missing main DOCX document for ' + template.id);
+  let xml = normalizeDocxXml(new TextDecoder().decode(parts[documentPath]));
+  if (!xml.includes('{{evidence.serialNumber}}')) {
+    const evidenceParagraph = xml.match(/<w:p\b[^>]*>[\s\S]*?\{\{\s*evidence\.quantity\s*\}\}[\s\S]*?<\/w:p>/);
+    if (!evidenceParagraph) throw new Error('Could not locate evidence quantity paragraph in ' + template.id);
+    const serialParagraph = '<w:p><w:pPr><w:pStyle w:val="Normal"/></w:pPr><w:r><w:t xml:space="preserve">Σειριακός αριθμός πλαστού χαρτονομίσματος: {{evidence.serialNumber}}</w:t></w:r></w:p>';
+    xml = xml.replace(evidenceParagraph[0], evidenceParagraph[0] + serialParagraph);
+  }
+  parts[documentPath] = new TextEncoder().encode(xml);
+  const bytes = zipSync(parts);
+  return {
+    ...template,
+    dataBase64: uint8ToBase64(bytes),
+    size: bytes.length,
+    fields: [...new Set([...(template.fields || []), 'evidence.serialNumber'])],
+    mappings: { ...(template.mappings || {}), 'evidence.serialNumber': 'evidence.serialNumber' }
+  };
 }
 
 export function base64ToUint8(base64) {
@@ -195,6 +234,7 @@ const FIELD_OPTIONS = [
   { path: 'person.phone', label: 'Πρόσωπο · Τηλέφωνο' },
   { path: 'person.email', label: 'Πρόσωπο · Email' },
   { path: 'evidence.quantity', label: 'Ευρήματα · Ποσότητες' },
+  { path: 'evidence.serialNumber', label: 'Πλαστό νόμισμα · Σειριακός αριθμός' },
   { path: 'timeline.witness.startTime', label: '1. Κατάθεση · Ώρα έναρξης' },
   { path: 'timeline.witness.endTime', label: "1. Κατάθεση · Ώρα περάτωσης (+5')" },
   { path: 'timeline.arrest.startTime', label: "2. Έκθεση σύλληψης · Ώρα έναρξης (+1')" },
@@ -219,7 +259,7 @@ function mappingFor(template, field) {
   return '';
 }
 
-function valueFor(path, item) {
+export function valueFor(path, item) {
   if (!item) return '—';
   const offender = item.offender || {};
   const officerA = item.officerA || {};
@@ -227,7 +267,7 @@ function valueFor(path, item) {
   const officerAFull = [officerA.rank, officerA.surname, officerA.name].filter(Boolean).join(' ');
   const officerBFull = [officerB.rank, officerB.surname, officerB.name].filter(Boolean).join(' ');
   const timeline = item.timeline || {};
-  const computed = computeTimeline(item.time || '');
+  const computed = item.profile === 'narcotics' ? computeTimeline(item.time || '') : {};
   const getTime = (key) => timeline[key] || computed[key] || item[key] || '';
   const map = {
     'case.title': item.title,
@@ -254,6 +294,7 @@ function valueFor(path, item) {
     'officerB.name': officerB.name,
     'officerB.service': officerB.service,
     'evidence.quantity': item.evidence,
+    'evidence.serialNumber': item.counterfeit && item.counterfeit.serialNumber,
     'timeline.witness.startTime': getTime('witnessStartTime'),
     'timeline.witness.endTime': getTime('witnessEndTime'),
     'timeline.arrest.startTime': getTime('arrestStartTime'),
