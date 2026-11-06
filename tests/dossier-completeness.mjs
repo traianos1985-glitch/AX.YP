@@ -7,7 +7,7 @@ const categoryIds = DOSSIER_CATEGORIES.map((category) => category.id);
 assert.equal(categoryIds.length, 13);
 assert.equal(new Set(categoryIds).size, categoryIds.length);
 assert.deepEqual(Object.keys(DOSSIER_COMPLETENESS_RULES).sort(),
-  ['camping','commerce','counterfeit','environment','health','narcotics'].sort());
+  ['camping','commerce','counterfeit','environment','health','narcotics','noise'].sort());
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const workflow = await readFile(new URL('../case-workflow.js', import.meta.url), 'utf8');
