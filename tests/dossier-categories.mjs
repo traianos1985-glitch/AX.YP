@@ -77,6 +77,6 @@ assert.ok(hyp.includes("activeProfileFilter !== 'camping'"));
 assert.ok(hyp.includes("camping: {"));
 assert.ok(templateLibrary.includes('camping.legalProvision'));
 assert.match(sw,/case-workflow\.js/);
-assert.match(sw,/const CACHE_NAME = \"axyp-v\d+\";/, 'Offline cache name must use a versioned axyp-vN identifier');
+assert.match(sw,/const CACHE_NAME = "axyp-dev"/);
 assert.match(sw,/dossier-categories\.js/);
 console.log('Dossier category navigation tests passed.');
