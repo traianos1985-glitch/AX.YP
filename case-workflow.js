@@ -126,21 +126,80 @@
   function updateSummary() {
     var summary = $('case-workflow-summary');
     if (!summary) return;
-    var missing = ['case-title', 'case-offence', 'case-protocol-number'].filter(function (id) {
-      var field = $(id);
-      return field && !field.value.trim();
-    }).map(function (id) {
-      return ({ 'case-title': 'Τίτλος υπόθεσης', 'case-offence': 'Είδος αδικήματος', 'case-protocol-number': 'Αριθμός πρωτοκόλλου' })[id];
-    });
     var profile = $('case-profile') ? $('case-profile').value : 'generic';
     var category = $('dossier-active-title') ? $('dossier-active-title').textContent : 'Δικογραφία';
+    var required = [
+      ['case-title', 'Τίτλος υπόθεσης'],
+      ['case-offence', 'Είδος αδικήματος'],
+      ['case-protocol-number', 'Αριθμός πρωτοκόλλου']
+    ];
+    var missing = required.filter(function (entry) {
+      var field = $(entry[0]);
+      return field && !field.value.trim();
+    }).map(function (entry) { return entry[1]; });
     var checks = ['check-safety', 'check-source', 'check-notify'].filter(function (id) {
       return $(id) && $(id).checked;
     }).length;
-    summary.textContent = missing.length
-      ? 'Πριν από την αποθήκευση συμπλήρωσε τα υποχρεωτικά πεδία: ' + missing.join(', ') + '. Δεν συμπληρώνονται αυτόματα στοιχεία που λείπουν.'
-      : category + ' · Τα υποχρεωτικά πεδία έχουν συμπληρωθεί. Έχουν σημειωθεί ' + checks + '/3 έλεγχοι πληρότητας. Έλεγξε τα πραγματικά στοιχεία και τα έγγραφα πριν από την οριστικοποίηση.';
-    summary.setAttribute('data-state', missing.length ? 'incomplete' : 'ready');
+    var read = function (id) { var field = $(id); return field ? field.value : ''; };
+    var registerCount = function (id) {
+      var root = $(id);
+      return root ? root.querySelectorAll('.case-register-entry').length : 0;
+    };
+    var report = window.AXYPDossierCompleteness
+      ? window.AXYPDossierCompleteness.evaluate(profile, {
+          title: read('case-title'), offence: read('case-offence'), protocolNumber: read('case-protocol-number'),
+          date: read('case-date'), location: read('case-location'), incidentDate: read('case-incident-date'),
+          incidentTime: read('case-incident-time'), people: read('case-people'), evidence: read('case-evidence'),
+          fields: null,
+          register: { persons: registerCount('person-register-list'), evidence: registerCount('evidence-register-list'), actions: registerCount('task-register-list') }
+        }, function (id) { return read(id); })
+      : null;
+
+    summary.replaceChildren();
+    var intro = document.createElement('p');
+    intro.textContent = missing.length
+      ? 'Πριν από την αποθήκευση συμπλήρωσε τα βασικά πεδία: ' + missing.join(', ') + '.'
+      : category + ' · Τα βασικά πεδία έχουν συμπληρωθεί. Έχουν σημειωθεί ' + checks + '/3 γενικοί έλεγχοι.';
+    summary.appendChild(intro);
+    summary.setAttribute('data-state', missing.length ? 'incomplete' : 'review');
+
+    if (report) {
+      var heading = document.createElement('strong');
+      heading.textContent = 'Έλεγχος ειδικών στοιχείων — ' + report.categoryLabel;
+      summary.appendChild(heading);
+      var note = document.createElement('p');
+      note.textContent = report.guidance;
+      summary.appendChild(note);
+      report.groups.forEach(function (group) {
+        var section = document.createElement('section');
+        section.className = 'completeness-review-group';
+        var title = document.createElement('strong');
+        title.textContent = group.label + ' · ' + group.filled + '/' + group.total + ' συμπληρωμένα';
+        section.appendChild(title);
+        if (group.missing.length) {
+          var list = document.createElement('ul');
+          group.missing.forEach(function (field) {
+            var item = document.createElement('li');
+            item.textContent = field.label + ' — δεν έχει συμπληρωθεί· έλεγξε αν αφορά την υπόθεση.';
+            list.appendChild(item);
+          });
+          section.appendChild(list);
+        } else {
+          var complete = document.createElement('p');
+          complete.textContent = group.total ? 'Τα πεδία αυτής της ενότητας έχουν συμπληρωθεί.' : 'Δεν υπάρχουν ειδικά δομημένα πεδία για αυτή την κατηγορία.';
+          section.appendChild(complete);
+        }
+        summary.appendChild(section);
+      });
+      var register = document.createElement('p');
+      register.className = 'completeness-register-counts';
+      register.textContent = 'Μητρώο: ' + report.register.persons + ' πρόσωπα · ' + report.register.evidence + ' πειστήρια · ' + report.register.actions + ' εκκρεμείς ενέργειες.';
+      summary.appendChild(register);
+      var caution = document.createElement('p');
+      caution.className = 'completeness-caution';
+      caution.textContent = 'Οι ενδείξεις αφορούν μόνο κενά καταχώρισης. Δεν αποτελούν νομικό έλεγχο, δεν χαρακτηρίζουν πεδία ως υποχρεωτικά και δεν εμποδίζουν την αποθήκευση.';
+      summary.appendChild(caution);
+    }
   }
 
   function visibleFields() {
