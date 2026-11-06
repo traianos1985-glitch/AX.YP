@@ -15,7 +15,8 @@ from pathlib import Path
 from lxml import etree
 
 ROOT = Path(__file__).resolve().parents[1]
-MARKER = ROOT / ".axyp-template-privacy-v1"
+MARKER_V1 = ROOT / ".axyp-template-privacy-v1"
+MARKER_V2 = ROOT / ".axyp-template-privacy-v2"
 OPERATIONS = [
   {
     "path": "templates/camping/01_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ_ΜΕ_ΔΙΕΡΜΗΝΕΑ.docx",
@@ -355,9 +356,80 @@ OPERATIONS = [
   }
 ]
 
-if MARKER.exists():
-    print("Template privacy corrections already applied; skipping.")
+INCREMENTAL_OPERATIONS = [
+  {
+    "path": "templates/noise/02_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ.docx",
+    "paragraph_index": 7,
+    "start": 374,
+    "end": 375,
+    "replacement": "B"
+  },
+  {
+    "path": "templates/dossiers/narcotics/01_ΚΑΤΑΘΕΣΗ_ΜΑΡΤΥΡΑ.docx",
+    "paragraph_index": 9,
+    "start": 40,
+    "end": 52,
+    "replacement": "{{case.date.day}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/01_ΚΑΤΑΘΕΣΗ_ΜΑΡΤΥΡΑ.docx",
+    "paragraph_index": 9,
+    "start": 63,
+    "end": 87,
+    "replacement": "{{case.date.monthName}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/01_ΚΑΤΑΘΕΣΗ_ΜΑΡΤΥΡΑ.docx",
+    "paragraph_index": 9,
+    "start": 98,
+    "end": 110,
+    "replacement": "{{case.date.year}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/01_ΚΑΤΑΘΕΣΗ_ΜΑΡΤΥΡΑ.docx",
+    "paragraph_index": 9,
+    "start": 131,
+    "end": 155,
+    "replacement": "{{case.date.weekdayName}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/06_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ_ΑΠΟΛΟΓΙΑ.docx",
+    "paragraph_index": 8,
+    "start": 41,
+    "end": 53,
+    "replacement": "{{case.date.day}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/06_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ_ΑΠΟΛΟΓΙΑ.docx",
+    "paragraph_index": 8,
+    "start": 64,
+    "end": 88,
+    "replacement": "{{case.date.monthName}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/06_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ_ΑΠΟΛΟΓΙΑ.docx",
+    "paragraph_index": 8,
+    "start": 99,
+    "end": 111,
+    "replacement": "{{case.date.year}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/06_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ_ΑΠΟΛΟΓΙΑ.docx",
+    "paragraph_index": 8,
+    "start": 132,
+    "end": 156,
+    "replacement": "{{case.date.weekdayName}}"
+  }
+]
+
+if MARKER_V2.exists():
+    print("Template privacy corrections v2 already applied; skipping.")
     raise SystemExit(0)
+if MARKER_V1.exists():
+    OPERATIONS = INCREMENTAL_OPERATIONS
+    MARKER = MARKER_V2
+else:
+    MARKER = MARKER_V1
 
 NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
 TARGETS = sorted({item["path"] for item in OPERATIONS})
@@ -488,14 +560,19 @@ def patch_embedded_counterfeit_templates():
                         raise ValueError(f"Missing B-investigator paragraph in {template['id']}")
                     text = "".join(target.xpath(".//w:t/text()", namespaces=NS))
                     b_name = text.index("{{officerB.fullName}}")
-                    service_start = text.find("{{officerA.service}}", b_name)
+                    service_start = text.find("{{officerB.service}}", b_name)
                     if service_start < 0:
-                        raise ValueError(f"Missing B-investigator service mapping in {template['id']}")
-                    apply_span(target, service_start, service_start + len("{{officerA.service}}"), "{{officerB.service}}")
+                        service_start = text.find("{{officerA.service}}", b_name)
+                        if service_start < 0:
+                            raise ValueError(f"Missing B-investigator service mapping in {template['id']}")
+                        apply_span(target, service_start, service_start + len("{{officerA.service}}"), "{{officerB.service}}")
                     if template["id"] == "counterfeit-01":
                         serial_done = False
                         for paragraph in paragraphs:
                             paragraph_text = "".join(paragraph.xpath(".//w:t/text()", namespaces=NS))
+                            if "{{counterfeit.serialNumber}}" in paragraph_text:
+                                serial_done = True
+                                break
                             match_serial = re.search(r"υπ[’']\s*αριθ\.\s*(\.{5,})", paragraph_text, re.IGNORECASE)
                             if match_serial:
                                 start = match_serial.start(1)
@@ -540,5 +617,5 @@ for module_path, export_name in [
             if base64.b64decode(template["dataBase64"]) != by_filename[filename]:
                 raise ValueError(f"Embedded DOCX mismatch: {filename}")
 
-MARKER.write_text("v1\n", encoding="utf-8")
+MARKER.write_text("completed\n", encoding="utf-8")
 print(f"Sanitized {len(TARGETS)} DOCX templates and synchronized embedded copies.")
