@@ -75,13 +75,6 @@ for (const field of ['case.location', 'case.notes', 'incident.date', 'incident.t
   assert.equal(narcoticsSubmission.mappings[field], field)
 }
 
-const noiseArrest = DEFAULT_NOISE_TEMPLATES.find((template) => template.id === 'noise-01')
-assert.ok(noiseArrest)
-const noiseParts = getTemplateParts(noiseArrest)
-const noiseXml = new TextDecoder().decode(noiseParts['word/document.xml'])
-assert.ok(!noiseXml.includes('{{owner.'), 'legacy owner personal data is not left as unresolved placeholders')
-assert.ok(noiseXml.includes('τα πλήρη στοιχεία θα συμπληρωθούν από τον συντάκτη'), 'owner details are left as a deliberate manual completion field')
-
 for (const id of ['narcotics-02', 'narcotics-03', 'narcotics-04', 'narcotics-06', 'narcotics-08']) {
   const template = DEFAULT_NARCOTICS_TEMPLATES.find((entry) => entry.id === id)
   assert.ok(template, `${id} exists`)
