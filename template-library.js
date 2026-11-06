@@ -254,6 +254,12 @@ export function computeTimeline(baseTime) {
 }
 
 const FIELD_OPTIONS = [
+  { path: 'service.name', label: 'Υπηρεσία · Ονομασία' },
+  { path: 'service.address', label: 'Υπηρεσία · Διεύθυνση' },
+  { path: 'service.phone', label: 'Υπηρεσία · Τηλέφωνο' },
+  { path: 'service.email', label: 'Υπηρεσία · Email' },
+  { path: 'service.prosecutor', label: 'Υπηρεσία · Αρμόδια Εισαγγελία' },
+  { path: 'service.chemicalService', label: 'Υπηρεσία · Αρμόδια Χημική Υπηρεσία' },
   { path: 'case.title', label: 'Υπόθεση · Τίτλος' },
   { path: 'case.protocolNumber', label: 'Υπόθεση · Αριθμός Πρωτοκόλλου' },
   { path: 'case.offence', label: 'Υπόθεση · Είδος αδικήματος' },
@@ -440,7 +446,16 @@ export function valueFor(path, item) {
       dateParts[type] = part ? part.value : '';
     }
   }
+  const serviceProfile = typeof window !== 'undefined' && window.AXYP_SERVICE_PROFILE && typeof window.AXYP_SERVICE_PROFILE.get === 'function'
+    ? window.AXYP_SERVICE_PROFILE.get()
+    : {};
   const map = {
+    'service.name': serviceProfile.name,
+    'service.address': serviceProfile.address,
+    'service.phone': serviceProfile.phone,
+    'service.email': serviceProfile.email,
+    'service.prosecutor': serviceProfile.prosecutor,
+    'service.chemicalService': serviceProfile.chemicalService,
     'case.title': item.title,
     'case.protocolNumber': item.protocolNumber,
     'case.offence': item.offence,
