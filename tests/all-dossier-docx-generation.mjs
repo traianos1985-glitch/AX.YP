@@ -116,16 +116,16 @@ for (const template of templates) {
   assert.ok(reopened['_rels/.rels'], `${template.id} must include package relationships`);
   assert.ok(reopened['word/document.xml'], `${template.id} must include the main Word document`);
 
-  const footerEntries = Object.entries(reopened).filter(([name]) => /^word\\/footer\\d+\\.xml$/u.test(name));
+  const footerEntries = Object.entries(reopened).filter(([name]) => /^word\/footer\d+\.xml$/u.test(name));
   assert.ok(footerEntries.length > 0, `${template.id} must include a real Word footer part`);
   const footerText = footerEntries.map(([, bytes]) => new TextDecoder().decode(bytes)).join(' ');
   assert.ok(footerText.includes('AX.YP'), `${template.id} footer must identify AX.YP`);
   assert.ok(footerText.includes(template.id), `${template.id} footer must identify the source template`);
   assert.ok(footerText.includes(DOCX_TEMPLATE_VERSION), `${template.id} footer must include the template release version`);
   const documentRels = new TextDecoder().decode(reopened['word/_rels/document.xml.rels']);
-  assert.match(documentRels, /relationships\\/footer/u, `${template.id} must link its footer through document relationships`);
-  assert.match(new TextDecoder().decode(reopened['word/document.xml']), /<w:footerReference\\b[^>]*w:type="default"/u, `${template.id} must attach the footer to the document section`);
-  assert.match(new TextDecoder().decode(reopened['[Content_Types].xml']), /footer\\+xml/u, `${template.id} must register the footer content type`);
+  assert.match(documentRels, /relationships\/footer/u, `${template.id} must link its footer through document relationships`);
+  assert.match(new TextDecoder().decode(reopened['word/document.xml']), /<w:footerReference\b[^>]*w:type="default"/u, `${template.id} must attach the footer to the document section`);
+  assert.match(new TextDecoder().decode(reopened['[Content_Types].xml']), /footer\+xml/u, `${template.id} must register the footer content type`);
 
   const wordXml = Object.entries(reopened)
     .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'));
