@@ -5,9 +5,9 @@ import { strFromU8 } from '../vendor/fflate.js';
 
 function paragraphs(template) {
   const xml = strFromU8(getTemplateParts(template)['word/document.xml']);
-  return [...xml.matchAll(/<w:p\\b[\\s\\S]*?<\\/w:p>/gu)].map((match, index) => {
+  return [...xml.matchAll(/<w:p\b[\s\S]*?<\/w:p>/gu)].map((match, index) => {
     const p = match[0];
-    const text = [...p.matchAll(/<w:t\\b[^>]*>([\\s\\S]*?)<\\/w:t>/gu)]
+    const text = [...p.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)]
       .map((part) => part[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'))
       .join('');
     return { index, p, text };
@@ -18,14 +18,14 @@ const dateForm = DEFAULT_NARCOTICS_TEMPLATES.find((item) => item.id === 'narcoti
 const arrestForm = DEFAULT_NARCOTICS_TEMPLATES.find((item) => item.id === 'narcotics-02');
 assert.ok(dateForm && arrestForm);
 const dateFindings = paragraphs(dateForm)
-  .filter(({ text }) => /\\.{3,}/u.test(text))
+  .filter(({ text }) => /\.{3,}/u.test(text))
   .map(({ index, p, text }) => ({
     index,
-    dotRuns: [...text.matchAll(/\\.{3,}/gu)].map((match) => match[0].length),
+    dotRuns: [...text.matchAll(/\.{3,}/gu)].map((match) => match[0].length),
     dateCue: /ημερομην|ημέρα|τόπος|χρόνος|ώρα|ηλικία/iu.test(text),
     slash: text.includes('/'),
-    runs: (p.match(/<w:r\\b/g) || []).length,
-    hasDatePlaceholder: /\\{\\{[^}]+\\}\\}/u.test(text)
+    runs: (p.match(/<w:r\b/g) || []).length,
+    hasDatePlaceholder: /\{\{[^}]+\}\}/u.test(text)
   }));
 const signatureFindings = paragraphs(arrestForm)
   .filter(({ text }) => /υπογραφ|ανακρι|αξιωματ|βεβαι|συντάξ|μάρτυρ/iu.test(text))
@@ -33,9 +33,9 @@ const signatureFindings = paragraphs(arrestForm)
     index,
     cue: ['υπογραφή','ανακριτικός','αξιωματικός','βεβαιώνω','συντάξας','μάρτυρας'].find((word) => text.toLocaleLowerCase('el-GR').includes(word)) || 'signature-context',
     spaces: (text.match(/ {2,}/g) || []).map((run) => run.length),
-    tabs: (text.match(/\\t/g) || []).length + (p.match(/<w:tab\\b/g) || []).length,
-    runs: (p.match(/<w:r\\b/g) || []).length,
-    hasTabStops: /<w:tabs\\b/.test(p),
+    tabs: (text.match(/\t/g) || []).length + (p.match(/<w:tab\b/g) || []).length,
+    runs: (p.match(/<w:r\b/g) || []).length,
+    hasTabStops: /<w:tabs\b/.test(p),
     insideTable: false
   }));
 console.log('NARCOTICS_10_LAYOUT_DIAGNOSTIC', JSON.stringify(dateFindings));
