@@ -820,18 +820,85 @@ function importTemplate(event) {
   });
 }
 
+function replaceTextAcrossWordRuns(xml, pattern, replacement) {
+  return xml.replace(/<w:p\\b[^>]*>[\\s\\S]*?<\\/w:p>/gu, (paragraph) => {
+    const nodes = [...paragraph.matchAll(/(<w:t\\b[^>]*>)([\\s\\S]*?)(<\\/w:t>)/gu)];
+    if (!nodes.length) return paragraph;
+
+    const values = nodes.map((match) => match[2]);
+    const plainText = values.join('');
+    const flags = pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g';
+    const matches = [...plainText.matchAll(new RegExp(pattern.source, flags))];
+
+    for (const match of matches.reverse()) {
+      const matchStart = match.index;
+      const matchEnd = matchStart + match[0].length;
+      let offset = 0;
+      let first = -1;
+      let last = -1;
+      let firstOffset = 0;
+      let lastEnd = 0;
+
+      for (let index = 0; index < values.length; index++) {
+        const nodeStart = offset;
+        const nodeEnd = nodeStart + values[index].length;
+        if (first === -1 && matchStart < nodeEnd && matchEnd > nodeStart) {
+          first = index;
+          firstOffset = matchStart - nodeStart;
+        }
+        if (matchStart < nodeEnd && matchEnd > nodeStart) {
+          last = index;
+          lastEnd = matchEnd - nodeStart;
+        }
+        offset = nodeEnd;
+      }
+      if (first === -1 || last === -1) continue;
+
+      if (first === last) {
+        values[first] = values[first].slice(0, firstOffset) + replacement + values[first].slice(lastEnd);
+      } else {
+        values[first] = values[first].slice(0, firstOffset) + replacement;
+        for (let index = first + 1; index < last; index++) values[index] = '';
+        values[last] = values[last].slice(lastEnd);
+      }
+    }
+
+    let index = 0;
+    return paragraph.replace(/(<w:t\\b[^>]*>)[\\s\\S]*?(<\\/w:t>)/gu, (_match, open, close) =>
+      open + esc(values[index++]) + close
+    );
+  });
+}
+
 function replaceLegacyLocalServiceReferences(xml) {
-  return xml
-    .replace(/,\s*(?:κατοίκων|κάτοικων)\s+Α\.Τ\.\s+Τριφυλίας/gu, ' της ίδιας Υπηρεσίας')
-    .replace(/κατ\.\s+Α\.Τ\.\s+Τριφυλίας/gu, 'της Υπηρεσίας μας')
-    .replace(/Αξιωματικό Υπηρεσίας του Α\.Τ\.\s+Τριφυλίας/gu, 'Αξιωματικό Υπηρεσίας')
+  const replacements = [
+    [/ΑΣΤΥΝΟΜΙΚΟ ΤΜΗΜΑ ΤΡΙΦΥΛΙΑΣ(?: ΜΕΣΣΗΝΙΑΣ)?/giu, '{{service.name}}'],
+    [/ΤΑΧ\\.\\s*Δ\\/ΝΣΗ:\\s*60ο\\s*χλμ\\.\\s*Ε\\.Ο\\.\\s*ΠΥΡΓΟΥ-ΜΕΘΩΝΗΣ/giu, 'ΤΑΧ. Δ/ΝΣΗ: {{service.address}}'],
+    [/Τ\\.?\\s*Κ\\.?\\s*24500\\s*ΚΥΠΑΡΙΣΣΙΑ\\s*ΜΕΣΣΗΝΙΑ/giu, ''],
+    [/2761440970|2761062000/gu, '{{service.phone}}'],
+    [/at\\.trifylias@astynomia\\.gr/giu, '{{service.email}}'],
+    [/,?\\s*Fax\\s*2131527691/giu, ''],
+    [/Εισαγγελία\\s+(?:Πλημμελειοδικών|Πρωτοδικών)\\s+Κυπαρισσίας/giu, '{{service.prosecutor}}'],
+    [/δικηγορικού\\s+Συλλόγου\\s+Κυπαρισσίας/giu, 'οικείου Δικηγορικού Συλλόγου'],
+    [/Ελαία\\s+Τριφυλίας\\s+Μεσσηνίας/giu, '{{case.location}}']
+  ];
+
+  let result = xml;
+  for (const [pattern, value] of replacements) {
+    result = replaceTextAcrossWordRuns(result, pattern, value);
+  }
+
+  return result
+    .replace(/,\\s*(?:κατοίκων|κάτοικων)\\s+Α\\.Τ\\.\\s+Τριφυλίας/gu, ' της ίδιας Υπηρεσίας')
+    .replace(/κατ\\.\\s+Α\\.Τ\\.\\s+Τριφυλίας/gu, 'της Υπηρεσίας μας')
+    .replace(/Αξιωματικό Υπηρεσίας του Α\\.Τ\\.\\s+Τριφυλίας/gu, 'Αξιωματικό Υπηρεσίας')
     .replace(/στο κατάστημα του Αστυνομικού Τμήματος Τριφυλίας/gu, 'στο κατάστημα της Υπηρεσίας μας')
     .replace(/του Αστυνομικού Τμήματος Τριφυλίας/gu, 'της Υπηρεσίας μας')
-    .replace(/του Α\.Τ\.\s+Τριφυλίας/gu, 'της Υπηρεσίας μας')
-    .replace(/στο Α\.Τ\.\s+Τριφυλίας/gu, 'στην Υπηρεσία μας')
+    .replace(/του Α\\.Τ\\.\\s+Τριφυλίας/gu, 'της Υπηρεσίας μας')
+    .replace(/στο Α\\.Τ\\.\\s+Τριφυλίας/gu, 'στην Υπηρεσία μας')
     .replace(/Αστυνομικού Τμήματος Τριφυλίας/gu, 'Υπηρεσίας μας')
     .replace(/Αστυνομικό Τμήμα Τριφυλίας/gu, 'Υπηρεσία μας')
-    .replace(/Α\.Τ\.\s+Τριφυλίας/gu, 'Υπηρεσία μας');
+    .replace(/Α\\.Τ\\.\\s+Τριφυλίας/gu, 'Υπηρεσία μας');
 }
 
 function replaceLegacyFixedDateText(xml, item) {
@@ -934,10 +1001,10 @@ export function buildDocx(template, item) {
       const xml = new TextDecoder().decode(files[filename]);
       const templatePatched = template.category === 'narcotics' ? patchNarcoticsTemplateXml(xml, template.id) : xml;
       const correctedServicePlaceholders = correctOfficerServicePlaceholders(templatePatched);
-      const populated = replaceInXml(correctedServicePlaceholders, template, item);
+      const withCurrentServiceReferences = replaceLegacyLocalServiceReferences(correctedServicePlaceholders);
+      const populated = replaceInXml(withCurrentServiceReferences, template, item);
       const withCurrentDates = replaceLegacyFixedDateText(populated, item);
-      const withCurrentServiceReferences = replaceLegacyLocalServiceReferences(withCurrentDates);
-      files[filename] = new TextEncoder().encode(normalizeGreekDocxXml(withCurrentServiceReferences));
+      files[filename] = new TextEncoder().encode(normalizeGreekDocxXml(withCurrentDates));
     }
   });
 
