@@ -7,7 +7,7 @@ function paragraphs(template) {
   const xml = strFromU8(getTemplateParts(template)['word/document.xml']);
   return [...xml.matchAll(/<w:p\b[\s\S]*?<\/w:p>/gu)].map((match, index) => {
     const p = match[0];
-    const text = [...p.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)]
+    const text = [...p.matchAll(/<(?:w|a):t\b[^>]*>([\s\S]*?)<\/(?:w|a):t>/gu)]
       .map((part) => part[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'))
       .join('');
     return { index, p, text };
@@ -49,14 +49,14 @@ const datePartFindings = Object.entries(dateParts)
   .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'))
   .flatMap(([name, bytes]) => {
     const xml = strFromU8(bytes);
-    const text = [...xml.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)].map((part) => part[1]).join('');
+    const text = [...xml.matchAll(/<(?:w|a):t\b[^>]*>([\s\S]*?)<\/(?:w|a):t>/gu)].map((part) => part[1]).join('');
     const runs = [...text.matchAll(/(?:\.{3,}|…{2,}|·{3,}|_{3,})/gu)].map((match) => match[0].length);
     return runs.length ? [{ name, runs, dateCue: /ημερομην|ημέρα|τόπος|χρόνος|ώρα|ηλικία/iu.test(text) }] : [];
   });
 console.log('NARCOTICS_10_ALL_XML_DOTS', JSON.stringify(datePartFindings));
 console.log('NARCOTICS_10_XML_PARTS', JSON.stringify(Object.keys(dateParts).filter((name) => name.startsWith('word/') && name.endsWith('.xml'))));
 const dateXml = strFromU8(dateParts['word/document.xml']);
-const dateTextNodes = [...dateXml.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)].map((part) => part[1]);
+const dateTextNodes = [...dateXml.matchAll(/<(?:w|a):t\b[^>]*>([\s\S]*?)<\/(?:w|a):t>/gu)].map((part) => part[1]);
 const dottedTextNodes = dateTextNodes.flatMap((text, index) => {
   const runs = [...text.matchAll(/(?:\.{3,}|…{2,}|·{3,}|_{3,})/gu)].map((match) => match[0].length);
   if (!runs.length) return [];
@@ -67,7 +67,7 @@ const dottedTextNodes = dateTextNodes.flatMap((text, index) => {
     nearbyDateCue: /ημερομην|ημέρα|τόπος|χρόνος|ώρα|ηλικία/iu.test(nearby),
     nearbyProtocolCue: /αριθμ|πρωτοκόλλ|υπόθεση/iu.test(nearby),
     currentDateCue: /ημερομην|ημέρα|τόπος|χρόνος|ώρα|ηλικία/iu.test(text),
-    safeText: text.replace(/\\.{3,}/gu, '[blank]').replace(/\\{\\{[^}]+\\}\\}/gu, '[field]')
+    safeText: text.replace(/\.{3,}/gu, '[blank]').replace(/\{\{[^}]+\}\}/gu, '[field]')
   }];
 });
 console.log('NARCOTICS_10_XML_STRUCTURE', JSON.stringify({
@@ -80,7 +80,7 @@ function textFor(id) {
   const template = DEFAULT_NARCOTICS_TEMPLATES.find((item) => item.id === id);
   return Object.entries(getTemplateParts(template))
     .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'))
-    .map(([name, bytes]) => ({ name, text: [...strFromU8(bytes).matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)].map((part) => part[1]).join('') }))
+    .map(([name, bytes]) => ({ name, text: [...strFromU8(bytes).matchAll(/<(?:w|a):t\b[^>]*>([\s\S]*?)<\/(?:w|a):t>/gu)].map((part) => part[1]).join('') }))
     .map(({ name, text }) => ({ name, text }));
 }
 const chemicalText = textFor('narcotics-09').map((part) => part.text).join(' ');
