@@ -59,7 +59,7 @@ function excerptAround(text, pattern, radius = 70) {
 }
 
 function visibleTextRuns(xml) {
-  return [...xml.matchAll(/<w:t\\b[^>]*>([\\s\\S]*?)<\\/w:t>/gu)]
+  return [...xml.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)]
     .map((match) => decodeXml(match[1]));
 }
 
