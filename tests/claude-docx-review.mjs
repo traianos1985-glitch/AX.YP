@@ -103,7 +103,8 @@ function mediaInfo(id) {
     .map(([name, bytes]) => ({
       name,
       size: bytes.length,
-      type: bytes[0] === 0x89 && bytes[1] === 0x50 ? 'png' : bytes[0] === 0xff && bytes[1] === 0xd8 ? 'jpeg' : 'other'
+      type: bytes[0] === 0x89 && bytes[1] === 0x50 ? 'png' : bytes[0] === 0xff && bytes[1] === 0xd8 ? 'jpeg' : 'other',
+      base64: id === 'narcotics-08' && bytes.length < 20000 ? Buffer.from(bytes).toString('base64') : undefined
     }));
 }
 console.log('NARCOTICS_09_MEDIA_INFO', JSON.stringify(mediaInfo('narcotics-09')));
