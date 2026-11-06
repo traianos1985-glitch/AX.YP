@@ -60,6 +60,8 @@
           };
           req.onblocked = function () {
             lastError = makeError('Η τοπική βάση δεδομένων είναι προσωρινά αποκλεισμένη από άλλη καρτέλα.');
+            // Μην κρατάμε όλη την εφαρμογή σε αναμονή· συνεχίζουμε με localStorage fallback.
+            resolve(null);
           };
         } catch (error) {
           lastError = error;
