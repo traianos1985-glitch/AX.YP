@@ -404,7 +404,7 @@ def patch_embedded_counterfeit_templates():
     """Fix the B-investigator service and bind the ATM banknote serial number."""
     path = ROOT / "dossier-templates-data.js"
     source = path.read_text(encoding="utf-8")
-    pattern = re.compile(r"(export const DEFAULT_COUNTERFEIT_TEMPLATES\\s*=\\s*)(\\[[\\s\\S]*?\\])(\\s*;)")
+    pattern = re.compile(r"(export const DEFAULT_COUNTERFEIT_TEMPLATES\s*=\s*)(\[[\s\S]*?\])(\s*;)")
     match = pattern.search(source)
     if not match:
         raise ValueError("Missing DEFAULT_COUNTERFEIT_TEMPLATES")
@@ -440,7 +440,7 @@ def patch_embedded_counterfeit_templates():
                         serial_done = False
                         for paragraph in paragraphs:
                             paragraph_text = "".join(paragraph.xpath(".//w:t/text()", namespaces=NS))
-                            match_serial = re.search(r"υπ[’']\\s*αριθ\\.\\s*(\\.{5,})", paragraph_text, re.IGNORECASE)
+                            match_serial = re.search(r"υπ[’']\s*αριθ\.\s*(\.{5,})", paragraph_text, re.IGNORECASE)
                             if match_serial:
                                 start = match_serial.start(1)
                                 end = match_serial.end(1)
