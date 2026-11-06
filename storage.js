@@ -238,6 +238,80 @@
     return flush();
   }
 
+  function setItemsDurable(entries) {
+    return flush().then(function () {
+      if (!Array.isArray(entries) || !entries.length) throw new Error('Δεν δόθηκαν έγκυρα δεδομένα επαναφοράς.');
+      var normalized = entries.map(function (entry) {
+        if (!Array.isArray(entry) || typeof entry[0] !== 'string' || entry[0].indexOf('axyp-') !== 0) {
+          throw new Error('Το αντίγραφο περιέχει μη επιτρεπτό κλειδί αποθήκευσης.');
+        }
+        return [entry[0], entry[1] === null || entry[1] === undefined ? null : String(entry[1])];
+      });
+      return openDB().then(function (db) {
+        var committedToDb = false;
+        var dbError = null;
+        if (db) {
+          try {
+            var tx = db.transaction(STORE_NAME, 'readwrite');
+            var store = tx.objectStore(STORE_NAME);
+            normalized.forEach(function (entry) {
+              if (entry[1] === null) store.delete(entry[0]);
+              else store.put(entry[1], entry[0]);
+            });
+            return transactionDone(tx).then(function () {
+              committedToDb = true;
+            }).catch(function (error) {
+              dbError = error;
+              lastError = error;
+            }).then(finish);
+          } catch (error) {
+            dbError = error;
+            lastError = error;
+          }
+        }
+        return finish();
+
+        function finish() {
+          if (!committedToDb) {
+            var previous = [];
+            try {
+              normalized.forEach(function (entry) {
+                previous.push([entry[0], localStorage.getItem(entry[0])]);
+              });
+              normalized.forEach(function (entry) {
+                if (entry[1] === null) localStorage.removeItem(entry[0]);
+                else localStorage.setItem(entry[0], entry[1]);
+              });
+            } catch (error) {
+              previous.forEach(function (entry) {
+                try {
+                  if (entry[1] === null) localStorage.removeItem(entry[0]);
+                  else localStorage.setItem(entry[0], entry[1]);
+                } catch (_) {}
+              });
+              throw makeError('Η επαναφορά δεν αποθηκεύτηκε. Δεν επιβεβαιώθηκε εγγραφή στο IndexedDB ή στο localStorage.', dbError || error);
+            }
+          } else {
+            try {
+              normalized.forEach(function (entry) {
+                if (entry[1] === null) localStorage.removeItem(entry[0]);
+                else localStorage.setItem(entry[0], entry[1]);
+              });
+            } catch (error) {
+              lastError = error;
+            }
+          }
+          normalized.forEach(function (entry) {
+            dirtyKeys[entry[0]] = true;
+            if (entry[1] === null) delete cache[entry[0]];
+            else cache[entry[0]] = entry[1];
+          });
+          return getStatus();
+        }
+      });
+    });
+  }
+
   function flush() {
     return ready.then(function () {
       var tasks = pendingWrites.slice();
@@ -325,6 +399,7 @@
     getItem: getItem,
     setItem: setItem,
     setItemDurable: setItemDurable,
+    setItemsDurable: setItemsDurable,
     removeItem: removeItem,
     removeItemDurable: removeItemDurable,
     clear: clear,
