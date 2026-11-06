@@ -821,8 +821,8 @@ function importTemplate(event) {
 }
 
 function replaceTextAcrossWordRuns(xml, pattern, replacement) {
-  return xml.replace(/<w:p\\b[^>]*>[\\s\\S]*?<\\/w:p>/gu, (paragraph) => {
-    const nodes = [...paragraph.matchAll(/(<w:t\\b[^>]*>)([\\s\\S]*?)(<\\/w:t>)/gu)];
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/gu, (paragraph) => {
+    const nodes = [...paragraph.matchAll(/(<w:t\b[^>]*>)([\s\S]*?)(<\/w:t>)/gu)];
     if (!nodes.length) return paragraph;
 
     const values = nodes.map((match) => match[2]);
@@ -864,7 +864,7 @@ function replaceTextAcrossWordRuns(xml, pattern, replacement) {
     }
 
     let index = 0;
-    return paragraph.replace(/(<w:t\\b[^>]*>)[\\s\\S]*?(<\\/w:t>)/gu, (_match, open, close) =>
+    return paragraph.replace(/(<w:t\b[^>]*>)[\s\S]*?(<\/w:t>)/gu, (_match, open, close) =>
       open + esc(values[index++]) + close
     );
   });
@@ -873,14 +873,15 @@ function replaceTextAcrossWordRuns(xml, pattern, replacement) {
 function replaceLegacyLocalServiceReferences(xml) {
   const replacements = [
     [/ΑΣΤΥΝΟΜΙΚΟ ΤΜΗΜΑ ΤΡΙΦΥΛΙΑΣ(?: ΜΕΣΣΗΝΙΑΣ)?/giu, '{{service.name}}'],
-    [/ΤΑΧ\\.\\s*Δ\\/ΝΣΗ:\\s*60ο\\s*χλμ\\.\\s*Ε\\.Ο\\.\\s*ΠΥΡΓΟΥ-ΜΕΘΩΝΗΣ/giu, 'ΤΑΧ. Δ/ΝΣΗ: {{service.address}}'],
-    [/Τ\\.?\\s*Κ\\.?\\s*24500\\s*ΚΥΠΑΡΙΣΣΙΑ\\s*ΜΕΣΣΗΝΙΑ/giu, ''],
+    [/ΤΑΧ\.\s*Δ\/ΝΣΗ:\s*60ο\s*χλμ\.\s*Ε\.Ο\.\s*ΠΥΡΓΟΥ-ΜΕΘΩΝΗΣ/giu, 'ΤΑΧ. Δ/ΝΣΗ: {{service.address}}'],
+    [/Τ\.?\s*Κ\.?\s*24500\s*ΚΥΠΑΡΙΣΣΙΑ\s*ΜΕΣΣΗΝΙΑ/giu, ''],
     [/2761440970|2761062000/gu, '{{service.phone}}'],
-    [/at\\.trifylias@astynomia\\.gr/giu, '{{service.email}}'],
-    [/,?\\s*Fax\\s*2131527691/giu, ''],
-    [/Εισαγγελία\\s+(?:Πλημμελειοδικών|Πρωτοδικών)\\s+Κυπαρισσίας/giu, '{{service.prosecutor}}'],
-    [/δικηγορικού\\s+Συλλόγου\\s+Κυπαρισσίας/giu, 'οικείου Δικηγορικού Συλλόγου'],
-    [/Ελαία\\s+Τριφυλίας\\s+Μεσσηνίας/giu, '{{case.location}}']
+    [/at\.trifylias@astynomia\.gr/giu, '{{service.email}}'],
+    [/,?\s*Fax\s*2131527691/giu, ''],
+    [/Εισαγγελία\s+(?:Πλημμελειοδικών|Πρωτοδικών)\s+Κυπαρισσίας/giu, '{{service.prosecutor}}'],
+    [/δικηγορικού\s+Συλλόγου\s+Κυπαρισσίας/giu, 'οικείου Δικηγορικού Συλλόγου'],
+    [/E-mail:\s*forgelab@otenet\.gr/giu, ''],
+    [/Ελαία\s+Τριφυλίας\s+Μεσσηνίας/giu, '{{case.location}}']
   ];
 
   let result = xml;
@@ -889,16 +890,16 @@ function replaceLegacyLocalServiceReferences(xml) {
   }
 
   return result
-    .replace(/,\\s*(?:κατοίκων|κάτοικων)\\s+Α\\.Τ\\.\\s+Τριφυλίας/gu, ' της ίδιας Υπηρεσίας')
-    .replace(/κατ\\.\\s+Α\\.Τ\\.\\s+Τριφυλίας/gu, 'της Υπηρεσίας μας')
-    .replace(/Αξιωματικό Υπηρεσίας του Α\\.Τ\\.\\s+Τριφυλίας/gu, 'Αξιωματικό Υπηρεσίας')
+    .replace(/,\s*(?:κατοίκων|κάτοικων)\s+Α\.Τ\.\s+Τριφυλίας/gu, ' της ίδιας Υπηρεσίας')
+    .replace(/κατ\.\s+Α\.Τ\.\s+Τριφυλίας/gu, 'της Υπηρεσίας μας')
+    .replace(/Αξιωματικό Υπηρεσίας του Α\.Τ\.\s+Τριφυλίας/gu, 'Αξιωματικό Υπηρεσίας')
     .replace(/στο κατάστημα του Αστυνομικού Τμήματος Τριφυλίας/gu, 'στο κατάστημα της Υπηρεσίας μας')
     .replace(/του Αστυνομικού Τμήματος Τριφυλίας/gu, 'της Υπηρεσίας μας')
-    .replace(/του Α\\.Τ\\.\\s+Τριφυλίας/gu, 'της Υπηρεσίας μας')
-    .replace(/στο Α\\.Τ\\.\\s+Τριφυλίας/gu, 'στην Υπηρεσία μας')
+    .replace(/του Α\.Τ\.\s+Τριφυλίας/gu, 'της Υπηρεσίας μας')
+    .replace(/στο Α\.Τ\.\s+Τριφυλίας/gu, 'στην Υπηρεσία μας')
     .replace(/Αστυνομικού Τμήματος Τριφυλίας/gu, 'Υπηρεσίας μας')
     .replace(/Αστυνομικό Τμήμα Τριφυλίας/gu, 'Υπηρεσία μας')
-    .replace(/Α\\.Τ\\.\\s+Τριφυλίας/gu, 'Υπηρεσία μας');
+    .replace(/Α\.Τ\.\s+Τριφυλίας/gu, 'Υπηρεσία μας');
 }
 
 function replaceLegacyFixedDateText(xml, item) {
