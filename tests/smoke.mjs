@@ -503,7 +503,10 @@ await import('./commerce-templates.mjs');
 // Per-installation service profile storage and privacy regressions.
 await import('./service-profile.mjs');
 
-// Production DOCX generation must work for every built-in dossier template.\nawait import('./all-dossier-docx-generation.mjs');\n\n// Guided dossier workflow: progressive steps, completeness summary, keyboard flow and unsaved-change guard.
+// Production DOCX generation must work for every built-in dossier template.
+await import('./all-dossier-docx-generation.mjs');
+
+// Guided dossier workflow: progressive steps, completeness summary, keyboard flow and unsaved-change guard.
 const workflowSource = await readFile(new URL('../case-workflow.js', import.meta.url), 'utf8')
 assert.match(workflowSource, /Καθοδηγούμενη καταχώριση/)
 assert.match(workflowSource, /Βασικά στοιχεία/)
@@ -521,3 +524,7 @@ const greekPlaceholder = '<w:p><w:r><w:t>{{ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑ
 const greekRendered = replaceInXml(greekPlaceholder, { mappings: { 'ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ': 'case.prosecutor' } }, { prosecutor: 'Εισαγγελία Πρωτοδικών' });
 assert.ok(greekRendered.includes('Εισαγγελία Πρωτοδικών'));
 assert.ok(!greekRendered.includes('{{ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ}}'));
+
+
+// Pre-download DOCX completeness warning regression tests.
+await import('./template-completeness.mjs');
