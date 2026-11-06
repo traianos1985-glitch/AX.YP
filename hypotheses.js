@@ -647,7 +647,7 @@ function uid() {
         : 'Η υπόθεση αποθηκεύτηκε μόνο στον browser. Επίλεξε προσωπικό φάκελο εργασίας για να δημιουργηθεί και αυτοτελής φάκελος στον υπολογιστή.';
       render();
     } catch (error) {
-      $('case-flash').textContent = 'Δεν ολοκληρώθηκε η αποθήκευση στον φάκελο εργασίας: ' + error.message + ' Τα στοιχεία της φόρμας παραμένουν διαθέσιμα· έλεγξε τον φάκελο και ξαναπροσπάθησε.';
+      $('case-flash').textContent = 'Δεν επιβεβαιώθηκε η αποθήκευση της υπόθεσης: ' + error.message + ' Τα στοιχεία της φόρμας παραμένουν διαθέσιμα· έλεγξε την αποθήκευση και ξαναπροσπάθησε.';
     }
   }
 
@@ -674,19 +674,23 @@ function uid() {
         : 'Το snapshot αποθηκεύτηκε στον browser. Επίλεξε προσωπικό φάκελο για αντίγραφο στον υπολογιστή.';
       renderDetail();
     } catch (error) {
-      $('case-flash').textContent = 'Δεν αποθηκεύτηκε το ιστορικό στον φάκελο εργασίας: ' + error.message;
+      $('case-flash').textContent = 'Δεν επιβεβαιώθηκε η αποθήκευση του ιστορικού: ' + error.message;
     }
   }
 
   async function exportData() {
-    if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
-    if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) await window.AXYP_STORAGE.flush();
-    var blob = new Blob([JSON.stringify({ schema: 1, exportedAt: new Date().toISOString(), hypotheses: read() }, null, 2)], { type: 'application/json' });
-    var link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'axyp-ypotheseis.json';
-    link.click();
-    URL.revokeObjectURL(link.href);
+    try {
+      if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
+      if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) await window.AXYP_STORAGE.flush();
+      var blob = new Blob([JSON.stringify({ schema: 1, exportedAt: new Date().toISOString(), hypotheses: read() }, null, 2)], { type: 'application/json' });
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'axyp-ypotheseis.json';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      $('case-flash').textContent = 'Δεν δημιουργήθηκε εξαγωγή: δεν επιβεβαιώθηκε η αποθήκευση των τελευταίων αλλαγών. ' + error.message;
+    }
   }
 
   function downloadJson(name, value) {
@@ -845,7 +849,9 @@ function uid() {
         $('case-flash').textContent = 'Η εισαγωγή ολοκληρώθηκε και η τοπική αποθήκευση επιβεβαιώθηκε.';
         render();
       } catch (e) {
-        $('case-flash').textContent = 'Το αρχείο JSON δεν έχει έγκυρη μορφή υποθέσεων.';
+        $('case-flash').textContent = e && e.message === 'invalid format'
+          ? 'Το αρχείο JSON δεν έχει έγκυρη μορφή υποθέσεων.'
+          : 'Η εισαγωγή δεν επιβεβαιώθηκε ως αποθηκευμένη: ' + (e.message || 'Άγνωστο σφάλμα.');
       }
       event.target.value = '';
     };
