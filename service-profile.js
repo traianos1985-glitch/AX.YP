@@ -23,25 +23,17 @@ const storage = () => {
   catch (_) { return null; }
 };
 
-function initializeServiceProfile() {
+async function initializeServiceProfile() {
   const form = document.getElementById('service-profile-form');
   if (!form) return;
   const status = document.getElementById('service-profile-status');
-  const current = readServiceProfile(storage());
+  const store = storage();
+  if (store && store.ready && typeof store.ready.then === 'function') await store.ready;
+  const current = readServiceProfile(store);
   SERVICE_PROFILE_FIELDS.forEach((field) => {
     const input = form.elements.namedItem(field);
     if (input) input.value = current[field];
   });
-  const store = storage();
-  if (store && store.ready && typeof store.ready.then === 'function') {
-    store.ready.then(() => {
-      const hydrated = readServiceProfile(store);
-      SERVICE_PROFILE_FIELDS.forEach((field) => {
-        const input = form.elements.namedItem(field);
-        if (input && !input.value) input.value = hydrated[field];
-      });
-    });
-  }
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     try {
