@@ -112,21 +112,21 @@ for (const template of templates) {
       const xml = new TextDecoder().decode(bytes);
       assert.doesNotMatch(
         xml,
-        /\\{\\{\\s*[\\p{L}\\p{N}_.-]+\\s*\\}\\}/u,
+        /\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/u,
         `${template.id} (${filename}) must not retain unresolved placeholders`
       );
       return xml;
     })
-    .join('\\n');
+    .join('\n');
 
   assert.doesNotMatch(
     combinedXml,
-    /Α\\.Τ\\.\\s*Τριφυλίας|Αστυνομικό Τμήμα Τριφυλίας|Αστυνομικού Τμήματος Τριφυλίας/u,
+    /Α\.Τ\.\s*Τριφυλίας|Αστυνομικό Τμήμα Τριφυλίας|Αστυνομικού Τμήματος Τριφυλίας/u,
     `${template.id} must not hardcode the issuing Triphylia police service in generated text`
   );
   assert.doesNotMatch(
     combinedXml,
-    /Στην Κυπαρισσία σήμερα την 16η του μήνα Απριλίου του έτους 2021|Στην Κυπαρισσία σήμερα την 21 του μηνός Απριλίου του έτους 2022|Κυπαρισσία,\\s*(?:01 Απριλίου 2021|31 Μαρτίου 2021|21\\s+Απριλίου 2022)|ώρα της 21\\/4\\/2022|\\(21\\/4\\/2022\\)/u,
+    /Στην Κυπαρισσία σήμερα την 16η του μήνα Απριλίου του έτους 2021|Στην Κυπαρισσία σήμερα την 21 του μηνός Απριλίου του έτους 2022|Κυπαρισσία,\s*(?:01 Απριλίου 2021|31 Μαρτίου 2021|21\s+Απριλίου 2022)|ώρα της 21\/4\/2022|\(21\/4\/2022\)/u,
     `${template.id} must not retain a fixed legacy case date`
   );
   if (/^(camping-0[1-4]|noise-0[1-3])$/.test(template.id)) {
