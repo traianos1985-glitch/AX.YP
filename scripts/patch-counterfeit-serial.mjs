@@ -29,6 +29,18 @@ function encodeXml(value) {
 function patchDocument(xml, id) {
   if (xml.includes(placeholder)) return xml
   const paragraphs = [...xml.matchAll(/<w:p(?:\s[^>]*)?>[\s\S]*?<\/w:p>/g)]
+  if (id === 'counterfeit-03') {
+    for (const paragraphMatch of paragraphs) {
+      const paragraph = paragraphMatch[0]
+      const text = [...paragraph.matchAll(/<w:t([^>]*)>([\s\S]*?)<\/w:t>/g)].map((node) => decodeXml(node[2])).join('')
+      if (/χαρτονόμισμα/i.test(text) && /πιθανόν πλαστό/i.test(text)) {
+        const addition = '<w:r><w:t xml:space="preserve"> Σειριακός αριθμός του εξεταζόμενου χαρτονομίσματος: ' + placeholder + '.</w:t></w:r>'
+        const updatedParagraph = paragraph.replace(/<\/w:p>$/, addition + '</w:p>')
+        return xml.slice(0, paragraphMatch.index) + updatedParagraph + xml.slice(paragraphMatch.index + paragraph.length)
+      }
+    }
+    throw new Error(id + ': could not locate the examined-banknote paragraph')
+  }
   for (const paragraphMatch of paragraphs) {
     const paragraph = paragraphMatch[0]
     const nodes = [...paragraph.matchAll(/<w:t([^>]*)>([\s\S]*?)<\/w:t>/g)]
@@ -41,6 +53,11 @@ function patchDocument(xml, id) {
     const dots = /(?:\.{4,}|…{2,}|_{4,})/.exec(remainder)
     if (!dots) continue
 
+    const masked = plain.split(/(\s+)/).map((token) => {
+      if (/^\s+$/.test(token) || /^[. …_]+$/.test(token) || /αριθ|σειρια|χαρτονόμισμα|πλαστ|υπ/i.test(token)) return token
+      return token ? '[token:' + token.length + ']' : token
+    }).join('')
+    console.log('Serial target paragraph ' + id + ': ' + masked)
     const rangeStart = afterAnchor + dots.index
     const rangeEnd = rangeStart + dots[0].length
     let offset = 0
