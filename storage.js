@@ -8,6 +8,7 @@
   var cache = Object.create(null);
   var dirtyKeys = Object.create(null);
   var pendingWrites = [];
+  var pendingFailures = [];
   var lastError = null;
   var indexedDBAvailable = !!(window.indexedDB && typeof indexedDB !== 'undefined');
 
@@ -177,7 +178,8 @@
       return { ok: false, error: error };
     });
     pendingWrites.push(tracked);
-    tracked.then(function () {
+    tracked.then(function (result) {
+      if (!result.ok) pendingFailures.push(result.error);
       var index = pendingWrites.indexOf(tracked);
       if (index !== -1) pendingWrites.splice(index, 1);
     });
@@ -315,9 +317,12 @@
   function flush() {
     return ready.then(function () {
       var tasks = pendingWrites.slice();
-      return Promise.all(tasks).then(function (results) {
-        var failed = results.find(function (result) { return !result.ok; });
-        if (failed) throw makeError('Η αποθήκευση δεν επιβεβαιώθηκε: ' + (failed.error.message || failed.error), failed.error);
+      return Promise.all(tasks).then(function () {
+        var failures = pendingFailures.splice(0);
+        if (failures.length) {
+          var first = failures[0];
+          throw makeError('Η αποθήκευση δεν επιβεβαιώθηκε: ' + (first.message || first), first);
+        }
         return getStatus();
       });
     });
