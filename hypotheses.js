@@ -1,4 +1,5 @@
 import { DOSSIER_CATEGORIES } from './dossier-categories.js';
+import { getCaseRegisterData, loadCaseRegister, resetCaseRegister } from './case-register.js';
 
 if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
 (function () {
@@ -258,6 +259,7 @@ function uid() {
         nationality: $('camping-interpreter-nationality')?.value.trim() || ''
       },
       notes: $('case-notes').value.trim(),
+      caseRegister: getCaseRegisterData(),
       completeness: {
         safety: $('check-safety').checked,
         source: $('check-source').checked,
@@ -272,6 +274,7 @@ function uid() {
   function reset() {
     ensureCommerceOffenderFields();
     $('case-form').reset();
+    resetCaseRegister();
     $('case-id').value = '';
     $('case-date').value = new Date().toISOString().slice(0, 10);
     if (activeProfileFilter) $('case-profile').value = activeProfileFilter;
@@ -435,6 +438,7 @@ function uid() {
     $('offender-email').value = offender.email || '';
     $('case-evidence').value = item.evidence || '';
     $('case-notes').value = item.notes || '';
+    loadCaseRegister(item.caseRegister || {});
     $('check-safety').checked = !!(item.completeness && item.completeness.safety);
     $('check-source').checked = !!(item.completeness && item.completeness.source);
     $('check-notify').checked = !!(item.completeness && item.completeness.notify);
