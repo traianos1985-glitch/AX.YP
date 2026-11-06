@@ -13,7 +13,7 @@ function createMockStorage(initial = {}) {
 }
 
 const storage = createMockStorage();
-ensureDefaultTemplates(storage);
+await ensureDefaultTemplates(storage);
 const seeded = JSON.parse(storage.getItem('axyp-docx-templates'));
 const templates = seeded.filter((template) => template.category === 'commerce');
 assert.equal(templates.length, 8, 'All eight commerce templates should be seeded');

@@ -1,8 +1,40 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
-import { DEFAULT_NARCOTICS_TEMPLATES, DEFAULT_COUNTERFEIT_TEMPLATES, DEFAULT_ENVIRONMENT_TEMPLATES, DEFAULT_HEALTH_TEMPLATES } from './dossier-templates-data.js';
-import { DEFAULT_NOISE_TEMPLATES } from './noise-templates-data.js';
-import { DEFAULT_CAMPING_TEMPLATES } from './camping-templates-data.js';
-import { DEFAULT_COMMERCE_TEMPLATES } from './paremporio-templates.js';
+
+let DEFAULT_NARCOTICS_TEMPLATES = [];
+let DEFAULT_COUNTERFEIT_TEMPLATES = [];
+let DEFAULT_ENVIRONMENT_TEMPLATES = [];
+let DEFAULT_HEALTH_TEMPLATES = [];
+let DEFAULT_NOISE_TEMPLATES = [];
+let DEFAULT_CAMPING_TEMPLATES = [];
+let DEFAULT_COMMERCE_TEMPLATES = [];
+let builtinTemplateDataPromise = null;
+
+export function loadBuiltinTemplateData() {
+  if (!builtinTemplateDataPromise) {
+    builtinTemplateDataPromise = Promise.all([
+      import('./template-data/narcotics.js'),
+      import('./template-data/counterfeit.js'),
+      import('./template-data/environment.js'),
+      import('./template-data/health.js'),
+      import('./noise-templates-data.js'),
+      import('./camping-templates-data.js'),
+      import('./paremporio-templates.js')
+    ]).then(([narcotics, counterfeit, environment, health, noise, camping, commerce]) => {
+      DEFAULT_NARCOTICS_TEMPLATES = narcotics.DEFAULT_NARCOTICS_TEMPLATES;
+      DEFAULT_COUNTERFEIT_TEMPLATES = counterfeit.DEFAULT_COUNTERFEIT_TEMPLATES;
+      DEFAULT_ENVIRONMENT_TEMPLATES = environment.DEFAULT_ENVIRONMENT_TEMPLATES;
+      DEFAULT_HEALTH_TEMPLATES = health.DEFAULT_HEALTH_TEMPLATES;
+      DEFAULT_NOISE_TEMPLATES = noise.DEFAULT_NOISE_TEMPLATES;
+      DEFAULT_CAMPING_TEMPLATES = camping.DEFAULT_CAMPING_TEMPLATES;
+      DEFAULT_COMMERCE_TEMPLATES = commerce.DEFAULT_COMMERCE_TEMPLATES;
+      return true;
+    }).catch((error) => {
+      builtinTemplateDataPromise = null;
+      throw error;
+    });
+  }
+  return builtinTemplateDataPromise;
+}
 
 const KEY = 'axyp-docx-templates';
 const NARCOTICS_SEED_KEY = 'axyp-narcotics-templates-seeded-v1';
@@ -18,7 +50,8 @@ const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } 
 const write = (value) => storage().setItem(KEY, JSON.stringify(value));
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[ch]);
 
-export function ensureDefaultTemplates(storageInstance = storage()) {
+export async function ensureDefaultTemplates(storageInstance = storage()) {
+  await loadBuiltinTemplateData();
   try {
     const existing = (() => {
       try { return JSON.parse(storageInstance.getItem(KEY) || '[]'); } catch (_) { return []; }
@@ -124,7 +157,7 @@ export async function initializeDefaultTemplates(storageInstance = storage()) {
   if (storageInstance && storageInstance.ready && typeof storageInstance.ready.then === 'function') {
     await storageInstance.ready;
   }
-  ensureDefaultTemplates(storageInstance);
+  await ensureDefaultTemplates(storageInstance);
 }
 
 function uint8ToBase64(bytes) {

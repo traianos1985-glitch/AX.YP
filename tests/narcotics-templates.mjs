@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { unzipSync, zipSync, strFromU8, strToU8 } from '../vendor/fflate.js';
-import { DEFAULT_NARCOTICS_TEMPLATES } from '../dossier-templates-data.js';
+import { DEFAULT_NARCOTICS_TEMPLATES } from '../template-data/narcotics.js';
 import { ensureDefaultTemplates, initializeDefaultTemplates, getTemplateParts, computeTimeline, replaceInXml } from '../template-library.js';
 
 console.log('--- Starting Narcotics Templates & Auto-loader Test Suite ---');
@@ -23,7 +23,7 @@ console.log('1. Testing first install on clean storage...');
 const storage1 = createMockStorage();
 assert.equal(storage1.getItem('axyp-docx-templates'), null);
 
-ensureDefaultTemplates(storage1);
+await ensureDefaultTemplates(storage1);
 
 const seededTemplates = JSON.parse(storage1.getItem('axyp-docx-templates'));
 
@@ -80,7 +80,7 @@ console.log('✓ Default seeding waits for storage hydration and preserves hydra
 
 // 2. Test second launch / re-initialization (no duplicates)
 console.log('2. Testing second launch (zero duplicates)...');
-ensureDefaultTemplates(storage1);
+await ensureDefaultTemplates(storage1);
 
 const recheckedTemplates = JSON.parse(storage1.getItem('axyp-docx-templates'));
 assert.equal(recheckedTemplates.length, 39, 'Must remain 35 templates without duplication');
@@ -90,7 +90,7 @@ recheckedTemplates.pop(); // user deletes 1 template
 storage1.setItem('axyp-docx-templates', JSON.stringify(recheckedTemplates));
 assert.equal(JSON.parse(storage1.getItem('axyp-docx-templates')).length, 38);
 
-ensureDefaultTemplates(storage1);
+await ensureDefaultTemplates(storage1);
 assert.equal(JSON.parse(storage1.getItem('axyp-docx-templates')).length, 38, 'Deleted template must not be restored');
 console.log('✓ Second launch creates zero duplicates and respects user deletions.');
 
@@ -115,7 +115,7 @@ const storageUpgrade = createMockStorage({
   ])
 });
 
-ensureDefaultTemplates(storageUpgrade);
+await ensureDefaultTemplates(storageUpgrade);
 const upgradedTemplates = JSON.parse(storageUpgrade.getItem('axyp-docx-templates'));
 
 // The custom template must still be there
@@ -143,8 +143,8 @@ console.log('4. Testing offline and local-first architecture...');
 const swSource = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
 const viteSource = await readFile(new URL('../vite.config.js', import.meta.url), 'utf8');
 
-assert.ok(swSource.includes('./dossier-templates-data.js'), 'sw.js must cache dossier-templates-data.js');
-assert.ok(viteSource.includes('dossier-templates-data.js'), 'vite.config.js must include dossier-templates-data.js');
+assert.ok(swSource.includes('./template-data/narcotics.js'), 'sw.js must cache dossier-templates-data.js');
+assert.ok(viteSource.includes('template-data/narcotics.js'), 'vite.config.js must include dossier-templates-data.js');
 
 // Verify no external endpoints in loader or data
 const dataJsSource = await readFile(new URL('../dossier-templates-data.js', import.meta.url), 'utf8');

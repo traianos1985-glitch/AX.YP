@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { unzipSync, zipSync, strFromU8, strToU8 } from '../vendor/fflate.js';
-import { DEFAULT_COUNTERFEIT_TEMPLATES } from '../dossier-templates-data.js';
+import { DEFAULT_COUNTERFEIT_TEMPLATES } from '../template-data/counterfeit.js';
 import { ensureDefaultTemplates, initializeDefaultTemplates, getTemplateParts, computeTimeline, replaceInXml, valueFor } from '../template-library.js';
 
 console.log('--- Starting Counterfeit Templates & Auto-loader Test Suite ---');
@@ -23,7 +23,7 @@ console.log('1. Testing first install on clean storage...');
 const storage1 = createMockStorage();
 assert.equal(storage1.getItem('axyp-docx-templates'), null);
 
-ensureDefaultTemplates(storage1);
+await ensureDefaultTemplates(storage1);
 
 const seededTemplates = JSON.parse(storage1.getItem('axyp-docx-templates'));
 
@@ -102,7 +102,7 @@ console.log('✓ Default seeding waits for storage hydration and preserves hydra
 
 // 2. Test second launch / re-initialization (no duplicates)
 console.log('2. Testing second launch (zero duplicates)...');
-ensureDefaultTemplates(storage1);
+await ensureDefaultTemplates(storage1);
 
 const recheckedTemplates = JSON.parse(storage1.getItem('axyp-docx-templates'));
 const recheckedCounterfeit = recheckedTemplates.filter((t) => t.category === 'counterfeit');
@@ -112,7 +112,7 @@ assert.equal(recheckedCounterfeit.length, 5, 'Must remain 5 counterfeit template
 const withoutFirstCounterfeit = recheckedTemplates.filter((t) => t.id !== 'counterfeit-01');
 storage1.setItem('axyp-docx-templates', JSON.stringify(withoutFirstCounterfeit));
 
-ensureDefaultTemplates(storage1);
+await ensureDefaultTemplates(storage1);
 const afterReboot = JSON.parse(storage1.getItem('axyp-docx-templates'));
 assert.equal(afterReboot.some((t) => t.id === 'counterfeit-01'), false, 'Deleted counterfeit template must not be restored');
 console.log('✓ Second launch creates zero duplicates and respects user deletions.');
@@ -139,7 +139,7 @@ const storageUpgrade = createMockStorage({
   ])
 });
 
-ensureDefaultTemplates(storageUpgrade);
+await ensureDefaultTemplates(storageUpgrade);
 const upgradedTemplates = JSON.parse(storageUpgrade.getItem('axyp-docx-templates'));
 assert.equal(storageUpgrade.getItem('axyp-counterfeit-templates-seeded-v1'), 'true');
 
@@ -162,7 +162,7 @@ const storageSource = await readFile(new URL('../storage.js', import.meta.url), 
 assert.match(storageSource, /axyp-counterfeit-templates-seeded-v1/, 'Counterfeit seed marker must be in KNOWN_KEYS');
 
 const swSource = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
-assert.ok(swSource.includes('./dossier-templates-data.js'), 'sw.js must cache dossier-templates-data.js');
+assert.ok(swSource.includes('./template-data/narcotics.js'), 'sw.js must cache dossier-templates-data.js');
 assert.ok(swSource.includes('./dossier-categories.js'), 'sw.js must cache dossier-categories.js');
 console.log('✓ Offline cache and local-first requirements fully verified.');
 
