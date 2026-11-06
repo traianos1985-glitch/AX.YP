@@ -1007,7 +1007,7 @@ export function normalizeGreekDocxXml(xml) {
   return xml.replace(/(<w:t\b[^>]*>)([\s\S]*?)(<\/w:t>)/gu, (_match, open, text, close) => open + fixes(text) + close);
 }
 
-export export const DOCX_TEMPLATE_VERSION = '2026.11.06.1';
+export const DOCX_TEMPLATE_VERSION = '2026.11.06.1';
 
 function ensureTemplateVersionFooter(files, template) {
   const documentPath = 'word/document.xml';
@@ -1083,7 +1083,7 @@ function ensureTemplateVersionFooter(files, template) {
   }
 }
 
-function buildDocx(template, item) {
+export function buildDocx(template, item) {
   if (!template || !item) throw new Error('Template and case data are required');
   const files = getTemplateParts(template);
 
