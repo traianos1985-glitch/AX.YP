@@ -23,7 +23,7 @@ console.log('1. Testing first install on clean storage...');
 const storage1 = createMockStorage();
 assert.equal(storage1.getItem('axyp-docx-templates'), null);
 
-ensureDefaultTemplates(storage1);
+await ensureDefaultTemplates(storage1);
 
 const seededTemplates = JSON.parse(storage1.getItem('axyp-docx-templates'));
 
@@ -81,7 +81,7 @@ console.log('✓ Default seeding waits for storage hydration and preserves hydra
 
 // 2. Test second launch / re-initialization (no duplicates)
 console.log('2. Testing second launch (zero duplicates)...');
-ensureDefaultTemplates(storage1);
+await ensureDefaultTemplates(storage1);
 
 const recheckedTemplates = JSON.parse(storage1.getItem('axyp-docx-templates'));
 const recheckedHealth = recheckedTemplates.filter((t) => t.category === 'health');
@@ -91,7 +91,7 @@ assert.equal(recheckedHealth.length, 4, 'Must remain 4 health templates without 
 const withoutFirstHealth = recheckedTemplates.filter((t) => t.id !== 'health-01');
 storage1.setItem('axyp-docx-templates', JSON.stringify(withoutFirstHealth));
 
-ensureDefaultTemplates(storage1);
+await ensureDefaultTemplates(storage1);
 const afterReboot = JSON.parse(storage1.getItem('axyp-docx-templates'));
 assert.equal(afterReboot.some((t) => t.id === 'health-01'), false, 'Deleted health template must not be restored');
 console.log('✓ Second launch creates zero duplicates and respects user deletions.');
@@ -120,7 +120,7 @@ const storageUpgrade = createMockStorage({
   ])
 });
 
-ensureDefaultTemplates(storageUpgrade);
+await ensureDefaultTemplates(storageUpgrade);
 const upgradedTemplates = JSON.parse(storageUpgrade.getItem('axyp-docx-templates'));
 assert.equal(storageUpgrade.getItem('axyp-health-templates-seeded-v1'), 'true');
 
