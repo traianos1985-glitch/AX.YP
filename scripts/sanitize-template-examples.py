@@ -296,6 +296,62 @@ OPERATIONS = [
     "start": 374,
     "end": 375,
     "replacement": "B"
+  },
+  {
+    "path": "templates/dossiers/narcotics/01_ΚΑΤΑΘΕΣΗ_ΜΑΡΤΥΡΑ.docx",
+    "paragraph_index": 9,
+    "start": 40,
+    "end": 52,
+    "replacement": "{{case.date.day}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/01_ΚΑΤΑΘΕΣΗ_ΜΑΡΤΥΡΑ.docx",
+    "paragraph_index": 9,
+    "start": 63,
+    "end": 87,
+    "replacement": "{{case.date.monthName}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/01_ΚΑΤΑΘΕΣΗ_ΜΑΡΤΥΡΑ.docx",
+    "paragraph_index": 9,
+    "start": 98,
+    "end": 110,
+    "replacement": "{{case.date.year}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/01_ΚΑΤΑΘΕΣΗ_ΜΑΡΤΥΡΑ.docx",
+    "paragraph_index": 9,
+    "start": 131,
+    "end": 155,
+    "replacement": "{{case.date.weekdayName}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/06_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ_ΑΠΟΛΟΓΙΑ.docx",
+    "paragraph_index": 8,
+    "start": 41,
+    "end": 53,
+    "replacement": "{{case.date.day}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/06_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ_ΑΠΟΛΟΓΙΑ.docx",
+    "paragraph_index": 8,
+    "start": 64,
+    "end": 88,
+    "replacement": "{{case.date.monthName}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/06_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ_ΑΠΟΛΟΓΙΑ.docx",
+    "paragraph_index": 8,
+    "start": 99,
+    "end": 111,
+    "replacement": "{{case.date.year}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/06_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ_ΑΠΟΛΟΓΙΑ.docx",
+    "paragraph_index": 8,
+    "start": 132,
+    "end": 156,
+    "replacement": "{{case.date.weekdayName}}"
   }
 ]
 
