@@ -44,5 +44,6 @@ assert.match(app, /caseRegister: getCaseRegisterData\(\)/);
 assert.match(app, /loadCaseRegister\(item\.caseRegister \|\| \{\}\)/);
 assert.match(app, /resetCaseRegister\(\)/);
 assert.match(sw, /"\.\/case-register\.js"/);
+assert.match(await readFile(new URL('../case-register.js', import.meta.url), 'utf8'), /\$\('case-register-section'\)/, 'Register initializer must target the actual HTML root ID');
 
 console.log('Structured dossier register tests passed.');
