@@ -65,7 +65,7 @@ assert.ok(hyp.includes("noise: {"));
 assert.ok(templateLibrary.includes('noise.establishmentName'));
 assert.match(sw,/noise-templates-data\.js/);
 assert.match(sw,/camping-templates-data\.js/);
-assert.match(sw,/axyp-v36/);
+assert.match(sw,/axyp-dev/);
 assert.match(html,/id="camping-fields"/);
 assert.match(html,/id="camping-interpreter-father-name"/);
 assert.match(html,/id="camping-interpreter-nationality"/);
