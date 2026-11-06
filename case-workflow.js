@@ -1,3 +1,4 @@
+import { evaluateDossierCompleteness } from './dossier-completeness.js';
 // Καθοδηγούμενη ροή δικογραφίας: κοινά στοιχεία, ειδικά πεδία, έλεγχος και αποθήκευση.
 (function () {
   'use strict';
@@ -145,15 +146,13 @@
       var root = $(id);
       return root ? root.querySelectorAll('.case-register-entry').length : 0;
     };
-    var report = window.AXYPDossierCompleteness
-      ? window.AXYPDossierCompleteness.evaluate(profile, {
+    var report = evaluateDossierCompleteness(profile, {
           title: read('case-title'), offence: read('case-offence'), protocolNumber: read('case-protocol-number'),
           date: read('case-date'), location: read('case-location'), incidentDate: read('case-incident-date'),
           incidentTime: read('case-incident-time'), people: read('case-people'), evidence: read('case-evidence'),
           fields: null,
           register: { persons: registerCount('person-register-list'), evidence: registerCount('evidence-register-list'), actions: registerCount('task-register-list') }
-        }, function (id) { return read(id); })
-      : null;
+        }, function (id) { return read(id); });
 
     summary.replaceChildren();
     var intro = document.createElement('p');
