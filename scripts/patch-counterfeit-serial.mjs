@@ -72,8 +72,8 @@ function patchDocument(xml, id) {
     return xml.slice(0, paragraphMatch.index) + updatedParagraph + xml.slice(paragraphMatch.index + paragraph.length)
   }
   const diagnostics = paragraphs.map((match, index) => {
-    const text = [...match[0].matchAll(/<w:t([^>]*)>([\\s\\S]*?)<\\/w:t>/g)].map((node) => decodeXml(node[2])).join('')
-    const dotRuns = [...text.matchAll(/(?:\\.{2,}|…+|_{2,})/g)].map((entry) => ({ start: entry.index, length: entry[0].length }))
+    const text = [...match[0].matchAll(/<w:t([^>]*)>([\s\S]*?)<\/w:t>/g)].map((node) => decodeXml(node[2])).join('')
+    const dotRuns = [...text.matchAll(/(?:\.{2,}|…+|_{2,})/g)].map((entry) => ({ start: entry.index, length: entry[0].length }))
     return { index, hasNumberWord: /αριθ/i.test(text), hasSerialWord: /σειρια/i.test(text), hasBanknoteWord: /χαρτονόμισμα/i.test(text), dotRuns }
   }).filter((entry) => entry.hasNumberWord || entry.hasSerialWord || entry.hasBanknoteWord || entry.dotRuns.length)
   console.log('Template structure diagnostics ' + id + ': ' + JSON.stringify(diagnostics))
