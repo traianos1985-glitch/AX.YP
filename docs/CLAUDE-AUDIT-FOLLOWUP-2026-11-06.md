@@ -23,7 +23,7 @@ This note records the disposition of the remaining findings from the Claude revi
 ## Not part of an ordinary code PR
 
 - Git history containing personal information introduced by PRs #56, #61, #72 and #75 still requires a targeted history rewrite. Making the repository private does not remove old Git objects, PR diffs, forks, or cached views. This must be handled as a coordinated `git-filter-repo` sensitive-data-removal operation, followed by force-with-lease pushes and GitHub Support follow-up. It must not be simulated by deleting current files or by rewriting unrelated history.
-- The 1 MB template data module is still statically imported by the template-library module. A true per-category lazy-loading redesign must also preserve offline first-use behavior and idempotent seeding. It is not represented as complete by this PR.
+- The 1 MB template data module has been split into independent category chunks. The template library now dynamically imports and seeds only the category opened by the user. The service worker precaches all category chunks for offline first use; per-category lazy loading and idempotent seeding are covered by regression tests.
 - The signature layout in narcotics-02 still needs a direct DOCX layout review before converting space-aligned signatures into a Word table.
 - Full visual/functional review of every generated DOCX, including Word on Android, remains part of the final manual acceptance test.
 
