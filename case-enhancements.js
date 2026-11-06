@@ -314,6 +314,7 @@ import { zipSync } from './vendor/fflate.js';
       : 'Εξήχθη ZIP με τα στοιχεία της υπόθεσης. Δεν έχει συνδεθεί ακόμη δικογραφία-πρότυπο.';
   }
 
+  $('case-form')?.addEventListener('submit', function () { syncExtraFields(); }, true);
   $('case-form')?.addEventListener('submit', function () { setTimeout(loadExtraFields, 0); });
   $('case-reset')?.addEventListener('click', function () {
     if ($('case-profile')) {
