@@ -50,7 +50,7 @@ function visibleParagraphs(xml) {
   );
 }
 
-function readWordParts(parts) {
+function excerptAround(text, pattern, radius = 70) {\n  const match = pattern.exec(text);\n  if (!match) return '';\n  const start = Math.max(0, match.index - radius);\n  const end = Math.min(text.length, match.index + match[0].length + radius);\n  return JSON.stringify(text.slice(start, end));\n}\n\nfunction readWordParts(parts) {
   return Object.entries(parts)
     .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'))
     .map(([name, data]) => ({
@@ -94,17 +94,17 @@ for (const template of templates) {
     const generatedText = generatedWordParts.flatMap((part) => part.paragraphs).join('\n');
 
     for (const check of personalDataPatterns) {
-      if (check.pattern.test(generatedText)) failures.push(`${label}: ${check.label} στο παραγόμενο DOCX`);
+      if (check.pattern.test(generatedText)) failures.push(`${label}: ${check.label} στο παραγόμενο DOCX — ${excerptAround(generatedText, check.pattern)}`);
     }
 
     for (const part of generatedWordParts) {
       for (const paragraph of part.paragraphs) {
         if (/[ \t]{2,}/u.test(paragraph)) {
-          failures.push(`${label} (${part.name}): διπλά συνεχόμενα κενά σε παράγραφο`);
+          failures.push(`${label} (${part.name}): διπλά συνεχόμενα κενά σε παράγραφο — ${JSON.stringify(paragraph)}`);
           break;
         }
         if (/[ \t]+[.,;:!?…]/u.test(paragraph)) {
-          failures.push(`${label} (${part.name}): κενό πριν από σημείο στίξης`);
+          failures.push(`${label} (${part.name}): κενό πριν από σημείο στίξης — ${JSON.stringify(paragraph)}`);
           break;
         }
       }
