@@ -404,6 +404,7 @@ const FIELD_OPTIONS = [
 
 function mappingFor(template, field) {
   if (template.mappings && template.mappings[field]) return template.mappings[field];
+  if (field === 'officerB.service') return field;
   if (FIELD_OPTIONS.some((option) => option.path === field)) return field;
   if (field.startsWith('offender.')) {
     const candidate = field.replace('offender.', 'person.');
@@ -815,13 +816,13 @@ function signatureParagraphTable() {
 
 export function patchNarcoticsTemplateXml(xml, templateId) {
   if (templateId === 'narcotics-02') {
-    const oldService = /(?:της ίδιας Υπηρεσίας,\\s*)?(?:που προσλήφθηκε ως )?Β[’'] Ανακριτικός Υπάλληλος,\\s*(?:κάτοικων|κατοίκων) Α\\.Τ\\. Τριφυλίας/u;
+    const oldService = /(?:της ίδιας Υπηρεσίας,\s*)?(?:που προσλήφθηκε ως )?Β[’'] Ανακριτικός Υπάλληλος,\s*(?:κάτοικων|κατοίκων) Α\.Τ\. Τριφυλίας/u;
     if (oldService.test(xml)) {
       xml = xml.replace(oldService, 'που υπηρετεί στο {{officerB.service}} και ενεργεί ως Β΄ Ανακριτικός Υπάλληλος');
     }
     let replacedSignature = false;
-    xml = xml.replace(/<w:p\\b[\\s\\S]*?<\\/w:p>/gu, (paragraph) => {
-      if (!replacedSignature && /Ο\\s+Συλλαβών/u.test(paragraph) && /Ο\\s+Συλληφθείς/u.test(paragraph) && /Ανακριτικός Υπάλληλος/u.test(paragraph)) {
+    xml = xml.replace(/<w:p\b[\s\S]*?<\/w:p>/gu, (paragraph) => {
+      if (!replacedSignature && /Ο\s+Συλλαβών/u.test(paragraph) && /Ο\s+Συλληφθείς/u.test(paragraph) && /Ανακριτικός Υπάλληλος/u.test(paragraph)) {
         replacedSignature = true;
         return signatureParagraphTable();
       }
@@ -829,10 +830,10 @@ export function patchNarcoticsTemplateXml(xml, templateId) {
     });
   }
   if (templateId === 'narcotics-08') {
-    xml = xml.replace(/Εισαγγελία Πρωτοδικών\\s*\\.{5,}/u, 'Εισαγγελία Πρωτοδικών {{case.prosecutor}}');
+    xml = xml.replace(/Εισαγγελία Πρωτοδικών\s*\.{5,}/u, 'Εισαγγελία Πρωτοδικών {{case.prosecutor}}');
   }
   if (templateId === 'narcotics-09') {
-    xml = xml.replace(/ΚΑΛΑΜΑΤΑ\\s+Τ\\.Κ\\.\\s*241\\s*00/u, 'Πάρκο Λιμενικού, Τ.Κ. 24131, Καλαμάτα');
+    xml = xml.replace(/ΚΑΛΑΜΑΤΑ\s+Τ\.Κ\.\s*241\s*00/u, 'Πάρκο Λιμενικού, Τ.Κ. 24131, Καλαμάτα');
   }
   return xml;
 }
