@@ -68,8 +68,7 @@ const syntheticCase = {
   environment: { description: 'TEST-ENVIRONMENT-DESCRIPTION' },
   health: { description: 'TEST-HEALTH-DESCRIPTION' },
   noise: {
-    description: 'TEST & <NOISE> "DESCRIPTION"',
-    establishmentName: 'TEST-ESTABLISHMENT',
+    establishmentName: 'TEST & <NOISE> "DESCRIPTION"',
     measuredDecibels: 'TEST-MEASURED-DB',
     limitDecibels: 'TEST-LIMIT-DB',
     legalProvision: 'TEST-LEGAL-PROVISION',
