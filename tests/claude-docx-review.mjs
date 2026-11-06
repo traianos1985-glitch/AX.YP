@@ -112,9 +112,9 @@ function serviceLines(id) {
   const template = DEFAULT_NARCOTICS_TEMPLATES.find((item) => item.id === id);
   return Object.entries(getTemplateParts(template))
     .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'))
-    .flatMap(([name, bytes]) => [...strFromU8(bytes).matchAll(/<(?:w|a):t\\b[^>]*>([\\s\\S]*?)<\\/(?:w|a):t>/gu)].map((part) => part[1]))
-    .filter((value) => /Εισαγγελ|Κυπαρισ|Χημικ|Καλαμάτ|διεύθυν|τηλέφων|email|241\\s*00|24500/iu.test(value))
-    .map((value) => value.replace(/\\{\\{[^}]+\\}\\}/gu, '[FIELD]'));
+    .flatMap(([name, bytes]) => [...strFromU8(bytes).matchAll(/<(?:w|a):t\b[^>]*>([\s\S]*?)<\/(?:w|a):t>/gu)].map((part) => part[1]))
+    .filter((value) => /Εισαγγελ|Κυπαρισ|Χημικ|Καλαμάτ|διεύθυν|τηλέφων|email|241\s*00|24500/iu.test(value))
+    .map((value) => value.replace(/\{\{[^}]+\}\}/gu, '[FIELD]'));
 }
 console.log('NARCOTICS_09_SERVICE_TEXT', JSON.stringify(serviceLines('narcotics-09')));
 console.log('NARCOTICS_08_SERVICE_TEXT', JSON.stringify(serviceLines('narcotics-08')));
