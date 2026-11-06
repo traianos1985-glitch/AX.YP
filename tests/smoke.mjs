@@ -521,3 +521,4 @@ const greekPlaceholder = '<w:p><w:r><w:t>{{ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑ
 const greekRendered = replaceInXml(greekPlaceholder, { mappings: { 'ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ': 'case.prosecutor' } }, { prosecutor: 'Εισαγγελία Πρωτοδικών' });
 assert.ok(greekRendered.includes('Εισαγγελία Πρωτοδικών'));
 assert.ok(!greekRendered.includes('{{ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ}}'));
+\n\n// Pre-download DOCX completeness warning regression tests.\nawait import('./template-completeness.mjs');\n
