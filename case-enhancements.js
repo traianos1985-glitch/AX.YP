@@ -110,7 +110,10 @@ import { zipSync } from './vendor/fflate.js';
   function loadExtraFields() {
     var item = current();
     if (!item) return;
-    if ($('case-profile')) $('case-profile').value = item.profile || 'generic';
+    if ($('case-profile')) {
+      $('case-profile').value = item.profile || 'generic';
+      $('case-profile').dispatchEvent(new Event('change', { bubbles: true }));
+    }
     if ($('case-people')) $('case-people').value = item.people || '';
     if ($('case-location')) $('case-location').value = item.location || '';
     if ($('case-time')) $('case-time').value = item.time || '';
@@ -313,7 +316,10 @@ import { zipSync } from './vendor/fflate.js';
 
   $('case-form')?.addEventListener('submit', function () { setTimeout(loadExtraFields, 0); });
   $('case-reset')?.addEventListener('click', function () {
-    if ($('case-profile')) $('case-profile').value = 'generic';
+    if ($('case-profile')) {
+      $('case-profile').value = 'generic';
+      $('case-profile').dispatchEvent(new Event('change', { bubbles: true }));
+    }
     if ($('case-people')) $('case-people').value = '';
     if ($('case-evidence')) $('case-evidence').value = '';
     ['check-safety', 'check-source', 'check-notify'].forEach(function (id) {
