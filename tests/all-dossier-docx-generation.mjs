@@ -136,6 +136,33 @@ for (const template of templates) {
   generated += 1;
 }
 
+function generatedText(templateId) {
+  const template = templates.find((entry) => entry.id === templateId);
+  assert.ok(template, `Missing ${templateId}`);
+  const parts = unzipSync(buildDocx(template, syntheticCase));
+  return {
+    parts,
+    text: Object.entries(parts)
+      .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'))
+      .map(([, bytes]) => new TextDecoder().decode(bytes))
+      .join('\\n')
+  };
+}
+
+const narcotics02 = generatedText('narcotics-02');
+assert.ok(narcotics02.text.includes('TEST-SERVICE-B'), 'narcotics-02 must use investigator B service');
+assert.ok(!narcotics02.text.includes('κάτοικων Α.Τ. Τριφυλίας'), 'narcotics-02 must not retain the fixed investigator-B service');
+assert.equal((narcotics02.text.match(/<w:tbl>/g) || []).length > 0, true, 'narcotics-02 signatures must use a real Word table');
+assert.ok(narcotics02.text.includes('Ο Β΄ Ανακριτικός Υπάλληλος'), 'narcotics-02 table must label investigator B');
+
+const narcotics08 = generatedText('narcotics-08');
+assert.ok(narcotics08.text.includes('TEST-PROSECUTOR'), 'narcotics-08 must populate the prosecutor recipient from the case');
+assert.ok(!/Εισαγγελία Πρωτοδικών\\s*\\.{5,}/u.test(narcotics08.text), 'narcotics-08 must not retain a dotted prosecutor placeholder');
+
+const narcotics09 = generatedText('narcotics-09');
+assert.ok(narcotics09.text.includes('Πάρκο Λιμενικού, Τ.Κ. 24131, Καλαμάτα'), 'narcotics-09 must show the verified Chemical Service address and postal code');
+assert.ok(!narcotics09.text.includes('Τ.Κ. 241 00'), 'narcotics-09 must not retain the obsolete postal code');
+
 const noiseTemplate = templates.find((template) => template.id === 'noise-01');
 assert.ok(noiseTemplate, 'Noise template must be present in the seeded library');
 const noiseDocx = unzipSync(buildDocx(noiseTemplate, syntheticCase));
