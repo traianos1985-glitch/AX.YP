@@ -55,7 +55,7 @@ for (const template of templates) {
   let xml = strFromU8(parts['word/document.xml']);
   assert.doesNotMatch(xml, /ΠΡΟΣΟΧΗ: Το παρόν είναι ανωνυμοποιημένο πρότυπο/u, 'Provisional warning must not be printed in the document');
   xml = replaceInXml(xml, template, syntheticCase);
-  assert.doesNotMatch(xml, /\{\{\s*[\\p{L}\\p{N}_.-]+\s*\}\}/, template.name + ' must not retain placeholders');
+  assert.doesNotMatch(xml, /\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/, template.name + ' must not retain placeholders');
 
   if (['commerce-01', 'commerce-05', 'commerce-07'].includes(template.id)) {
     assert.ok(xml.includes('ACTOR-A-FULL-NAME'), template.name + ' must contain actor A');
@@ -79,7 +79,7 @@ assert.doesNotMatch(hypothesesSource, /Προεπισκόπηση: /);
 assert.doesNotMatch(hypothesesSource, /Αποθηκευμένο έγγραφο: /);
 
 const serviceWorker = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(serviceWorker, /const CACHE_NAME = \"axyp-v\d+\";/, 'Offline cache name must use a versioned axyp-vN identifier');
+assert.match(serviceWorker, /const CACHE_NAME = \"axyp-dev\";/, "Source service worker must use the build placeholder");
 assert.ok(serviceWorker.includes('./paremporio-templates.js'), 'Commerce template module must be available offline');
 
 console.log('Commerce dossier mapping and document-access tests passed.');
