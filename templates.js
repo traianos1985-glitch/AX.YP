@@ -1,3 +1,5 @@
+if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
+
 (function () {
   var KEY = 'axyp-template-mappings';
   var root = document.getElementById('template-catalog');

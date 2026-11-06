@@ -234,6 +234,8 @@
   }
 
   async function mergeWorkspaceIntoBrowser() {
+    var storageApi = window.AXYP_STORAGE;
+    if (storageApi && storageApi.ready) await storageApi.ready;
     var stored = localStorageApi();
     var local = [];
     try { local = JSON.parse(stored.getItem('axyp-hypotheses') || '[]'); } catch (_) {}
@@ -252,11 +254,13 @@
       }
     });
     stored.setItem('axyp-hypotheses', JSON.stringify(Array.from(byId.values())));
+    if (stored.flush) await stored.flush();
     if (window.HypothesesView) window.HypothesesView.refresh();
     return remote.length;
   }
 
   async function connect() {
+    if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
     if (!window.showDirectoryPicker) {
       throw new Error('Η επιλογή προσωπικού φακέλου υποστηρίζεται μόνο σε πρόσφατο Chrome ή Edge για υπολογιστή. Σε κινητό ή μη συμβατό browser, οι δικογραφίες παραμένουν στην τοπική αποθήκευση του browser· μην καθαρίσεις τα δεδομένα του browser χωρίς να έχεις πρώτα κρατήσει αντίγραφο ασφαλείας.');
     }
@@ -286,6 +290,7 @@
       }
     }
     stored.setItem('axyp-hypotheses', JSON.stringify(local));
+    if (stored.flush) await stored.flush();
     status('Προσωπικός χώρος εργασίας: ' + workspace.name + ' · ' + count + ' υπάρχουσες δικογραφίες · ' + migrated + ' μεταφέρθηκαν από τον browser' + (skipped ? ' · ' + skipped + ' χρειάζονται έλεγχο' : '') + '.', false);
     if (window.HypothesesView) window.HypothesesView.refresh();
     return { count: count, migrated: migrated, skipped: skipped, name: workspace.name };
@@ -293,6 +298,7 @@
 
   async function restore() {
     try {
+      if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
       workspace = await readHandle();
       if (!workspace) {
         status('Δεν έχει επιλεγεί προσωπικός φάκελος εργασίας. Τα δεδομένα παραμένουν προσωρινά στον browser μέχρι να επιλέξεις φάκελο.', true);

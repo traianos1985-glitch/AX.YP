@@ -51,6 +51,8 @@
               });
           Promise.resolve(clearing).then(function () {
             location.reload();
+          }).catch(function (error) {
+            window.alert('Δεν επιβεβαιώθηκε η εκκαθάριση των τοπικών δεδομένων. Δεν έγινε επαναφόρτωση: ' + (error.message || 'Άγνωστο σφάλμα.'));
           });
         }
       }

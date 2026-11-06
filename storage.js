@@ -1,31 +1,16 @@
-// Τοπική αποθήκευση με IndexedDB και μνήμη cache για ασφαλή χειρισμό μεγάλων αρχείων χωρίς όρια localStorage.
+// Τοπική αποθήκευση AX.YP με IndexedDB, συμβατό σύγχρονο API και ρητή επιβεβαίωση εγγραφών.
 (function () {
+  'use strict';
+
   var DB_NAME = 'axyp-local-db';
   var STORE_NAME = 'kv';
   var dbPromise = null;
-  var cache = {};
-
-  function openDB() {
-    if (!dbPromise) {
-      dbPromise = new Promise(function (resolve) {
-        if (!window.indexedDB) return resolve(null);
-        try {
-          var req = indexedDB.open(DB_NAME, 1);
-          req.onupgradeneeded = function (e) {
-            var db = e.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-              db.createObjectStore(STORE_NAME);
-            }
-          };
-          req.onsuccess = function (e) { resolve(e.target.result); };
-          req.onerror = function () { resolve(null); };
-        } catch (_) {
-          resolve(null);
-        }
-      });
-    }
-    return dbPromise;
-  }
+  var cache = Object.create(null);
+  var dirtyKeys = Object.create(null);
+  var pendingWrites = [];
+  var pendingFailures = [];
+  var lastError = null;
+  var indexedDBAvailable = !!(window.indexedDB && typeof indexedDB !== 'undefined');
 
   var KNOWN_KEYS = [
     'axyp-hypotheses',
@@ -41,139 +26,371 @@
     'axyp-counterfeit-templates-seeded-v1',
     'axyp-environment-templates-seeded-v1',
     'axyp-health-templates-seeded-v1',
-  'axyp-noise-templates-seeded-v1',
-  'axyp-camping-templates-seeded-v1'
+    'axyp-noise-templates-seeded-v1',
+    'axyp-camping-templates-seeded-v1'
   ];
 
-  // Αρχική ανάγνωση από localStorage
-  KNOWN_KEYS.forEach(function (k) {
-    try {
-      var v = localStorage.getItem(k);
-      if (v !== null) cache[k] = v;
-    } catch (_) {}
+  function makeError(message, cause) {
+    var error = new Error(message);
+    if (cause) error.cause = cause;
+    return error;
+  }
+
+  function openDB() {
+    if (!dbPromise) {
+      dbPromise = new Promise(function (resolve) {
+        if (!indexedDBAvailable) return resolve(null);
+        try {
+          var req = indexedDB.open(DB_NAME, 1);
+          req.onupgradeneeded = function (event) {
+            var db = event.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+          };
+          req.onsuccess = function (event) {
+            var db = event.target.result;
+            db.onversionchange = function () {
+              try { db.close(); } catch (_) {}
+              dbPromise = null;
+            };
+            resolve(db);
+          };
+          req.onerror = function () {
+            lastError = req.error || makeError('Δεν ήταν δυνατό να ανοίξει η τοπική βάση δεδομένων.');
+            resolve(null);
+          };
+          req.onblocked = function () {
+            lastError = makeError('Η τοπική βάση δεδομένων είναι προσωρινά αποκλεισμένη από άλλη καρτέλα.');
+            // Μην κρατάμε όλη την εφαρμογή σε αναμονή· συνεχίζουμε με localStorage fallback.
+            resolve(null);
+          };
+        } catch (error) {
+          lastError = error;
+          resolve(null);
+        }
+      });
+    }
+    return dbPromise;
+  }
+
+  function transactionDone(tx) {
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      tx.oncomplete = function () {
+        if (settled) return;
+        settled = true;
+        resolve();
+      };
+      tx.onerror = function () {
+        if (settled) return;
+        settled = true;
+        reject(tx.error || makeError('Απέτυχε η συναλλαγή της τοπικής βάσης δεδομένων.'));
+      };
+      tx.onabort = function () {
+        if (settled) return;
+        settled = true;
+        reject(tx.error || makeError('Ακυρώθηκε η συναλλαγή της τοπικής βάσης δεδομένων.'));
+      };
+    });
+  }
+
+  function readLocalStorage(key) {
+    try { return localStorage.getItem(key); } catch (error) {
+      lastError = error;
+      return null;
+    }
+  }
+
+  // Το σύγχρονο API διατηρείται για συμβατότητα με τις υπάρχουσες ενότητες.
+  // Οι κρίσιμες ροές μπορούν να καλέσουν flush()/setItemDurable() για επιβεβαίωση.
+  KNOWN_KEYS.forEach(function (key) {
+    var value = readLocalStorage(key);
+    if (value !== null) cache[key] = value;
   });
 
-  // Η αρχικοποίηση εκτίθεται ως Promise ώστε οι λειτουργίες που εξαρτώνται
-  // από αποθηκευμένα δεδομένα να περιμένουν να ολοκληρωθεί η ανάγνωση από IndexedDB.
   var ready = openDB().then(function (db) {
-    if (!db) return;
+    if (!db) return getStatus();
     return new Promise(function (resolve) {
-      var pendingWrites = [];
+      var pendingMigration = [];
+      var tx;
       try {
-        var tx = db.transaction(STORE_NAME, 'readonly');
+        tx = db.transaction(STORE_NAME, 'readonly');
         var store = tx.objectStore(STORE_NAME);
-        KNOWN_KEYS.forEach(function (k) {
-          var req = store.get(k);
-          req.onsuccess = function () {
-            if (req.result !== undefined && req.result !== null) {
-              cache[k] = req.result;
-            } else if (cache[k] !== undefined) {
-              pendingWrites.push([k, cache[k]]);
+        KNOWN_KEYS.forEach(function (key) {
+          var request = store.get(key);
+          request.onsuccess = function () {
+            if (dirtyKeys[key]) return;
+            if (request.result !== undefined && request.result !== null) {
+              cache[key] = request.result;
+            } else if (cache[key] !== undefined) {
+              pendingMigration.push([key, cache[key]]);
             }
           };
         });
         tx.oncomplete = function () {
-          if (!pendingWrites.length) return resolve();
+          if (!pendingMigration.length) return resolve(getStatus());
           try {
             var writeTx = db.transaction(STORE_NAME, 'readwrite');
             var writeStore = writeTx.objectStore(STORE_NAME);
-            pendingWrites.forEach(function (entry) { writeStore.put(entry[1], entry[0]); });
-            writeTx.oncomplete = resolve;
-            writeTx.onerror = resolve;
-            writeTx.onabort = resolve;
-          } catch (_) {
-            resolve();
+            pendingMigration.forEach(function (entry) {
+              if (!dirtyKeys[entry[0]]) writeStore.put(entry[1], entry[0]);
+            });
+            transactionDone(writeTx).then(function () {
+              resolve(getStatus());
+            }).catch(function (error) {
+              lastError = error;
+              resolve(getStatus());
+            });
+          } catch (error) {
+            lastError = error;
+            resolve(getStatus());
           }
         };
-        tx.onerror = resolve;
-        tx.onabort = resolve;
-      } catch (_) {
-        resolve();
+        tx.onerror = tx.onabort = function () {
+          lastError = tx.error || makeError('Δεν ολοκληρώθηκε η ανάγνωση της τοπικής βάσης.');
+          resolve(getStatus());
+        };
+      } catch (error) {
+        lastError = error;
+        resolve(getStatus());
       }
     });
-  }).catch(function () {});
+  }).catch(function (error) {
+    lastError = error;
+    return getStatus();
+  });
+
+  function getStatus() {
+    return {
+      indexedDBAvailable: indexedDBAvailable,
+      degraded: !!lastError,
+      error: lastError ? String(lastError.message || lastError) : null
+    };
+  }
 
   function getItem(key) {
-    if (cache[key] !== undefined) return cache[key];
-    try { return localStorage.getItem(key); } catch (_) { return null; }
+    if (Object.prototype.hasOwnProperty.call(cache, key)) return cache[key];
+    return readLocalStorage(key);
+  }
+
+  function trackWrite(operation) {
+    var tracked = Promise.resolve(operation).then(function () {
+      return { ok: true };
+    }).catch(function (error) {
+      lastError = error;
+      return { ok: false, error: error };
+    });
+    pendingWrites.push(tracked);
+    tracked.then(function (result) {
+      if (!result.ok) pendingFailures.push(result.error);
+      var index = pendingWrites.indexOf(tracked);
+      if (index !== -1) pendingWrites.splice(index, 1);
+    });
+    return tracked;
+  }
+
+  function writeToDB(key, value, remove) {
+    return openDB().then(function (db) {
+      if (!db) throw lastError || makeError('Το IndexedDB δεν είναι διαθέσιμο.');
+      var tx = db.transaction(STORE_NAME, 'readwrite');
+      var store = tx.objectStore(STORE_NAME);
+      if (remove) store.delete(key);
+      else store.put(value, key);
+      return transactionDone(tx);
+    });
   }
 
   function setItem(key, value) {
-    var str = String(value);
-    cache[key] = str;
-    openDB().then(function (db) {
-      if (!db) return;
-      try {
-        var tx = db.transaction(STORE_NAME, 'readwrite');
-        tx.objectStore(STORE_NAME).put(str, key);
-      } catch (err) {
-        console.warn('IndexedDB write error:', err);
-      }
-    });
+    var stringValue = String(value);
+    cache[key] = stringValue;
+    dirtyKeys[key] = true;
+    var localOk = false;
     try {
-      localStorage.setItem(key, str);
-    } catch (_) {
-      // Σε περίπτωση υπέρβασης ορίου 5MB στο localStorage, τα δεδομένα σώζονται κανονικά στο IndexedDB
+      localStorage.setItem(key, stringValue);
+      localOk = true;
+    } catch (error) {
+      lastError = error;
     }
+    trackWrite(writeToDB(key, stringValue, false).catch(function (error) {
+      if (localOk) return;
+      throw makeError('Δεν αποθηκεύτηκαν τα δεδομένα ούτε στο IndexedDB ούτε στο localStorage.', error);
+    }));
+  }
+
+  function setItemDurable(key, value) {
+    setItem(key, value);
+    return flush();
   }
 
   function removeItem(key) {
     delete cache[key];
-    try { localStorage.removeItem(key); } catch (_) {}
-    openDB().then(function (db) {
-      if (!db) return;
-      try {
-        var tx = db.transaction(STORE_NAME, 'readwrite');
-        tx.objectStore(STORE_NAME).delete(key);
-      } catch (_) {}
-    });
+    dirtyKeys[key] = true;
+    var localOk = false;
+    try {
+      localStorage.removeItem(key);
+      localOk = true;
+    } catch (error) {
+      lastError = error;
+    }
+    trackWrite(writeToDB(key, null, true).catch(function (error) {
+      if (localOk) return;
+      throw makeError('Δεν διαγράφηκαν τα δεδομένα ούτε από το IndexedDB ούτε από το localStorage.', error);
+    }));
   }
 
-  function clear() {
-    // Διαγράφει αποκλειστικά τα δεδομένα με namespace AX.YP.
-    // Δεν αγγίζει άλλα δεδομένα που ανήκουν σε άλλες εφαρμογές του ίδιου origin.
-    Object.keys(cache).forEach(function (key) {
-      if (key.indexOf('axyp-') === 0) delete cache[key];
-    });
-    try {
-      for (var i = localStorage.length - 1; i >= 0; i--) {
-        var key = localStorage.key(i);
-        if (key && key.indexOf('axyp-') === 0) localStorage.removeItem(key);
-      }
-    } catch (_) {}
+  function removeItemDurable(key) {
+    removeItem(key);
+    return flush();
+  }
 
-    return openDB().then(function (db) {
-      if (!db) return;
-      return new Promise(function (resolve) {
-        try {
-          var tx = db.transaction(STORE_NAME, 'readwrite');
-          var store = tx.objectStore(STORE_NAME);
-          if (typeof store.getAllKeys === 'function') {
-            var request = store.getAllKeys();
-            request.onsuccess = function () {
-              (request.result || []).forEach(function (key) {
-                if (typeof key === 'string' && key.indexOf('axyp-') === 0) store.delete(key);
-              });
-            };
-            request.onerror = function () { resolve(); };
-          } else {
-            KNOWN_KEYS.forEach(function (knownKey) { store.delete(knownKey); });
+  function setItemsDurable(entries) {
+    return flush().then(function () {
+      if (!Array.isArray(entries) || !entries.length) throw new Error('Δεν δόθηκαν έγκυρα δεδομένα επαναφοράς.');
+      var normalized = entries.map(function (entry) {
+        if (!Array.isArray(entry) || typeof entry[0] !== 'string' || entry[0].indexOf('axyp-') !== 0) {
+          throw new Error('Το αντίγραφο περιέχει μη επιτρεπτό κλειδί αποθήκευσης.');
+        }
+        return [entry[0], entry[1] === null || entry[1] === undefined ? null : String(entry[1])];
+      });
+      return openDB().then(function (db) {
+        var committedToDb = false;
+        var dbError = null;
+        if (db) {
+          try {
+            var tx = db.transaction(STORE_NAME, 'readwrite');
+            var store = tx.objectStore(STORE_NAME);
+            normalized.forEach(function (entry) {
+              if (entry[1] === null) store.delete(entry[0]);
+              else store.put(entry[1], entry[0]);
+            });
+            return transactionDone(tx).then(function () {
+              committedToDb = true;
+            }).catch(function (error) {
+              dbError = error;
+              lastError = error;
+            }).then(finish);
+          } catch (error) {
+            dbError = error;
+            lastError = error;
           }
-          tx.oncomplete = resolve;
-          tx.onerror = resolve;
-          tx.onabort = resolve;
-        } catch (_) {
-          resolve();
+        }
+        return finish();
+
+        function finish() {
+          if (!committedToDb) {
+            var previous = [];
+            try {
+              normalized.forEach(function (entry) {
+                previous.push([entry[0], localStorage.getItem(entry[0])]);
+              });
+              normalized.forEach(function (entry) {
+                if (entry[1] === null) localStorage.removeItem(entry[0]);
+                else localStorage.setItem(entry[0], entry[1]);
+              });
+            } catch (error) {
+              previous.forEach(function (entry) {
+                try {
+                  if (entry[1] === null) localStorage.removeItem(entry[0]);
+                  else localStorage.setItem(entry[0], entry[1]);
+                } catch (_) {}
+              });
+              throw makeError('Η επαναφορά δεν αποθηκεύτηκε. Δεν επιβεβαιώθηκε εγγραφή στο IndexedDB ή στο localStorage.', dbError || error);
+            }
+          } else {
+            try {
+              normalized.forEach(function (entry) {
+                if (entry[1] === null) localStorage.removeItem(entry[0]);
+                else localStorage.setItem(entry[0], entry[1]);
+              });
+            } catch (error) {
+              lastError = error;
+            }
+          }
+          normalized.forEach(function (entry) {
+            dirtyKeys[entry[0]] = true;
+            if (entry[1] === null) delete cache[entry[0]];
+            else cache[entry[0]] = entry[1];
+          });
+          return getStatus();
         }
       });
     });
   }
 
+  function flush() {
+    return ready.then(function () {
+      var tasks = pendingWrites.slice();
+      return Promise.all(tasks).then(function () {
+        var failures = pendingFailures.splice(0);
+        if (failures.length) {
+          var first = failures[0];
+          throw makeError('Η αποθήκευση δεν επιβεβαιώθηκε: ' + (first.message || first), first);
+        }
+        return getStatus();
+      });
+    });
+  }
+
+  function clear() {
+    Object.keys(cache).forEach(function (key) {
+      if (key.indexOf('axyp-') === 0) {
+        delete cache[key];
+        dirtyKeys[key] = true;
+      }
+    });
+
+    var localOk = true;
+    try {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var key = localStorage.key(i);
+        if (key && key.indexOf('axyp-') === 0) {
+          dirtyKeys[key] = true;
+          localStorage.removeItem(key);
+        }
+      }
+    } catch (error) {
+      localOk = false;
+      lastError = error;
+    }
+
+    var operation = openDB().then(function (db) {
+      if (!db) throw lastError || makeError('Το IndexedDB δεν είναι διαθέσιμο.');
+      var tx = db.transaction(STORE_NAME, 'readwrite');
+      var store = tx.objectStore(STORE_NAME);
+      if (typeof store.getAllKeys === 'function') {
+        var request = store.getAllKeys();
+        request.onsuccess = function () {
+          (request.result || []).forEach(function (key) {
+            if (typeof key === 'string' && key.indexOf('axyp-') === 0) store.delete(key);
+          });
+        };
+        request.onerror = function () {
+          try { tx.abort(); } catch (_) {}
+        };
+      } else {
+        KNOWN_KEYS.forEach(function (key) { store.delete(key); });
+      }
+      return transactionDone(tx);
+    }).catch(function (error) {
+      if (localOk) return;
+      throw makeError('Δεν ολοκληρώθηκε η εκκαθάριση ούτε στο IndexedDB ούτε στο localStorage.', error);
+    });
+    return trackWrite(operation).then(function (result) {
+      if (!result.ok) throw result.error;
+      return getStatus();
+    });
+  }
+
   function checkQuota() {
-    if (navigator.storage && navigator.storage.estimate) {
-      return navigator.storage.estimate().then(function (est) {
-        if (est.quota && est.usage && (est.quota - est.usage < 10 * 1024 * 1024)) {
-          return { low: true, freeMb: Math.round((est.quota - est.usage) / (1024 * 1024)) };
+    if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.estimate) {
+      return navigator.storage.estimate().then(function (estimate) {
+        if (typeof estimate.quota === 'number' && typeof estimate.usage === 'number') {
+          var freeBytes = Math.max(0, estimate.quota - estimate.usage);
+          return {
+            low: freeBytes < 10 * 1024 * 1024,
+            freeMb: Math.round(freeBytes / (1024 * 1024)),
+            quotaMb: Math.round(estimate.quota / (1024 * 1024)),
+            usageMb: Math.round(estimate.usage / (1024 * 1024))
+          };
         }
         return { low: false };
       }).catch(function () { return { low: false }; });
@@ -181,8 +398,6 @@
     return Promise.resolve({ low: false });
   }
 
-  
-  // Αίτημα επίμονης αποθήκευσης στον browser για αποφυγή αυτόματης εκκαθάρισης
   if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
     try { navigator.storage.persist().catch(function () {}); } catch (_) {}
   }
@@ -190,9 +405,14 @@
   window.AXYP_STORAGE = {
     getItem: getItem,
     setItem: setItem,
+    setItemDurable: setItemDurable,
+    setItemsDurable: setItemsDurable,
     removeItem: removeItem,
+    removeItemDurable: removeItemDurable,
     clear: clear,
+    flush: flush,
     checkQuota: checkQuota,
+    getStatus: getStatus,
     ready: ready
   };
 })();
