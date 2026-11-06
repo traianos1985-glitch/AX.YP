@@ -115,7 +115,7 @@ try {
   const devtoolsPort = await waitUntil(async () => {
     try {
       const active = await readFile(path.join(profileDir, 'DevToolsActivePort'), 'utf8');
-      const port = Number(active.split('\\n')[0]);
+      const port = Number(active.split(String.fromCharCode(10))[0]);
       return Number.isInteger(port) && port > 0 ? port : false;
     } catch { return false; }
   }, 'Chrome DevTools port');
