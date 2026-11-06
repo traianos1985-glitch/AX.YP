@@ -50,7 +50,15 @@ function visibleParagraphs(xml) {
   );
 }
 
-function excerptAround(text, pattern, radius = 70) {\n  const match = pattern.exec(text);\n  if (!match) return '';\n  const start = Math.max(0, match.index - radius);\n  const end = Math.min(text.length, match.index + match[0].length + radius);\n  return JSON.stringify(text.slice(start, end));\n}\n\nfunction readWordParts(parts) {
+function excerptAround(text, pattern, radius = 70) {
+  const match = pattern.exec(text);
+  if (!match) return '';
+  const start = Math.max(0, match.index - radius);
+  const end = Math.min(text.length, match.index + match[0].length + radius);
+  return JSON.stringify(text.slice(start, end));
+}
+
+function readWordParts(parts) {
   return Object.entries(parts)
     .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'))
     .map(([name, data]) => ({
