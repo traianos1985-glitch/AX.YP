@@ -178,4 +178,12 @@ function loadStorage(localStorage, indexedDB) {
   assert.equal(local.getItem('axyp-theme'), 'dark');
 }
 
+// Modules that render or read case data wait for IndexedDB hydration first.
+for (const path of ['hypotheses.js', 'case-bundles.js', 'templates.js', 'app.js']) {
+  const consumer = await readFile(new URL('../' + path, import.meta.url), 'utf8');
+  assert.match(consumer, /await window\.AXYP_STORAGE\.ready/, path + ' waits for storage hydration');
+}
+const workspaceSource = await readFile(new URL('../case-folder-storage.js', import.meta.url), 'utf8');
+assert.match(workspaceSource, /async function restore\(\)[\s\S]*?await window\.AXYP_STORAGE\.ready/);
+
 console.log('Storage reliability tests passed.');
