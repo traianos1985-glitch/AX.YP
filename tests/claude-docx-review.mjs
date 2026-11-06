@@ -51,5 +51,48 @@ const datePartFindings = Object.entries(dateParts)
   });
 console.log('NARCOTICS_10_ALL_XML_DOTS', JSON.stringify(datePartFindings));
 console.log('NARCOTICS_10_XML_PARTS', JSON.stringify(Object.keys(dateParts).filter((name) => name.startsWith('word/') && name.endsWith('.xml'))));
+const dateXml = strFromU8(dateParts['word/document.xml']);
+const dateTextNodes = [...dateXml.matchAll(/<w:t\\b[^>]*>([\\s\\S]*?)<\\/w:t>/gu)].map((part) => part[1]);
+const dottedTextNodes = dateTextNodes.flatMap((text, index) => {
+  const runs = [...text.matchAll(/(?:\\.{3,}|…{2,}|·{3,}|_{3,})/gu)].map((match) => match[0].length);
+  if (!runs.length) return [];
+  const nearby = dateTextNodes.slice(Math.max(0, index - 3), index).join(' ');
+  return [{
+    index,
+    runs,
+    nearbyDateCue: /ημερομην|ημέρα|τόπος|χρόνος|ώρα|ηλικία/iu.test(nearby),
+    nearbyProtocolCue: /αριθμ|πρωτοκόλλ|υπόθεση/iu.test(nearby),
+    currentDateCue: /ημερομην|ημέρα|τόπος|χρόνος|ώρα|ηλικία/iu.test(text)
+  }];
+});
+console.log('NARCOTICS_10_XML_STRUCTURE', JSON.stringify({
+  paragraphStarts: (dateXml.match(/<w:p\\b/g) || []).length,
+  paragraphEnds: (dateXml.match(/<\\/w:p>/g) || []).length,
+  textNodes: dateTextNodes.length,
+  dottedTextNodes
+}));
+function textFor(id) {
+  const template = DEFAULT_NARCOTICS_TEMPLATES.find((item) => item.id === id);
+  return Object.entries(getTemplateParts(template))
+    .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'))
+    .map(([name, bytes]) => ({ name, text: [...strFromU8(bytes).matchAll(/<w:t\\b[^>]*>([\\s\\S]*?)<\\/w:t>/gu)].map((part) => part[1]).join('') }))
+    .map(({ name, text }) => ({ name, text }));
+}
+const chemicalText = textFor('narcotics-09').map((part) => part.text).join(' ');
+const prosecutorText = textFor('narcotics-08').map((part) => part.text).join(' ');
+console.log('NARCOTICS_09_RECIPIENT_INFO', JSON.stringify({
+  oldByronosAddress: chemicalText.includes('Βύρωνος 50'),
+  portParkAddress: chemicalText.includes('Πάρκο Λιμενικού'),
+  oldPostalCode: chemicalText.includes('241 00'),
+  newPostalCode: chemicalText.includes('24131'),
+  email: chemicalText.includes('kalamata.gcsl@aade.gr'),
+  currentPhone: chemicalText.includes('27213 66100') || chemicalText.includes('27213-66100')
+}));
+console.log('NARCOTICS_08_PROSECUTOR_INFO', JSON.stringify({
+  kyparissiaAddress: prosecutorText.includes('25ης Μαρτίου'),
+  postalCode: prosecutorText.includes('24500'),
+  phone: prosecutorText.includes('2761022372'),
+  email: prosecutorText.includes('grammateia@eisaggeliaprotodikon-kyparissias.gov.gr')
+}));
 console.log('NARCOTICS_10_FIELDS', JSON.stringify(dateForm.fields));
 console.log('NARCOTICS_02_FIELDS', JSON.stringify(arrestForm.fields));
