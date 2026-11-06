@@ -70,7 +70,7 @@ assert.ok(!noiseRendered.includes('{{owner.'))
 
 const narcoticsSubmission = DEFAULT_NARCOTICS_TEMPLATES.find((template) => template.id === 'narcotics-08')
 assert.ok(narcoticsSubmission)
-for (const field of ['case.location', 'case.notes', 'incident.time', 'officerA.service', 'timeline.release.startTime', 'case.prosecutor']) {
+for (const field of ['case.location', 'case.notes', 'incident.date', 'incident.time', 'officerA.service', 'timeline.release.startTime', 'case.releaseDate', 'case.prosecutor']) {
   assert.ok(narcoticsSubmission.fields.includes(field), `narcotics-08 declares ${field}`)
   assert.equal(narcoticsSubmission.mappings[field], field)
 }
