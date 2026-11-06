@@ -806,6 +806,37 @@ function replaceLegacyFixedDateText(xml, item) {
     .replace(/\(\d{1,2}\/\d{1,2}\/\d{4}\)/gu, `(${numericDate})`);
 }
 
+function signatureParagraphTable() {
+  const paragraph = (value) => `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">${esc(value)}</w:t></w:r></w:p>`;
+  const cell = (label, field) => `<w:tc><w:tcPr><w:tcW w:w="4680" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>${paragraph(label)}${paragraph('________________________')}${paragraph(`{{${field}}}`)}</w:tc>`;
+  const nil = '<w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/>';
+  return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblLayout w:type="fixed"/><w:tblBorders>${nil}</w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="4680"/><w:gridCol w:w="4680"/></w:tblGrid><w:tr>${cell('Ο Συλλαβών','case.arrestingOfficer')}${cell('Ο Συλληφθείς','person.fullName')}</w:tr><w:tr>${cell('Ο Β΄ Ανακριτικός Υπάλληλος','officerB.fullName')}${cell('Ο Α΄ Ανακριτικός Υπάλληλος','officerA.fullName')}</w:tr></w:tbl>`;
+}
+
+export function patchNarcoticsTemplateXml(xml, templateId) {
+  if (templateId === 'narcotics-02') {
+    const oldService = /(?:της ίδιας Υπηρεσίας,\\s*)?(?:που προσλήφθηκε ως )?Β[’'] Ανακριτικός Υπάλληλος,\\s*(?:κάτοικων|κατοίκων) Α\\.Τ\\. Τριφυλίας/u;
+    if (oldService.test(xml)) {
+      xml = xml.replace(oldService, 'που υπηρετεί στο {{officerB.service}} και ενεργεί ως Β΄ Ανακριτικός Υπάλληλος');
+    }
+    let replacedSignature = false;
+    xml = xml.replace(/<w:p\\b[\\s\\S]*?<\\/w:p>/gu, (paragraph) => {
+      if (!replacedSignature && /Ο\\s+Συλλαβών/u.test(paragraph) && /Ο\\s+Συλληφθείς/u.test(paragraph) && /Ανακριτικός Υπάλληλος/u.test(paragraph)) {
+        replacedSignature = true;
+        return signatureParagraphTable();
+      }
+      return paragraph;
+    });
+  }
+  if (templateId === 'narcotics-08') {
+    xml = xml.replace(/Εισαγγελία Πρωτοδικών\\s*\\.{5,}/u, 'Εισαγγελία Πρωτοδικών {{case.prosecutor}}');
+  }
+  if (templateId === 'narcotics-09') {
+    xml = xml.replace(/ΚΑΛΑΜΑΤΑ\\s+Τ\\.Κ\\.\\s*241\\s*00/u, 'Πάρκο Λιμενικού, Τ.Κ. 24131, Καλαμάτα');
+  }
+  return xml;
+}
+
 export function correctOfficerServicePlaceholders(xml) {
   return xml
     .replace(/(?:κατοίκων|κάτοικων)\s*\{\{\s*officerA\.service\s*\}\}/gu, 'που υπηρετεί στο {{officerB.service}}')
@@ -836,7 +867,7 @@ export function buildDocx(template, item) {
   Object.keys(files).forEach((filename) => {
     if (filename.startsWith('word/') && filename.endsWith('.xml')) {
       const xml = new TextDecoder().decode(files[filename]);
-      const correctedServicePlaceholders = correctOfficerServicePlaceholders(xml);
+      const templatePatched = template.category === 'narcotics' ? patchNarcoticsTemplateXml(xml, template.id) : xml;\n      const correctedServicePlaceholders = correctOfficerServicePlaceholders(templatePatched);
       const populated = replaceInXml(correctedServicePlaceholders, template, item);
       const withCurrentDates = replaceLegacyFixedDateText(populated, item);
       const withCurrentServiceReferences = replaceLegacyLocalServiceReferences(withCurrentDates);
