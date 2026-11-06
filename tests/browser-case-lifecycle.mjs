@@ -112,13 +112,21 @@ try {
     '--remote-allow-origins=*', '--user-data-dir=' + profileDir, 'about:blank'
   ], { stdio: 'ignore' });
 
+  const devtoolsPort = await waitUntil(async () => {
+    try {
+      const active = await readFile(path.join(profileDir, 'DevToolsActivePort'), 'utf8');
+      const port = Number(active.split('\\n')[0]);
+      return Number.isInteger(port) && port > 0 ? port : false;
+    } catch { return false; }
+  }, 'Chrome DevTools port');
+  const devtoolsBase = 'http://127.0.0.1:' + devtoolsPort;
   const version = await waitUntil(async () => {
-    const response = await fetch('http://127.0.0.1:9222/json/version');
+    const response = await fetch(devtoolsBase + '/json/version');
     return response.ok ? response.json() : false;
   }, 'Chrome DevTools endpoint');
   assert.ok(version.webSocketDebuggerUrl);
 
-  const targetResponse = await fetch('http://127.0.0.1:9222/json/new?about:blank', { method: 'PUT' });
+  const targetResponse = await fetch(devtoolsBase + '/json/new?about:blank', { method: 'PUT' });
   assert.ok(targetResponse.ok, 'Chrome must create a browser tab');
   const target = await targetResponse.json();
   socket = await connectCdp(target.webSocketDebuggerUrl);
