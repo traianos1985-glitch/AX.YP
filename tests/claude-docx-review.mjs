@@ -41,7 +41,8 @@ const signatureFindings = paragraphs(arrestForm)
     hasOfficerB: text.includes('{{officerB.fullName}}'),
     hasServiceA: text.includes('{{officerA.service}}'),
     hasServiceB: text.includes('{{officerB.service}}'),
-    safeText: text.replace(/\{\{[^}]+\}\}/gu, '[FIELD]')
+    safeText: text.replace(/\{\{[^}]+\}\}/gu, '[FIELD]'),
+    placeholders: [...text.matchAll(/\{\{([^}]+)\}\}/gu)].map((match) => match[1])
   }));
 console.log('NARCOTICS_10_LAYOUT_DIAGNOSTIC', JSON.stringify(dateFindings));
 console.log('NARCOTICS_02_SIGNATURE_DIAGNOSTIC', JSON.stringify(signatureFindings));
@@ -107,6 +108,16 @@ function mediaInfo(id) {
 }
 console.log('NARCOTICS_09_MEDIA_INFO', JSON.stringify(mediaInfo('narcotics-09')));
 console.log('NARCOTICS_08_MEDIA_INFO', JSON.stringify(mediaInfo('narcotics-08')));
+function serviceLines(id) {
+  const template = DEFAULT_NARCOTICS_TEMPLATES.find((item) => item.id === id);
+  return Object.entries(getTemplateParts(template))
+    .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'))
+    .flatMap(([name, bytes]) => [...strFromU8(bytes).matchAll(/<(?:w|a):t\\b[^>]*>([\\s\\S]*?)<\\/(?:w|a):t>/gu)].map((part) => part[1]))
+    .filter((value) => /Εισαγγελ|Κυπαρισ|Χημικ|Καλαμάτ|διεύθυν|τηλέφων|email|241\\s*00|24500/iu.test(value))
+    .map((value) => value.replace(/\\{\\{[^}]+\\}\\}/gu, '[FIELD]'));
+}
+console.log('NARCOTICS_09_SERVICE_TEXT', JSON.stringify(serviceLines('narcotics-09')));
+console.log('NARCOTICS_08_SERVICE_TEXT', JSON.stringify(serviceLines('narcotics-08')));
 console.log('NARCOTICS_08_PROSECUTOR_INFO', JSON.stringify({
   kyparissiaAddress: prosecutorText.includes('25ης Μαρτίου'),
   postalCode: prosecutorText.includes('24500'),
