@@ -50,7 +50,7 @@ assert.equal(unknown.groups.length, 0);
 assert.match(workflow, /evaluateDossierCompleteness\(profile/);
 assert.match(workflow, /Δεν αποτελούν νομικό έλεγχο/);
 assert.match(workflow, /δεν χαρακτηρίζουν πεδία ως υποχρεωτικά/);
-assert.match(workflow, /Δεν εμποδίζουν την αποθήκευση/);
+assert.match(workflow, /δεν εμποδίζουν την αποθήκευση/i);
 assert.match(serviceWorker, /\.\/dossier-completeness\.js/);
 assert.match(workflow, /import \{ evaluateDossierCompleteness \}/);
 
