@@ -1,5 +1,6 @@
 // Bump this name whenever the app shell or bundled source content changes.
 const CACHE_NAME = "axyp-v36";
+const NETWORK_TIMEOUT_MS = 3000;
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -54,8 +55,12 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), NETWORK_TIMEOUT_MS);
+
   event.respondWith(
-    fetch(request)
+    fetch(request, { signal: controller.signal })
       .then((response) => {
         if (response.ok) {
           const copy = response.clone();
@@ -67,5 +72,6 @@ self.addEventListener("fetch", (event) => {
         if (cached) return cached;
         return request.mode === "navigate" ? caches.match("./index.html") : Response.error();
       }))
+      .finally(() => clearTimeout(timeoutId))
   );
 });
