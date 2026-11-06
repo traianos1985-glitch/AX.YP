@@ -58,6 +58,11 @@ function excerptAround(text, pattern, radius = 70) {
   return JSON.stringify(text.slice(start, end));
 }
 
+function visibleTextRuns(xml) {
+  return [...xml.matchAll(/<w:t\\b[^>]*>([\\s\\S]*?)<\\/w:t>/gu)]
+    .map((match) => decodeXml(match[1]));
+}
+
 function readWordParts(parts) {
   return Object.entries(parts)
     .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'))
@@ -106,13 +111,14 @@ for (const template of templates) {
     }
 
     for (const part of generatedWordParts) {
-      for (const paragraph of part.paragraphs) {
-        if (/[ \t]{2,}/u.test(paragraph)) {
-          failures.push(`${label} (${part.name}): διπλά συνεχόμενα κενά σε παράγραφο — ${JSON.stringify(paragraph)}`);
+      const runs = visibleTextRuns(strFromU8(generatedParts[part.name]));
+      for (const run of runs) {
+        if (/ {2,}/u.test(run)) {
+          failures.push(`${label} (${part.name}): διπλά συνεχόμενα κενά σε κείμενο Word — ${JSON.stringify(run)}`);
           break;
         }
-        if (/[ \t]+[.,;:!?…]/u.test(paragraph)) {
-          failures.push(`${label} (${part.name}): κενό πριν από σημείο στίξης — ${JSON.stringify(paragraph)}`);
+        if (/ +[.,;:!?…]/u.test(run)) {
+          failures.push(`${label} (${part.name}): κενό πριν από σημείο στίξης σε κείμενο Word — ${JSON.stringify(run)}`);
           break;
         }
       }
