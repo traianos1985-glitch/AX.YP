@@ -23,6 +23,12 @@ assert.equal(saved.name, 'Αστυνομικό Τμήμα Δοκιμής');
 assert.equal(saved.chemicalService, 'Χημική Υπηρεσία Δοκιμής');
 assert.ok(!Object.hasOwn(saved, 'ignored'));
 assert.deepEqual(readServiceProfile(storage), saved);
+
+globalThis.window = { AXYP_SERVICE_PROFILE: { get: () => saved } };
+const { valueFor } = await import('../template-library.js');
+assert.equal(valueFor('service.name', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
+assert.equal(valueFor('service.chemicalService', { title: 'CASE-ONLY-DATA' }), 'Χημική Υπηρεσία Δοκιμής');
+assert.equal(valueFor('service.prosecutor', { title: 'CASE-ONLY-DATA' }), 'Εισαγγελία Πρωτοδικών Δοκιμής');
 assert.ok(!JSON.stringify(saved).includes('Τριφυλ'));
 assert.ok(!JSON.stringify(saved).includes('Κυπαρισσ'));
 
