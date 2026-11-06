@@ -74,7 +74,11 @@ function patchDocument(xml, id) {
   const diagnostics = paragraphs.map((match, index) => {
     const text = [...match[0].matchAll(/<w:t([^>]*)>([\s\S]*?)<\/w:t>/g)].map((node) => decodeXml(node[2])).join('')
     const dotRuns = [...text.matchAll(/(?:\.{2,}|…+|_{2,})/g)].map((entry) => ({ start: entry.index, length: entry[0].length }))
-    return { index, hasNumberWord: /αριθ/i.test(text), hasSerialWord: /σειρια/i.test(text), hasBanknoteWord: /χαρτονόμισμα/i.test(text), dotRuns }
+    const masked = text.split(/(\\s+)/).map((token) => {
+      if (/^\\s+$/.test(token) || /^[. …_]+$/.test(token) || /αριθ|σειρια|χαρτονόμισμα|πλαστ|υπ/i.test(token)) return token
+      return token ? '[token:' + token.length + ']' : token
+    }).join('')
+    return { index, hasNumberWord: /αριθ/i.test(text), hasSerialWord: /σειρια/i.test(text), hasBanknoteWord: /χαρτονόμισμα/i.test(text), dotRuns, masked }
   }).filter((entry) => entry.hasNumberWord || entry.hasSerialWord || entry.hasBanknoteWord || entry.dotRuns.length)
   console.log('Template structure diagnostics ' + id + ': ' + JSON.stringify(diagnostics))
   throw new Error(id + ': could not locate a dotted serial-number blank after the “αριθ.” label')
