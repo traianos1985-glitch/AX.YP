@@ -1,3 +1,5 @@
+if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
+
 // Κύρια λογική: αναζήτηση σε όλη τη βάση, φίλτρα, καθοδηγούμενος έλεγχος, θέμα, ιδιωτικότητα και εκτύπωση.
 (function () {
   var STALE_DAYS = 90;
