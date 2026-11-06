@@ -265,6 +265,10 @@ const FIELD_OPTIONS = [
   { path: 'case.offence', label: 'Υπόθεση · Είδος αδικήματος' },
   { path: 'case.status', label: 'Υπόθεση · Κατάσταση' },
   { path: 'case.date', label: 'Υπόθεση · Ημερομηνία' },
+  { path: 'case.date.day', label: 'Ημερομηνία · Ημέρα' },
+  { path: 'case.date.monthName', label: 'Ημερομηνία · Μήνας' },
+  { path: 'case.date.year', label: 'Ημερομηνία · Έτος' },
+  { path: 'case.date.weekdayName', label: 'Ημερομηνία · Ημέρα εβδομάδας' },
   { path: 'case.releaseDate', label: 'Υπόθεση · Ημερομηνία απόλυσης' },
   { path: 'case.time', label: 'Υπόθεση · Ώρα σύνταξης' },
   { path: 'incident.date', label: 'Συμβάν · Ημερομηνία' },
@@ -425,12 +429,32 @@ export function valueFor(path, item) {
   const timeline = item.timeline || {};
   const computed = item.profile === 'narcotics' ? computeTimeline(item.time || '') : {};
   const getTime = (key) => timeline[key] || computed[key] || item[key] || '';
+  const dateMatch = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(item.date || ''));
+  const dateParts = {};
+  if (dateMatch) {
+    const date = new Date(Date.UTC(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]), 12));
+    const parts = new Intl.DateTimeFormat('el-GR', {
+      timeZone: 'UTC',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      weekday: 'long'
+    }).formatToParts(date);
+    for (const type of ['day', 'month', 'year', 'weekday']) {
+      const part = parts.find((entry) => entry.type === type);
+      dateParts[type] = part ? part.value : '';
+    }
+  }
   const map = {
     'case.title': item.title,
     'case.protocolNumber': item.protocolNumber,
     'case.offence': item.offence,
     'case.status': item.status,
     'case.date': item.date,
+    'case.date.day': dateParts.day,
+    'case.date.monthName': dateParts.month,
+    'case.date.year': dateParts.year,
+    'case.date.weekdayName': dateParts.weekday,
     'case.releaseDate': item.releaseDate,
     'case.time': item.time,
     'incident.date': item.incidentDate || item.date,
