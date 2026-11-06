@@ -55,7 +55,7 @@ for (const template of templates) {
   let xml = strFromU8(parts['word/document.xml']);
   assert.doesNotMatch(xml, /ΠΡΟΣΟΧΗ: Το παρόν είναι ανωνυμοποιημένο πρότυπο/u, 'Provisional warning must not be printed in the document');
   xml = replaceInXml(xml, template, syntheticCase);
-  assert.doesNotMatch(xml, /\{\{\s*[a-zA-Z0-9_.-]+\s*\}\}/, template.name + ' must not retain placeholders');
+  assert.doesNotMatch(xml, /\{\{\s*[\\p{L}\\p{N}_.-]+\s*\}\}/, template.name + ' must not retain placeholders');
 
   if (['commerce-01', 'commerce-05', 'commerce-07'].includes(template.id)) {
     assert.ok(xml.includes('ACTOR-A-FULL-NAME'), template.name + ' must contain actor A');
