@@ -891,6 +891,18 @@ function replaceLegacyLocalServiceReferences(xml) {
     result = replaceTextAcrossWordRuns(result, pattern, value);
   }
 
+  let previousParagraphText = '';
+  result = result.replace(/<w:p\\b[^>]*>[\\s\\S]*?<\\/w:p>/gu, (paragraph) => {
+    const paragraphText = [...paragraph.matchAll(/<w:t\\b[^>]*>([\\s\\S]*?)<\\/w:t>/gu)]
+      .map((match) => match[1])
+      .join('');
+    if (/Πλημ\\/κων\\s*$/u.test(previousParagraphText.trim()) && /^\\s*Κυπαρισσίας\\./u.test(paragraphText.trim())) {
+      paragraph = replaceTextAcrossWordRuns(paragraph, /Κυπαρισσίας/gu, '');
+    }
+    previousParagraphText = paragraphText;
+    return paragraph;
+  });
+
   return result
     .replace(/,\s*(?:κατοίκων|κάτοικων)\s+Α\.Τ\.\s+Τριφυλίας/gu, ' της ίδιας Υπηρεσίας')
     .replace(/κατ\.\s+Α\.Τ\.\s+Τριφυλίας/gu, 'της Υπηρεσίας μας')
@@ -920,6 +932,7 @@ function replaceLegacyFixedDateText(xml, item) {
       (_match, prefix, beforeDay, ordinal, monthPrefix, yearPrefix, weekdayPrefix) =>
         `${prefix}${location}${beforeDay}${esc(day)}${ordinal}${monthPrefix}${esc(month)}${yearPrefix}${esc(year)}${weekdayPrefix}${esc(weekday)}`
     )
+    .replace(/Κυπαρισσία,\\s*\\d{4}-\\d{2}-\\d{2}/gu, `${location}, ${numericDate}`)
     .replace(/Κυπαρισσία,\s*\d{1,2}\s+[\p{L}]+\s+\d{4}/gu, `${location}, ${esc(day)} ${esc(month)} ${esc(year)}`)
     .replace(/(ώρα\s+της\s+)\d{1,2}\/\d{1,2}\/\d{4}/gu, `$1${numericDate}`)
     .replace(/\(\d{1,2}\/\d{1,2}\/\d{4}\)/gu, `(${numericDate})`);
