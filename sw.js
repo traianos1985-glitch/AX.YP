@@ -1,10 +1,11 @@
 // Bump this name whenever the app shell or bundled source content changes.
-const CACHE_NAME = "axyp-dev";
+const CACHE_NAME = "axyp-service-profile-v1";
 const NETWORK_TIMEOUT_MS = 3000;
 const APP_SHELL = [
   "./",
   "./index.html",
   "./storage.js",
+  "./service-profile.js",
   "./case-folder-storage.js",
   "./data.js",
   "./incident-search.js",
