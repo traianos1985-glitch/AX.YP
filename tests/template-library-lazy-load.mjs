@@ -33,10 +33,12 @@ assert.match(
   /ready \}/,
   'The initialization promise must be exposed to the app'
 );
-assert.match(
-  serviceWorker,
-  /["']\.\/dossier-templates-data\.js["']/,
-  'The service worker must keep the built-in DOCX data available offline'
-);
+for (const category of ['narcotics', 'counterfeit', 'environment', 'health']) {
+  assert.ok(serviceWorker.includes(`./template-data/${category}.js`), `The service worker must precache offline ${category} template data`);
+}
+for (const category of ['narcotics', 'counterfeit', 'environment', 'health']) {
+  assert.ok(library.includes(`import('./template-data/${category}.js')`), `The library must dynamically load the ${category} chunk`);
+}
+assert.doesNotMatch(library, /from ['"]\.\/dossier-templates-data\.js['"]/);
 
 console.log('Template-library lazy-load checks passed.');
