@@ -41,7 +41,7 @@ const signatureFindings = paragraphs(arrestForm)
     hasOfficerB: text.includes('{{officerB.fullName}}'),
     hasServiceA: text.includes('{{officerA.service}}'),
     hasServiceB: text.includes('{{officerB.service}}'),
-    safeText: text.replace(/\\{\\{[^}]+\\}\\}/gu, '[FIELD]')
+    safeText: text.replace(/\{\{[^}]+\}\}/gu, '[FIELD]')
   }));
 console.log('NARCOTICS_10_LAYOUT_DIAGNOSTIC', JSON.stringify(dateFindings));
 console.log('NARCOTICS_02_SIGNATURE_DIAGNOSTIC', JSON.stringify(signatureFindings));
