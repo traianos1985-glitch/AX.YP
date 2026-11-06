@@ -868,7 +868,8 @@ export function buildDocx(template, item) {
   Object.keys(files).forEach((filename) => {
     if (filename.startsWith('word/') && filename.endsWith('.xml')) {
       const xml = new TextDecoder().decode(files[filename]);
-      const templatePatched = template.category === 'narcotics' ? patchNarcoticsTemplateXml(xml, template.id) : xml;\n      const correctedServicePlaceholders = correctOfficerServicePlaceholders(templatePatched);
+      const templatePatched = template.category === 'narcotics' ? patchNarcoticsTemplateXml(xml, template.id) : xml;
+      const correctedServicePlaceholders = correctOfficerServicePlaceholders(templatePatched);
       const populated = replaceInXml(correctedServicePlaceholders, template, item);
       const withCurrentDates = replaceLegacyFixedDateText(populated, item);
       const withCurrentServiceReferences = replaceLegacyLocalServiceReferences(withCurrentDates);
