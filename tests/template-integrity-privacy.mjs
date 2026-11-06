@@ -117,7 +117,7 @@ for (const template of templates) {
           failures.push(`${label} (${part.name}): διπλά συνεχόμενα κενά σε κείμενο Word — ${JSON.stringify(run)}`);
           break;
         }
-        if (/[ \\t]+[,;:!?]/u.test(run) || / +\\.(?=[\\p{L}\\p{N}])/u.test(run)) {
+        if (/[ \t]+[,;:!?]/u.test(run) || / +\.(?=[\p{L}\p{N}])/u.test(run)) {
           failures.push(`${label} (${part.name}): κενό πριν από σημείο στίξης σε κείμενο Word — ${JSON.stringify(run)}`);
           break;
         }
