@@ -656,7 +656,8 @@ function render() {
     details.open = expandedCategories.has(categoryKey);
     const heading = document.createElement('summary');
     heading.className = 'template-category-heading';
-    heading.textContent = group.title(group.items.length);
+    const categorySeeded = !group.category || !!storage().getItem(CATEGORY_SEED_KEYS[group.category]);
+    heading.textContent = group.title(group.items.length) + (categorySeeded ? '' : ' · άνοιγμα για φόρτωση');
     details.appendChild(heading);
     const panel = document.createElement('div');
     panel.className = 'template-category-content';
