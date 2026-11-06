@@ -40,6 +40,34 @@ for (const template of DEFAULT_COUNTERFEIT_TEMPLATES) {
   assert.ok(embedded.includes(Buffer.from('word/document.xml')), `${template.id}: DOCX contains the main Word document part`)
 }
 
+const noiseArrest = DEFAULT_NOISE_TEMPLATES.find((template) => template.id === 'noise-01')
+assert.ok(noiseArrest)
+const ownerFields = ['owner.fullName', 'owner.fatherName', 'owner.motherName', 'owner.birthDate', 'owner.birthPlace', 'owner.city', 'owner.idNumber', 'owner.idDate', 'owner.idService', 'owner.taxId', 'owner.taxOffice']
+for (const field of ownerFields) {
+  assert.ok(noiseArrest.fields.includes(field), `noise-01 declares ${field}`)
+  assert.equal(noiseArrest.mappings[field], field)
+}
+const noiseParts = getTemplateParts(noiseArrest)
+const noiseXml = new TextDecoder().decode(noiseParts['word/document.xml'])
+const noiseRendered = replaceInXml(noiseXml, noiseArrest, {
+  owner: {
+    fullName: 'SYNTHETIC OWNER',
+    fatherName: 'SYNTHETIC FATHER',
+    motherName: 'SYNTHETIC MOTHER',
+    birthDate: '1980-01-02',
+    birthPlace: 'SYNTHETIC BIRTH PLACE',
+    city: 'SYNTHETIC CITY',
+    idNumber: 'TEST-ID',
+    idDate: '2020-01-02',
+    idService: 'TEST ISSUING AUTHORITY',
+    taxId: '000000000',
+    taxOffice: 'TEST TAX OFFICE'
+  }
+})
+assert.ok(noiseRendered.includes('SYNTHETIC OWNER'))
+assert.ok(noiseRendered.includes('SYNTHETIC CITY'))
+assert.ok(!noiseRendered.includes('{{owner.'))
+
 const narcoticsSubmission = DEFAULT_NARCOTICS_TEMPLATES.find((template) => template.id === 'narcotics-08')
 assert.ok(narcoticsSubmission)
 for (const field of ['case.location', 'case.notes', 'incident.time', 'officerA.service', 'timeline.release.startTime', 'case.prosecutor']) {
@@ -53,6 +81,41 @@ const noiseParts = getTemplateParts(noiseArrest)
 const noiseXml = new TextDecoder().decode(noiseParts['word/document.xml'])
 assert.ok(!noiseXml.includes('{{owner.'), 'legacy owner personal data is not left as unresolved placeholders')
 assert.ok(noiseXml.includes('τα πλήρη στοιχεία θα συμπληρωθούν από τον συντάκτη'), 'owner details are left as a deliberate manual completion field')
+
+const greekMappings = {
+  'ΗΜΕΡΟΜΗΝΙΑ_ΣΥΜΒΑΝΤΟΣ': 'incident.date',
+  'ΩΡΑ_ΣΥΜΒΑΝΤΟΣ': 'incident.time',
+  'ΤΟΠΟΣ_ΣΥΜΒΑΝΤΟΣ': 'case.location',
+  'ΑΦΟΡΜΗ_ΕΛΕΓΧΟΥ': 'case.notes',
+  'ΥΠΗΡΕΣΙΑ_ΕΛΕΓΧΟΥ': 'officerA.service',
+  'ΩΡΑ_ΑΠΟΛΥΣΗΣ': 'timeline.release.startTime',
+  'ΗΜΕΡΟΜΗΝΙΑ_ΑΠΟΛΥΣΗΣ': 'case.releaseDate',
+  'ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ': 'case.prosecutor'
+}
+for (const [greek, field] of Object.entries(greekMappings)) {
+  assert.ok(narcoticsSubmission.fields.includes(field), `narcotics-08 declares ${field}`)
+  assert.equal(narcoticsSubmission.mappings[greek], field, `Greek placeholder ${greek} maps to ${field}`)
+}
+const narcoticsParts = getTemplateParts(narcoticsSubmission)
+const narcoticsXml = new TextDecoder().decode(narcoticsParts['word/document.xml'])
+const narcoticsRendered = replaceInXml(narcoticsXml, narcoticsSubmission, {
+  date: '2026-11-06',
+  incidentDate: '2026-11-06',
+  incidentTime: '13:30',
+  location: 'SYNTHETIC LOCATION',
+  notes: 'SYNTHETIC REASON',
+  officerA: { service: 'SYNTHETIC POLICE SERVICE' },
+  releaseDate: '2026-11-06',
+  timeline: { releaseStartTime: '15:00' },
+  prosecutor: 'SYNTHETIC PROSECUTOR',
+  protocolNumber: 'TEST/1',
+  evidence: 'TEST EVIDENCE',
+  offender: {}
+})
+for (const greek of Object.keys(greekMappings)) {
+  assert.ok(!narcoticsRendered.includes(`{{${greek}}}`), `Greek placeholder ${greek} is resolved`)
+}
+assert.ok(narcoticsRendered.includes('Χημική Υπηρεσία Καλαμάτας'))
 
 const greekPlaceholderXml = '<w:p><w:r><w:t>{{ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ}}</w:t></w:r></w:p>'
 const rendered = replaceInXml(greekPlaceholderXml, { mappings: { 'ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ': 'case.prosecutor' } }, { prosecutor: 'Εισαγγελία Πρωτοδικών' })
