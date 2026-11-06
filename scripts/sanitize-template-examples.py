@@ -582,6 +582,19 @@ def patch_embedded_counterfeit_templates():
                                 break
                         if not serial_done:
                             raise ValueError("Missing serial-number blank in counterfeit-01")
+                        for paragraph in paragraphs:
+                            paragraph_text = "".join(paragraph.xpath(".//w:t/text()", namespaces=NS))
+                            old_phrase = "το υπ’ αριθ. {{counterfeit.serialNumber}} χαρτονόμισμα των {{evidence.quantity}}"
+                            if "Σειριακός αριθμός πλαστού χαρτονομίσματος:" in paragraph_text:
+                                break
+                            if old_phrase in paragraph_text:
+                                start = paragraph_text.index(old_phrase)
+                                end = start + len(old_phrase)
+                                new_phrase = "το χαρτονόμισμα των {{evidence.quantity}}. Σειριακός αριθμός πλαστού χαρτονομίσματος: {{counterfeit.serialNumber}}"
+                                apply_span(paragraph, start, end, new_phrase)
+                                break
+                        else:
+                            raise ValueError("Could not add the explicit counterfeit serial-number label")
                     raw = etree.tostring(document, xml_declaration=True, encoding="UTF-8", standalone=True)
                 zout.writestr(info, raw)
         data = output.getvalue()
