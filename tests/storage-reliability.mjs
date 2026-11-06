@@ -149,4 +149,33 @@ function loadStorage(localStorage, indexedDB) {
   assert.equal(quota.freeMb, 9);
 }
 
+// Backup restore batches commit together in IndexedDB and mirror to localStorage.
+{
+  const local = createLocalStorage({ 'axyp-theme': 'light' });
+  const idb = createIndexedDB({ 'axyp-theme': 'light' });
+  const storage = loadStorage(local, idb);
+  await storage.ready;
+  await storage.setItemsDurable([
+    ['axyp-hypotheses', '[{"id":"case-1"}]'],
+    ['axyp-theme', null],
+    ['axyp-favorites', '[]']
+  ]);
+  assert.equal(idb.records.get('axyp-hypotheses'), '[{"id":"case-1"}]');
+  assert.equal(idb.records.has('axyp-theme'), false);
+  assert.equal(local.getItem('axyp-favorites'), '[]');
+}
+
+// A batch restore falls back to localStorage when IndexedDB cannot be opened.
+{
+  const local = createLocalStorage();
+  const idb = createIndexedDB({}, true);
+  const storage = loadStorage(local, idb);
+  await storage.setItemsDurable([
+    ['axyp-hypotheses', '[{"id":"fallback-case"}]'],
+    ['axyp-theme', 'dark']
+  ]);
+  assert.equal(local.getItem('axyp-hypotheses'), '[{"id":"fallback-case"}]');
+  assert.equal(local.getItem('axyp-theme'), 'dark');
+}
+
 console.log('Storage reliability tests passed.');
