@@ -122,6 +122,8 @@ function loadStorage(localStorage, indexedDB) {
   const local = createLocalStorage({}, true);
   const storage = loadStorage(local, null);
   storage.setItem('axyp-hypotheses', 'memory-only');
+  // Let the failed asynchronous write settle before flush is requested.
+  await new Promise((resolve) => setTimeout(resolve, 0));
   await assert.rejects(storage.flush(), /Δεν αποθηκεύτηκαν τα δεδομένα/);
   assert.equal(storage.getItem('axyp-hypotheses'), 'memory-only');
 }
