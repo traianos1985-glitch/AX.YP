@@ -1,27 +1,28 @@
 import assert from 'node:assert/strict';
-import { readdir, readFile } from 'node:fs/promises';
-import path from 'node:path';
 import { unzipSync, strFromU8 } from 'fflate';
-import { getMissingTemplateFields } from '../template-library.js';
+import {
+  buildDocx,
+  ensureDefaultTemplates,
+  getMissingTemplateFields,
+  getTemplateParts
+} from '../template-library.js';
+
+const values = new Map();
+const memoryStorage = {
+  getItem(key) { return values.has(key) ? values.get(key) : null; },
+  setItem(key, value) { values.set(key, String(value)); },
+  removeItem(key) { values.delete(key); }
+};
 
 globalThis.window = {
+  AXYP_STORAGE: memoryStorage,
   AXYP_SERVICE_PROFILE: { get: () => ({}) }
 };
 
-const root = path.resolve('templates');
-const docxFiles = [];
-
-async function walk(directory) {
-  const entries = await readdir(directory, { withFileTypes: true });
-  for (const entry of entries) {
-    const absolute = path.join(directory, entry.name);
-    if (entry.isDirectory()) await walk(absolute);
-    else if (entry.isFile() && entry.name.toLowerCase().endsWith('.docx')) docxFiles.push(absolute);
-  }
-}
-
-await walk(root);
-assert.ok(docxFiles.length > 0, 'At least one built-in DOCX template must be checked');
+const TEMPLATE_STORAGE_KEY = 'axyp-docx-templates';
+await ensureDefaultTemplates(memoryStorage);
+const templates = JSON.parse(memoryStorage.getItem(TEMPLATE_STORAGE_KEY) || '[]');
+assert.ok(templates.length > 0, 'At least one built-in DOCX template must be checked');
 
 const failures = [];
 const placeholderPattern = /\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu;
@@ -41,38 +42,77 @@ function decodeXml(value) {
     .replace(/&apos;/gu, "'");
 }
 
-for (const file of docxFiles) {
-  const relative = path.relative(process.cwd(), file).split(path.sep).join('/');
-  try {
-    const bytes = new Uint8Array(await readFile(file));
-    const archive = unzipSync(bytes);
-    const xmlEntries = Object.entries(archive)
-      .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'));
-    const visibleText = xmlEntries.map(([name, data]) => {
-      const xml = strFromU8(data);
-      return [...xml.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)]
-        .map((match) => decodeXml(match[1]))
-        .join('');
-    }).join('\n');
+function visibleParagraphs(xml) {
+  return [...xml.matchAll(/<w:p\b[^>]*>([\s\S]*?)<\/w:p>/gu)].map((paragraph) =>
+    [...paragraph[1].matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)]
+      .map((match) => decodeXml(match[1]))
+      .join('')
+  );
+}
 
-    const placeholders = [...new Set([...visibleText.matchAll(placeholderPattern)].map((match) => match[1]))];
+function readWordParts(parts) {
+  return Object.entries(parts)
+    .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'))
+    .map(([name, data]) => ({
+      name,
+      paragraphs: visibleParagraphs(strFromU8(data))
+    }));
+}
+
+const testCase = {
+  id: 'axyp-template-integrity-test',
+  title: 'Δοκιμαστική υπόθεση',
+  date: '2026-11-06',
+  location: 'έδρα της Υπηρεσίας',
+  time: '10:00',
+  service: {},
+  case: {},
+  person: {},
+  officerA: {},
+  officerB: {}
+};
+
+for (const template of templates) {
+  const label = template.id || template.name || 'άγνωστο πρότυπο';
+  try {
+    const sourceParts = getTemplateParts(template);
+    const sourceWordParts = readWordParts(sourceParts);
+    const sourceText = sourceWordParts.flatMap((part) => part.paragraphs).join('\n');
+
+    const placeholders = [...new Set([...sourceText.matchAll(placeholderPattern)].map((match) => match[1]))];
     for (const field of placeholders) {
       const issues = getMissingTemplateFields({ fields: [field] }, {});
       if (issues.some((issue) => issue.reason === 'δεν έχει αντιστοιχιστεί')) {
-        failures.push(`${relative}: placeholder χωρίς γνωστή αντιστοίχιση {{${field}}}`);
+        failures.push(`${label}: placeholder χωρίς γνωστή αντιστοίχιση {{${field}}}`);
       }
     }
 
+    // Test the actual DOCX produced by the same production pipeline used for downloads.
+    const generated = buildDocx(template, testCase);
+    const generatedParts = unzipSync(generated);
+    const generatedWordParts = readWordParts(generatedParts);
+    const generatedText = generatedWordParts.flatMap((part) => part.paragraphs).join('\n');
+
     for (const check of personalDataPatterns) {
-      if (check.pattern.test(visibleText)) failures.push(`${relative}: ${check.label}`);
+      if (check.pattern.test(generatedText)) failures.push(`${label}: ${check.label} στο παραγόμενο DOCX`);
     }
 
-    if (/[ \t]{2,}/u.test(visibleText)) failures.push(`${relative}: διπλά συνεχόμενα κενά`);
-    if (/[ \t]+[.,;:!?…]/u.test(visibleText)) failures.push(`${relative}: κενό πριν από σημείο στίξης`);
+    for (const part of generatedWordParts) {
+      for (const paragraph of part.paragraphs) {
+        if (/[ \t]{2,}/u.test(paragraph)) {
+          failures.push(`${label} (${part.name}): διπλά συνεχόμενα κενά σε παράγραφο`);
+          break;
+        }
+        if (/[ \t]+[.,;:!?…]/u.test(paragraph)) {
+          failures.push(`${label} (${part.name}): κενό πριν από σημείο στίξης`);
+          break;
+        }
+      }
+    }
   } catch (error) {
-    failures.push(`${relative}: μη αναγνώσιμο DOCX (${error.message})`);
+    failures.push(`${label}: μη αναγνώσιμο ή μη παραγόμενο DOCX (${error.message})`);
   }
 }
 
-assert.deepEqual(failures, [], `Έλεγχοι ακεραιότητας προτύπων απέτυχαν:\\n${failures.join('\\n')}`);
-console.log(`Template integrity/privacy tests passed: ${docxFiles.length} DOCX templates checked.`);
+assert.deepEqual(failures, [], `Έλεγχοι ακεραιότητας/privacy προτύπων απέτυχαν:\n${failures.join('\n')}`);
+console.log(`Template integrity/privacy tests passed: ${templates.length} built-in DOCX templates checked.`);
