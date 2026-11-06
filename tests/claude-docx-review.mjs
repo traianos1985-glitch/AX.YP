@@ -40,5 +40,16 @@ const signatureFindings = paragraphs(arrestForm)
   }));
 console.log('NARCOTICS_10_LAYOUT_DIAGNOSTIC', JSON.stringify(dateFindings));
 console.log('NARCOTICS_02_SIGNATURE_DIAGNOSTIC', JSON.stringify(signatureFindings));
+const dateParts = getTemplateParts(dateForm);
+const datePartFindings = Object.entries(dateParts)
+  .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'))
+  .flatMap(([name, bytes]) => {
+    const xml = strFromU8(bytes);
+    const text = [...xml.matchAll(/<w:t\\b[^>]*>([\\s\\S]*?)<\\/w:t>/gu)].map((part) => part[1]).join('');
+    const runs = [...text.matchAll(/(?:\\.{3,}|…{2,}|·{3,}|_{3,})/gu)].map((match) => match[0].length);
+    return runs.length ? [{ name, runs, dateCue: /ημερομην|ημέρα|τόπος|χρόνος|ώρα|ηλικία/iu.test(text) }] : [];
+  });
+console.log('NARCOTICS_10_ALL_XML_DOTS', JSON.stringify(datePartFindings));
+console.log('NARCOTICS_10_XML_PARTS', JSON.stringify(Object.keys(dateParts).filter((name) => name.startsWith('word/') && name.endsWith('.xml'))));
 console.log('NARCOTICS_10_FIELDS', JSON.stringify(dateForm.fields));
 console.log('NARCOTICS_02_FIELDS', JSON.stringify(arrestForm.fields));
