@@ -289,6 +289,13 @@ OPERATIONS = [
     "start": 106,
     "end": 125,
     "replacement": "Χημική Υπηρεσία Καλαμάτας"
+  },
+  {
+    "path": "templates/noise/02_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ.docx",
+    "paragraph_index": 7,
+    "start": 374,
+    "end": 375,
+    "replacement": "B"
   }
 ]
 
@@ -392,6 +399,74 @@ by_filename = {Path(relative).name: data for relative, data in sanitized.items()
 update_embedded("camping-templates-data.js", "DEFAULT_CAMPING_TEMPLATES", by_filename)
 update_embedded("noise-templates-data.js", "DEFAULT_NOISE_TEMPLATES", by_filename)
 update_embedded("dossier-templates-data.js", "DEFAULT_NARCOTICS_TEMPLATES", by_filename)
+
+def patch_embedded_counterfeit_templates():
+    """Fix the B-investigator service and bind the ATM banknote serial number."""
+    path = ROOT / "dossier-templates-data.js"
+    source = path.read_text(encoding="utf-8")
+    pattern = re.compile(r"(export const DEFAULT_COUNTERFEIT_TEMPLATES\\s*=\\s*)(\\[[\\s\\S]*?\\])(\\s*;)")
+    match = pattern.search(source)
+    if not match:
+        raise ValueError("Missing DEFAULT_COUNTERFEIT_TEMPLATES")
+    templates = json.loads(match.group(2))
+    touched = 0
+    for template in templates:
+        if template.get("id") not in ("counterfeit-01", "counterfeit-02"):
+            continue
+        package = base64.b64decode(template["dataBase64"])
+        zin = zipfile.ZipFile(io.BytesIO(package))
+        output = io.BytesIO()
+        with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as zout:
+            for info in zin.infolist():
+                raw = zin.read(info.filename)
+                if info.filename == "word/document.xml":
+                    document = etree.fromstring(raw)
+                    paragraphs = document.xpath(".//w:p", namespaces=NS)
+                    target = None
+                    for paragraph in paragraphs:
+                        text = "".join(paragraph.xpath(".//w:t/text()", namespaces=NS))
+                        if "{{officerB.fullName}}" in text and "{{officerA.service}}" in text:
+                            target = paragraph
+                            break
+                    if target is None:
+                        raise ValueError(f"Missing B-investigator paragraph in {template['id']}")
+                    text = "".join(target.xpath(".//w:t/text()", namespaces=NS))
+                    b_name = text.index("{{officerB.fullName}}")
+                    service_start = text.find("{{officerA.service}}", b_name)
+                    if service_start < 0:
+                        raise ValueError(f"Missing B-investigator service mapping in {template['id']}")
+                    apply_span(target, service_start, service_start + len("{{officerA.service}}"), "{{officerB.service}}")
+                    if template["id"] == "counterfeit-01":
+                        serial_done = False
+                        for paragraph in paragraphs:
+                            paragraph_text = "".join(paragraph.xpath(".//w:t/text()", namespaces=NS))
+                            match_serial = re.search(r"υπ[’']\\s*αριθ\\.\\s*(\\.{5,})", paragraph_text, re.IGNORECASE)
+                            if match_serial:
+                                start = match_serial.start(1)
+                                end = match_serial.end(1)
+                                apply_span(paragraph, start, end, "{{counterfeit.serialNumber}}")
+                                serial_done = True
+                                break
+                        if not serial_done:
+                            raise ValueError("Missing serial-number blank in counterfeit-01")
+                    raw = etree.tostring(document, xml_declaration=True, encoding="UTF-8", standalone=True)
+                zout.writestr(info, raw)
+        data = output.getvalue()
+        with zipfile.ZipFile(io.BytesIO(data)) as check:
+            etree.fromstring(check.read("word/document.xml"))
+        template["dataBase64"] = base64.b64encode(data).decode("ascii")
+        template["size"] = len(data)
+        if "officerB.service" not in template["fields"]:
+            template["fields"].append("officerB.service")
+        template.setdefault("mappings", {})["officerB.service"] = "officerB.service"
+        touched += 1
+    if touched != 2:
+        raise ValueError("Expected to update counterfeit-01 and counterfeit-02")
+    updated = match.group(1) + json.dumps(templates, ensure_ascii=False, separators=(",", ":")) + match.group(3)
+    path.write_text(source[:match.start()] + updated + source[match.end():], encoding="utf-8")
+    print("Updated B-investigator service and counterfeit serial-number mapping in embedded templates.")
+
+patch_embedded_counterfeit_templates()
 
 # Verify every changed embedded DOCX is byte-for-byte identical to its source file.
 for module_path, export_name in [
