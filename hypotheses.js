@@ -1,4 +1,6 @@
 import { DOSSIER_CATEGORIES } from './dossier-categories.js';
+
+if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
 (function () {
   var KEY = 'axyp-hypotheses';
   var selectedId = null;
@@ -638,6 +640,7 @@ function uid() {
       if (index >= 0) items[index] = saved;
       else items.unshift(saved);
       write(items);
+      if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) await window.AXYP_STORAGE.flush();
       selectedId = id;
       $('case-flash').textContent = window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()
         ? 'Η υπόθεση αποθηκεύτηκε στον προσωπικό φάκελο εργασίας και στον τοπικό κατάλογο.'
@@ -665,6 +668,7 @@ function uid() {
         Object.assign(item, saved);
       }
       write(items);
+      if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) await window.AXYP_STORAGE.flush();
       $('case-flash').textContent = window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()
         ? 'Το snapshot αποθηκεύτηκε στο Ιστορικό της δικογραφίας.'
         : 'Το snapshot αποθηκεύτηκε στον browser. Επίλεξε προσωπικό φάκελο για αντίγραφο στον υπολογιστή.';
@@ -674,7 +678,9 @@ function uid() {
     }
   }
 
-  function exportData() {
+  async function exportData() {
+    if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
+    if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) await window.AXYP_STORAGE.flush();
     var blob = new Blob([JSON.stringify({ schema: 1, exportedAt: new Date().toISOString(), hypotheses: read() }, null, 2)], { type: 'application/json' });
     var link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -695,7 +701,10 @@ function uid() {
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
-  function fullBackup() {
+  async function fullBackup() {
+    try {
+    if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
+    if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) await window.AXYP_STORAGE.flush();
     var s = window.AXYP_STORAGE || localStorage;
     downloadJson('axyp-plires-antigrafo.json', {
       schema: 2,
@@ -709,14 +718,17 @@ function uid() {
       templates: s.getItem('axyp-docx-templates'),
       templateMappings: s.getItem('axyp-template-mappings')
     });
-    $('case-flash').textContent = 'Το πλήρες αντίγραφο δημιουργήθηκε τοπικά.';
+    $('case-flash').textContent = 'Το πλήρες αντίγραφο δημιουργήθηκε τοπικά μετά από επιβεβαίωση αποθήκευσης.';
+    } catch (error) {
+      $('case-flash').textContent = 'Δεν δημιουργήθηκε αντίγραφο: δεν επιβεβαιώθηκε η αποθήκευση των τελευταίων αλλαγών. ' + error.message;
+    }
   }
 
   function restoreBackup(event) {
     var file = event.target.files[0];
     if (!file) return;
     var reader = new FileReader();
-    reader.onload = function () {
+    reader.onload = async function () {
       try {
         var parsed = JSON.parse(reader.result);
         if (!parsed || (parsed.schema !== 2 && parsed.schema !== 1) || !Array.isArray(parsed.hypotheses)) {
@@ -780,7 +792,8 @@ function uid() {
             } catch (_) {}
           }
 
-          $('case-flash').textContent = 'Η συγχώνευση αντιγράφου ολοκληρώθηκε επιτυχώς.';
+          if (s.flush) await s.flush();
+          $('case-flash').textContent = 'Η συγχώνευση αντιγράφου ολοκληρώθηκε και η τοπική αποθήκευση επιβεβαιώθηκε.';
           setTimeout(function () { location.reload(); }, 600);
           return;
         }
@@ -812,7 +825,8 @@ function uid() {
           }
         });
 
-        $('case-flash').textContent = 'Η πλήρης επαναφορά ολοκληρώθηκε. Ανανεώνεται η εφαρμογή.';
+        if (s.flush) await s.flush();
+        $('case-flash').textContent = 'Η πλήρης επαναφορά ολοκληρώθηκε και η τοπική αποθήκευση επιβεβαιώθηκε. Ανανεώνεται η εφαρμογή.';
         setTimeout(function () { location.reload(); }, 500);
       } catch (e) {
         $('case-flash').textContent = 'Το αρχείο δεν έχει έγκυρη μορφή αντιγράφου AX.YP.';
@@ -826,7 +840,7 @@ function uid() {
     var file = event.target.files[0];
     if (!file) return;
     var reader = new FileReader();
-    reader.onload = function () {
+    reader.onload = async function () {
       try {
         var parsed = JSON.parse(reader.result);
         var list = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.hypotheses) ? parsed.hypotheses : null);
@@ -844,7 +858,8 @@ function uid() {
         } else {
           write(list);
         }
-        $('case-flash').textContent = 'Η εισαγωγή ολοκληρώθηκε τοπικά.';
+        if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) await window.AXYP_STORAGE.flush();
+        $('case-flash').textContent = 'Η εισαγωγή ολοκληρώθηκε και η τοπική αποθήκευση επιβεβαιώθηκε.';
         render();
       } catch (e) {
         $('case-flash').textContent = 'Το αρχείο JSON δεν έχει έγκυρη μορφή υποθέσεων.';
