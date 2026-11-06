@@ -516,7 +516,7 @@ def update_embedded(module_path, export_name, sanitized_by_name):
             template["size"] = len(data)
             touched += 1
     if not touched:
-        raise ValueError(f"No embedded templates updated in {module_path}:{export_name}")
+        return 0
     updated = match.group(1) + json.dumps(templates, ensure_ascii=False, separators=(",", ":")) + match.group(3)
     path.write_text(source[:match.start()] + updated + source[match.end():], encoding="utf-8")
     return touched
