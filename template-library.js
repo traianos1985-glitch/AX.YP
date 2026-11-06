@@ -808,8 +808,8 @@ function replaceLegacyFixedDateText(xml, item) {
 
 export function correctOfficerServicePlaceholders(xml) {
   return xml
-    .replace(/(?:κατοίκων|κάτοικων)\\s*\\{\\{\\s*officerA\\.service\\s*\\}\\}/gu, 'που υπηρετεί στο {{officerB.service}}')
-    .replace(/κατ\\.\\s*\\{\\{\\s*officerA\\.service\\s*\\}\\}/gu, 'που υπηρετεί στο {{officerB.service}}');
+    .replace(/(?:κατοίκων|κάτοικων)\s*\{\{\s*officerA\.service\s*\}\}/gu, 'που υπηρετεί στο {{officerB.service}}')
+    .replace(/κατ\.\s*\{\{\s*officerA\.service\s*\}\}/gu, 'που υπηρετεί στο {{officerB.service}}');
 }
 
 export function normalizeGreekDocxXml(xml) {
@@ -823,8 +823,8 @@ export function normalizeGreekDocxXml(xml) {
     .replace(/Yποβολή/gu, 'Υποβολή')
     .replace(/Β[’']/gu, 'Β΄')
     .replace(/ {2,}/gu, ' ')
-    .replace(/\\s+([,.;:!?])/gu, '$1');
-  return xml.replace(/(<w:t\\b[^>]*>)([\\s\\S]*?)(<\\/w:t>)/gu, (_match, open, text, close) => open + fixes(text) + close);
+    .replace(/\s+([,.;:!?])/gu, '$1');
+  return xml.replace(/(<w:t\b[^>]*>)([\s\S]*?)(<\/w:t>)/gu, (_match, open, text, close) => open + fixes(text) + close);
 }
 
 export function buildDocx(template, item) {
