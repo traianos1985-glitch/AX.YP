@@ -133,3 +133,5 @@ assert.ok(rendered.includes('Εισαγγελία Πρωτοδικών'), 'Greek
 assert.ok(!rendered.includes('{{ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ}}'), 'Greek placeholder is not left unresolved')
 
 console.log('Template privacy/synchronization regressions passed.')
+
+// Keep this regression suite in the guarded template-sanitization PR workflow.
