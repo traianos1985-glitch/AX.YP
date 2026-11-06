@@ -19,6 +19,7 @@ const APP_SHELL = [
   "./case-workflow.js",
   "./hypotheses.js",
   "./case-register.js",
+  "./dossier-completeness.js",
   "./dossier-categories.js",
   "./security.js",
   "./template-library.js",
