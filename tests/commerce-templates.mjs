@@ -46,9 +46,14 @@ assert.equal(
 );
 
 for (const template of templates) {
+  assert.equal(template.status, 'temporary', template.name + ' must be explicitly marked provisional');
+  assert.ok(template.statusLabel.includes('πραγματικό υπηρεσιακό έντυπο'), template.name + ' must explain provisional status');
   const parts = getTemplateParts(template);
   assert.ok(parts['word/document.xml'], template.name + ' must contain document.xml');
+  assert.ok(parts['word/styles.xml'], template.name + ' must include styles.xml');
+  assert.ok(parts['word/_rels/document.xml.rels'], template.name + ' must link styles.xml');
   let xml = strFromU8(parts['word/document.xml']);
+  assert.doesNotMatch(xml, /ΠΡΟΣΟΧΗ: Το παρόν είναι ανωνυμοποιημένο πρότυπο/u, 'Provisional warning must not be printed in the document');
   xml = replaceInXml(xml, template, syntheticCase);
   assert.doesNotMatch(xml, /\{\{\s*[a-zA-Z0-9_.-]+\s*\}\}/, template.name + ' must not retain placeholders');
 
