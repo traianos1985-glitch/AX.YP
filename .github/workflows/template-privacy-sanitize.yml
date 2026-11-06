@@ -54,5 +54,7 @@ jobs:
           git add camping-templates-data.js noise-templates-data.js dossier-templates-data.js .axyp-template-privacy-v1
           if ! git diff --cached --quiet; then
             git commit -m "Sanitize legacy personal examples in dossier templates"
+            git fetch origin "$BRANCH_NAME"
+            git rebase "origin/$BRANCH_NAME"
             git push origin "HEAD:${BRANCH_NAME}"
           fi
