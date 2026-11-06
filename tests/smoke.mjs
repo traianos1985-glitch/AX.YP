@@ -500,6 +500,9 @@ await import('./camping-templates.mjs');
 // Commerce dossier actor A/B field mapping and generated-document regressions
 await import('./commerce-templates.mjs');
 
+// Per-installation service profile storage and privacy regressions.
+await import('./service-profile.mjs');
+
 // Production DOCX generation must work for every built-in dossier template.\nawait import('./all-dossier-docx-generation.mjs');\n\n// Guided dossier workflow: progressive steps, completeness summary, keyboard flow and unsaved-change guard.
 const workflowSource = await readFile(new URL('../case-workflow.js', import.meta.url), 'utf8')
 assert.match(workflowSource, /Καθοδηγούμενη καταχώριση/)
