@@ -821,13 +821,29 @@ export function patchNarcoticsTemplateXml(xml, templateId) {
       xml = xml.replace(oldService, 'που υπηρετεί στο {{officerB.service}} και ενεργεί ως Β΄ Ανακριτικός Υπάλληλος');
     }
     let replacedSignature = false;
-            xml = xml.replace(new RegExp('<w:p[^>]*>[^]*?</w:p>', 'gu'), (paragraph) => {
+            const signatureTable = signatureParagraphTable();
+    xml = xml.replace(new RegExp('<w:p[^>]*>[^]*?</w:p>', 'gu'), (paragraph) => {
       if (!replacedSignature && /Ο\s+Συλλαβών/u.test(paragraph) && /Ο\s+Συλληφθείς/u.test(paragraph) && /Ανακριτικός Υπάλληλος/u.test(paragraph)) {
         replacedSignature = true;
-        return signatureParagraphTable();
+        return signatureTable;
       }
       return paragraph;
     });
+    if (replacedSignature) {
+      // The original four-signature layout placed a separate dotted line
+      // paragraph immediately after the signature paragraph. Once the
+      // paragraph is replaced by a real table, that old line is redundant.
+      const tableEnd = xml.indexOf(signatureTable) + signatureTable.length;
+      const tail = xml.slice(tableEnd);
+      const nextParagraph = tail.match(/^\s*(<w:p\\b[\\s\\S]*?<\\/w:p>)/u);
+      if (nextParagraph) {
+        const text = nextParagraph[1].replace(/<[^>]+>/gu, '').replace(/&amp;/gu, '&').trim();
+        const dotRuns = text.match(/[.·…_]{3,}/gu) || [];
+        if (/^[.·…_\\s]+$/u.test(text) && dotRuns.length >= 3) {
+          xml = xml.slice(0, tableEnd) + tail.replace(nextParagraph[1], '');
+        }
+      }
+    }
   }
   if (templateId === 'narcotics-08') {
     xml = xml.replace(/Εισαγγελία Πρωτοδικών\s*\.{5,}/u, 'Εισαγγελία Πρωτοδικών {{case.prosecutor}}');
