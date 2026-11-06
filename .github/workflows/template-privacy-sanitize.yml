@@ -38,6 +38,12 @@ jobs:
         run: python -m pip install lxml
       - name: Sanitize DOCX files and synchronize embedded copies
         run: python scripts/sanitize-template-examples.py
+      - name: Verify the sanitized templates and application tests
+        run: |
+          npm ci
+          npm run validate
+          npm test
+          npm run build
       - name: Commit generated template changes
         env:
           BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
