@@ -5,7 +5,7 @@ on:
     types: [opened, reopened, synchronize]
     paths:
       - 'template-library.js'
-      - 'tests/smoke.mjs'
+      - 'tests/**'
       - 'scripts/sanitize-template-examples.py'
       - 'docs/**'
       - 'package.json'
