@@ -795,7 +795,7 @@ function replaceLegacyFixedDateText(xml, item) {
   const numericDate = `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}`;
   return xml
     .replace(
-      /(Στην\s+)Κυπαρισσία(\s+σήμερα\s+την\s+)\d{1,2}(η?)(\s+του\s+(?:μηνός|μήνα)\s+)[\p{L}]+(\s+του\s+έτους\s+)\d{4}(\s+ημέρα(?:\s+της\s+εβδομάδος)?\s+)[\p{L}.΄’' ]+/gu,
+      /(Στην\s+)Κυπαρισσία(\s+σήμερα\s+την\s+)\d{1,2}(η?)(\s+του\s+(?:μηνός|μήνα)\s+)[\p{L}]+(\s+του\s+έτους\s+)\d{4}(\s+ημέρα(?:\s+της\s+εβδομάδος)?\s+)(?:Μ\.\s*)?[\p{L}΄’']+/gu,
       (_match, prefix, beforeDay, ordinal, monthPrefix, yearPrefix, weekdayPrefix) =>
         `${prefix}${location}${beforeDay}${esc(day)}${ordinal}${monthPrefix}${esc(month)}${yearPrefix}${esc(year)}${weekdayPrefix}${esc(weekday)}`
     )
