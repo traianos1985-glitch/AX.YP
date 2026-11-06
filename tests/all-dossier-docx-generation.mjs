@@ -2,6 +2,19 @@ import assert from 'node:assert/strict';
 import { buildDocx, ensureDefaultTemplates } from '../template-library.js';
 import { unzipSync } from '../vendor/fflate.js';
 
+globalThis.window = {
+  AXYP_SERVICE_PROFILE: {
+    get: () => ({
+      name: 'TEST-SERVICE-NAME',
+      address: 'TEST-SERVICE-ADDRESS',
+      phone: 'TEST-SERVICE-PHONE',
+      email: 'test-service@example.invalid',
+      prosecutor: 'TEST-SERVICE-PROSECUTOR',
+      chemicalService: 'TEST-CHEMICAL-SERVICE'
+    })
+  }
+};
+
 // Use an isolated in-memory store so the test exercises the same seeded
 // built-in templates as a fresh installation without touching browser data.
 const values = new Map();
@@ -169,7 +182,8 @@ assert.equal(
 assert.ok(narcotics10.text.includes('ΑΠΟΔΕΙΚΤΙΚΟ ΚΟΙΝΟΠΟΙΗΣΗΣ'), 'narcotics-10 must retain the official proof-of-notification section');
 assert.ok(narcotics10.text.includes('Ημερομηνία') && narcotics10.text.includes('Ώρα'), 'narcotics-10 must retain the notification date and time fields');
 assert.ok(narcotics10.text.includes('…………'), 'narcotics-10 notification date/time must remain manually fillable; case creation time is not necessarily the actual time rights were communicated');
-assert.ok(narcotics10.text.includes('ΑΣΤΥΝΟΜΙΚΟ ΤΜΗΜΑ ΤΡΙΦΥΛΙΑΣ'), 'narcotics-10 must retain the confirmed fixed issuing-service header');
+assert.ok(narcotics10.text.includes('TEST-SERVICE-NAME'), 'narcotics-10 must populate the issuing-service header from the per-installation service profile');
+assert.ok(!/Τριφυλ|Κυπαρισσ/iu.test(narcotics10.text), 'narcotics-10 must not retain installation-specific service names');
 
 const narcotics08 = generatedText('narcotics-08');
 assert.ok(narcotics08.text.includes('TEST-PROSECUTOR'), 'narcotics-08 must populate the prosecutor recipient from the case');
