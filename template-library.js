@@ -879,7 +879,7 @@ function replaceLegacyLocalServiceReferences(xml) {
     [/at\.trifylias@astynomia\.gr/giu, '{{service.email}}'],
     [/,?\s*Fax\s*2131527691/giu, ''],
     [/Αντεισαγγελέα\s+Πλημ\/κων\s+Κυπαρισσίας/giu, 'αρμόδιου Αντεισαγγελέα'],
-    [/Εισαγγελία\s+(?:Πλημμελειοδικών|Πρωτοδικών)\s+Κυπαρισσίας/giu, '{{service.prosecutor}}'],
+    [/(?:ΠΛΗΜΜΕΛΕΙΟΔΙΚΩΝ|ΠΡΩΤΟΔΙΚΩΝ)\s*ΚΥΠΑΡΙΣΣΙΑΣ/giu, '{{service.prosecutor}}'],
     [/(?:Πλημμελειοδικών|Πρωτοδικών)\s+Κυπαρισσίας/giu, '{{service.prosecutor}}'],
     [/δικηγορικού\s+Συλλόγου\s+Κυπαρισσίας/giu, 'οικείου Δικηγορικού Συλλόγου'],
     [/E-mail:\s*forgelab@otenet\.gr/giu, ''],
