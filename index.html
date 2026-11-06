@@ -250,6 +250,19 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
 
 <section id="templates-panel" class="panel templates-panel" hidden>
   <div class="section-heading"><div><p class="eyebrow">Πρότυπα εκθέσεων</p><h2>Κατάλογος και αντιστοίχιση πεδίων</h2><p class="muted">Τα πρότυπα παραμένουν συνδεδεμένα με την αρχική πηγή. Η αντιστοίχιση αποθηκεύεται τοπικά και θα τροφοδοτεί την παραγωγή Word.</p></div><a class="source-link" href="https://proanakrisi.gr/" target="_blank" rel="noreferrer">Άνοιγμα πηγής</a></div>
+    <section class="panel" id="service-profile-panel" aria-labelledby="service-profile-title">
+    <div class="section-heading"><div><p class="eyebrow">Ρυθμίσεις εγκατάστασης</p><h2 id="service-profile-title">Προφίλ Υπηρεσίας</h2><p class="muted">Συμπλήρωσε μία φορά τα στοιχεία της Υπηρεσίας αυτής της εγκατάστασης. Αποθηκεύονται τοπικά στη συσκευή και χρησιμοποιούνται στα αντίστοιχα πρότυπα Word.</p></div></div>
+    <form id="service-profile-form"><div class="profile-grid">
+      <label class="profile-field">Ονομασία Υπηρεσίας<input name="name" type="text" autocomplete="organization" maxlength="160"></label>
+      <label class="profile-field">Διεύθυνση<input name="address" type="text" autocomplete="street-address" maxlength="240"></label>
+      <label class="profile-field">Τηλέφωνο<input name="phone" type="tel" autocomplete="tel" maxlength="60"></label>
+      <label class="profile-field">Email<input name="email" type="email" autocomplete="email" maxlength="160"></label>
+      <label class="profile-field">Αρμόδια Εισαγγελία<input name="prosecutor" type="text" maxlength="200"></label>
+      <label class="profile-field">Αρμόδια Χημική Υπηρεσία<input name="chemicalService" type="text" maxlength="200"></label>
+      <div class="profile-actions"><button class="mini-button" type="submit">Αποθήκευση προφίλ</button><span id="service-profile-status" class="flash" role="status" aria-live="polite"></span></div>
+    </div></form>
+  </section>
+
   <div class="template-import"><label>Εισαγωγή πραγματικού προτύπου Word (.docx)<input id="template-file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label><p class="muted">Χρησιμοποίησε placeholders όπως <code>{{case.title}}</code>, <code>{{person.name}}</code> ή <code>{{evidence.quantity}}</code> μέσα στο πρότυπο.</p></div><p class="template-provisional-note" role="note">Τα πρότυπα παρεμπορίου επισημαίνονται ως προσωρινά βοηθήματα σύνταξης και όχι ως επίσημα υπηρεσιακά έντυπα. Πριν από χρήση απαιτείται αντιπαραβολή με το ισχύον πραγματικό έντυπο και έλεγχος της διαδικασίας.</p><div id="template-library" class="template-library"></div><div id="template-catalog" class="template-catalog"></div>
 </section>
 
@@ -269,6 +282,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
 </footer>
 </main>
 <script type="module" src="storage.js"></script>
+<script type="module" src="service-profile.js"></script>
 <script type="module" src="case-folder-storage.js"></script>
 <script type="module" src="data.js"></script>
 <script type="module" src="forms.js"></script>

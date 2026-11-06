@@ -34,6 +34,7 @@
     'axyp-template-mappings',
     'axyp-favorites',
     'axyp-form-profile',
+    'axyp-service-profile-v1',
     'axyp-theme',
     'axyp-privacy',
     'axyp-narcotics-templates-seeded-v1',
