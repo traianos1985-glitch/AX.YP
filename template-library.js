@@ -1021,10 +1021,10 @@ function ensureTemplateVersionFooter(files, template) {
     ? decode(files[relsPath])
     : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
 
-  const footerRelationship = [...relsXml.matchAll(/<Relationship\\b(?=[^>]*\\bId="([^"]+)")(?=[^>]*\\bType="[^"]*\\/footer")(?=[^>]*\\bTarget="([^"]+)")[^>]*\\/?\\s*>/gu)]
+  const footerRelationship = [...relsXml.matchAll(/<Relationship\b(?=[^>]*\bId="([^"]+)")(?=[^>]*\bType="[^"]*\/footer")(?=[^>]*\bTarget="([^"]+)")[^>]*\/?\s*>/gu)]
     .map((match) => ({ id: match[1], target: match[2] }));
-  const targetToPath = (target) => target.startsWith('/') ? target.slice(1) : `word/${target.replace(/^\\.\\//u, '')}`;
-  const referencedDefault = documentXml.match(/<w:footerReference\\b(?=[^>]*\\bw:type="default")(?=[^>]*\\br:id="([^"]+)")[^>]*\\/?\\s*>/u);
+  const targetToPath = (target) => target.startsWith('/') ? target.slice(1) : `word/${target.replace(/^\.\//u, '')}`;
+  const referencedDefault = documentXml.match(/<w:footerReference\b(?=[^>]*\bw:type="default")(?=[^>]*\br:id="([^"]+)")[^>]*\/?\s*>/u);
   let footerRel = referencedDefault
     ? footerRelationship.find((entry) => entry.id === referencedDefault[1])
     : footerRelationship[0];
@@ -1033,7 +1033,7 @@ function ensureTemplateVersionFooter(files, template) {
   if (!footerPath || !files[footerPath]) {
     let index = 1;
     do { footerPath = `word/footer${index++}.xml`; } while (files[footerPath]);
-    const usedIds = [...relsXml.matchAll(/\\bId="rId(\\d+)"/gu)].map((match) => Number(match[1]));
+    const usedIds = [...relsXml.matchAll(/\bId="rId(\d+)"/gu)].map((match) => Number(match[1]));
     const relId = `rId${Math.max(0, ...usedIds) + 1}`;
     relsXml = relsXml.replace(
       '</Relationships>',
@@ -1055,16 +1055,16 @@ function ensureTemplateVersionFooter(files, template) {
   files[relsPath] = encode(relsXml);
 
   let updatedDocumentXml = documentXml;
-  if (!/<w:footerReference\\b(?=[^>]*\\bw:type="default")/u.test(updatedDocumentXml)) {
+  if (!/<w:footerReference\b(?=[^>]*\bw:type="default")/u.test(updatedDocumentXml)) {
     const reference = `<w:footerReference w:type="default" r:id="${footerRel.id}"/>`;
-    if (/<w:sectPr\\b[^>]*>/u.test(updatedDocumentXml)) {
-      updatedDocumentXml = updatedDocumentXml.replace(/(<w:sectPr\\b[^>]*>)/u, `$1${reference}`);
+    if (/<w:sectPr\b[^>]*>/u.test(updatedDocumentXml)) {
+      updatedDocumentXml = updatedDocumentXml.replace(/(<w:sectPr\b[^>]*>)/u, `$1${reference}`);
     } else {
       updatedDocumentXml = updatedDocumentXml.replace('</w:body>', `<w:sectPr>${reference}</w:sectPr></w:body>`);
     }
   }
   if (!/xmlns:r="/u.test(updatedDocumentXml.slice(0, updatedDocumentXml.indexOf('>') + 1))) {
-    updatedDocumentXml = updatedDocumentXml.replace(/<w:document\\b/u, '<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"');
+    updatedDocumentXml = updatedDocumentXml.replace(/<w:document\b/u, '<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"');
   }
   files[documentPath] = encode(updatedDocumentXml);
 
