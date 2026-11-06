@@ -36,7 +36,8 @@ function copyStaticFiles() {
         hash.update(fs.readFileSync(absolutePath));
         hash.update('\0');
       };
-      const candidates = files.filter((file) => file !== 'sw.js').concat(['index.html']);
+      // Hash the copied service worker while it still contains axyp-dev; this makes SW logic changes invalidate the cache without a circular digest.
+      const candidates = files.concat(['index.html']);
       for (const file of candidates) {
         const absolutePath = path.join(outDir, file);
         if (fs.existsSync(absolutePath) && fs.statSync(absolutePath).isFile()) addFile(absolutePath, file);
