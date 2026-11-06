@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { unzipSync, zipSync, strFromU8, strToU8 } from '../vendor/fflate.js';
-import { DEFAULT_COUNTERFEIT_TEMPLATES } from '../dossier-templates-data.js';
+import { DEFAULT_COUNTERFEIT_TEMPLATES } from '../template-data/counterfeit.js';
 import { ensureDefaultTemplates, initializeDefaultTemplates, getTemplateParts, computeTimeline, replaceInXml, valueFor } from '../template-library.js';
 
 console.log('--- Starting Counterfeit Templates & Auto-loader Test Suite ---');
