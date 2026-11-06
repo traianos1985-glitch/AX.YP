@@ -872,7 +872,7 @@ function replaceTextAcrossWordRuns(xml, pattern, replacement) {
 
 function replaceLegacyLocalServiceReferences(xml) {
   const replacements = [
-    [/ΑΣΤΥΝΟΜΙΚΟ ΤΜΗΜΑ ΤΡΙΦΥΛΙΑΣ(?: ΜΕΣΣΗΝΙΑΣ)?/giu, '{{service.name}}'],
+    [/ΑΣΤΥΝΟΜΙΚΟ\\s+ΤΜΗΜΑ\\s+ΤΡΙΦΥΛΙΑΣ(?:\\s+ΜΕΣΣΗΝΙΑΣ)?/giu, '{{service.name}}'],
     [/ΤΑΧ\.\s*Δ\/ΝΣΗ:\s*60ο\s*χλμ\.\s*Ε\.Ο\.\s*ΠΥΡΓΟΥ-ΜΕΘΩΝΗΣ/giu, 'ΤΑΧ. Δ/ΝΣΗ: {{service.address}}'],
     [/Τ\.?\s*Κ\.?\s*24500\s*ΚΥΠΑΡΙΣΣΙΑ\s*ΜΕΣΣΗΝΙΑ/giu, ''],
     [/2761440970|2761062000/gu, '{{service.phone}}'],
