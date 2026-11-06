@@ -954,8 +954,8 @@ export async function generate(template) {
   }
   const missingFields = getMissingTemplateFields(template, item);
   if (missingFields.length) {
-    const details = missingFields.map(({ field, reason }) => `• {{${field}}} — ${reason}`).join('\\n');
-    const message = 'Πριν από τη λήψη του Word εντοπίστηκαν τα παρακάτω πεδία που χρειάζονται έλεγχο:\\n\\n' + details + '\\n\\nΘέλεις να συνεχίσεις τη λήψη με αυτά τα πεδία κενά;';
+    const details = missingFields.map(({ field, reason }) => `• {{${field}}} — ${reason}`).join('\n');
+    const message = 'Πριν από τη λήψη του Word εντοπίστηκαν τα παρακάτω πεδία που χρειάζονται έλεγχο:\n\n' + details + '\n\nΘέλεις να συνεχίσεις τη λήψη με αυτά τα πεδία κενά;';
     if (typeof window.confirm === 'function' && !window.confirm(message)) return;
   }
   const blob = new Blob([buildDocx(template, item)], {
