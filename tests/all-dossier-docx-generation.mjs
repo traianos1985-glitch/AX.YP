@@ -159,6 +159,18 @@ assert.ok(narcotics02.text.includes('TEST-RANK-A TEST-SURNAME-A TEST-NAME-A'), '
 assert.ok(narcotics02.text.includes('TEST-RANK-B TEST-SURNAME-B TEST-NAME-B'), 'narcotics-02 signature table must populate investigator B full name');
 assert.ok(narcotics02.text.includes('TEST-SERVICE-B'), 'narcotics-02 must populate investigator B service in the generated document');
 
+const narcotics10 = generatedText('narcotics-10');
+assert.ok(narcotics10.text.includes('TEST-RANK-A TEST-SURNAME-A TEST-NAME-A'), 'narcotics-10 D-33 must populate the responsible officer in the rights notice');
+assert.equal(
+  (narcotics10.text.match(/TEST-RANK-A TEST-SURNAME-A TEST-NAME-A/g) || []).length,
+  2,
+  'narcotics-10 must populate the officer in both the responsible-officer notice and the final officer declaration'
+);
+assert.ok(narcotics10.text.includes('ΑΠΟΔΕΙΚΤΙΚΟ ΚΟΙΝΟΠΟΙΗΣΗΣ'), 'narcotics-10 must retain the official proof-of-notification section');
+assert.ok(narcotics10.text.includes('Ημερομηνία') && narcotics10.text.includes('Ώρα'), 'narcotics-10 must retain the notification date and time fields');
+assert.ok(narcotics10.text.includes('…………'), 'narcotics-10 notification date/time must remain manually fillable; case creation time is not necessarily the actual time rights were communicated');
+assert.ok(narcotics10.text.includes('ΑΣΤΥΝΟΜΙΚΟ ΤΜΗΜΑ ΤΡΙΦΥΛΙΑΣ'), 'narcotics-10 must retain the confirmed fixed issuing-service header');
+
 const narcotics08 = generatedText('narcotics-08');
 assert.ok(narcotics08.text.includes('TEST-PROSECUTOR'), 'narcotics-08 must populate the prosecutor recipient from the case');
 assert.ok(!/Εισαγγελία Πρωτοδικών\\s*\\.{5,}/u.test(narcotics08.text), 'narcotics-08 must not retain a dotted prosecutor placeholder');
