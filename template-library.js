@@ -203,7 +203,7 @@ const normalizeDocxXml = (xml) => {
     return p.replace(/\{\{(?:(?!\{\{|\}\})[\s\S])*?\}\}/g, (match) => {
       if (!match.includes('<')) return match;
       const plain = match.replace(/<[^>]+>/g, '');
-      const field = plain.match(/^\s*\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}\s*$/);
+      const field = plain.match(/^\s*\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}\s*$/u);
       if (field) {
         return `</w:t></w:r><w:r><w:t xml:space="preserve">{{${field[1]}}}</w:t></w:r><w:r><w:t xml:space="preserve">`;
       }
@@ -212,7 +212,7 @@ const normalizeDocxXml = (xml) => {
   });
 };
 
-const extractFields = (xml) => [...new Set((normalizeDocxXml(xml).match(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g) || []).map((val) => val.replace(/\{\{|\}\}|\s/g, '')))];
+const extractFields = (xml) => [...new Set((normalizeDocxXml(xml).match(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu) || []).map((val) => val.replace(/\{\{|\}\}|\s/g, '')))];
 const display = (value) => value || '—';
 
 export function addMinutes(timeStr, mins) {
@@ -589,7 +589,7 @@ export function valueFor(path, item) {
 }
 
 export function replaceInXml(xml, template, item) {
-  return xml.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, path) => {
+  return xml.replace(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu, (_, path) => {
     const mapped = mappingFor(template, path);
     const raw = mapped ? valueFor(mapped, item) : `{{${path}}}`;
     if (!raw || raw === '—') return '—';
