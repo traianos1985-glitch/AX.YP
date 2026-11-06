@@ -1007,6 +1007,82 @@ export function normalizeGreekDocxXml(xml) {
   return xml.replace(/(<w:t\b[^>]*>)([\s\S]*?)(<\/w:t>)/gu, (_match, open, text, close) => open + fixes(text) + close);
 }
 
+export const DOCX_TEMPLATE_VERSION = '2026.11.06.1';
+
+function ensureTemplateVersionFooter(files, template) {
+  const documentPath = 'word/document.xml';
+  if (!files[documentPath]) throw new Error('DOCX main document is missing');
+
+  const decode = (bytes) => new TextDecoder().decode(bytes);
+  const encode = (value) => new TextEncoder().encode(value);
+  const documentXml = decode(files[documentPath]);
+  const relsPath = 'word/_rels/document.xml.rels';
+  let relsXml = files[relsPath]
+    ? decode(files[relsPath])
+    : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+
+  const footerRelationship = [...relsXml.matchAll(/<Relationship\b(?=[^>]*\bId="([^"]+)")(?=[^>]*\bType="[^"]*\/footer")(?=[^>]*\bTarget="([^"]+)")[^>]*\/?\s*>/gu)]
+    .map((match) => ({ id: match[1], target: match[2] }));
+  const targetToPath = (target) => target.startsWith('/') ? target.slice(1) : `word/${target.replace(/^\.\//u, '')}`;
+  const referencedDefault = documentXml.match(/<w:footerReference\b(?=[^>]*\bw:type="default")(?=[^>]*\br:id="([^"]+)")[^>]*\/?\s*>/u);
+  let footerRel = referencedDefault
+    ? footerRelationship.find((entry) => entry.id === referencedDefault[1])
+    : footerRelationship[0];
+  let footerPath = footerRel ? targetToPath(footerRel.target) : '';
+  const canReuseExistingFooterReference = Boolean(footerRel && files[footerPath]);
+
+  if (!canReuseExistingFooterReference) {
+    let index = 1;
+    do { footerPath = `word/footer${index++}.xml`; } while (files[footerPath]);
+    const usedIds = [...relsXml.matchAll(/\bId="rId(\d+)"/gu)].map((match) => Number(match[1]));
+    const relId = `rId${Math.max(0, ...usedIds) + 1}`;
+    relsXml = relsXml.replace(
+      '</Relationships>',
+      `<Relationship Id="${relId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="${footerPath.slice(5)}"/></Relationships>`
+    );
+    footerRel = { id: relId, target: footerPath.slice(5) };
+  }
+
+  const footerLabel = `AX.YP • Πρότυπο: ${template.id || template.name || 'unknown'} • Έκδοση: ${DOCX_TEMPLATE_VERSION}`;
+  let footerXml = files[footerPath]
+    ? decode(files[footerPath])
+    : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p/></w:ftr>';
+
+  if (!footerXml.includes(footerLabel)) {
+    const paragraph = `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="16"/><w:color w:val="666666"/></w:rPr><w:t xml:space="preserve">${esc(footerLabel)}</w:t></w:r></w:p>`;
+    footerXml = footerXml.replace('</w:ftr>', paragraph + '</w:ftr>');
+  }
+  files[footerPath] = encode(footerXml);
+  files[relsPath] = encode(relsXml);
+
+  let updatedDocumentXml = documentXml;
+  if (referencedDefault && !canReuseExistingFooterReference) {
+    updatedDocumentXml = updatedDocumentXml.replace(/(<w:footerReference\b(?=[^>]*\bw:type="default")[^>]*\br:id=")[^"]+("[^>]*\/?\s*>)/u, `$1${footerRel.id}$2`);
+  }
+  if (!/<w:footerReference\b(?=[^>]*\bw:type="default")/u.test(updatedDocumentXml)) {
+    const reference = `<w:footerReference w:type="default" r:id="${footerRel.id}"/>`;
+    if (/<w:sectPr\b[^>]*>/u.test(updatedDocumentXml)) {
+      updatedDocumentXml = updatedDocumentXml.replace(/(<w:sectPr\b[^>]*>)/u, `$1${reference}`);
+    } else {
+      updatedDocumentXml = updatedDocumentXml.replace('</w:body>', `<w:sectPr>${reference}</w:sectPr></w:body>`);
+    }
+  }
+  if (!/xmlns:r="/u.test(updatedDocumentXml.slice(0, updatedDocumentXml.indexOf('>') + 1))) {
+    updatedDocumentXml = updatedDocumentXml.replace(/<w:document\b/u, '<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"');
+  }
+  files[documentPath] = encode(updatedDocumentXml);
+
+  const contentTypesPath = '[Content_Types].xml';
+  let contentTypes = decode(files[contentTypesPath]);
+  if (!contentTypes.includes(`PartName="/${footerPath}"`)) {
+    contentTypes = contentTypes.replace(
+      '</Types>',
+      `<Override PartName="/${footerPath}" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>`
+    );
+    files[contentTypesPath] = encode(contentTypes);
+  }
+}
+
 export function buildDocx(template, item) {
   if (!template || !item) throw new Error('Template and case data are required');
   const files = getTemplateParts(template);
@@ -1025,6 +1101,7 @@ export function buildDocx(template, item) {
     }
   });
 
+  ensureTemplateVersionFooter(files, template);
   return zipSync(files);
 }
 
