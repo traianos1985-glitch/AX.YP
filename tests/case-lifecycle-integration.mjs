@@ -97,6 +97,13 @@ globalThis.window = {
   }
 };
 
+const templateStorage = {
+  values: new Map(),
+  getItem(key) { return this.values.has(key) ? this.values.get(key) : null; },
+  setItem(key, value) { this.values.set(key, String(value)); }
+};
+globalThis.localStorage = templateStorage;
+
 const {
   getCaseRegisterData,
   loadCaseRegister,
@@ -210,11 +217,6 @@ assert.equal(report.groups.reduce((sum, group) => sum + group.filled, 0),
 assert.deepEqual(report.register, { persons: 2, evidence: 2, actions: 1 });
 
 // Generate a real DOCX from the same reopened case and inspect the resulting ZIP package.
-const templateStorage = {
-  values: new Map(),
-  getItem(key) { return this.values.has(key) ? this.values.get(key) : null; },
-  setItem(key, value) { this.values.set(key, String(value)); }
-};
 await ensureDefaultTemplates(templateStorage, 'narcotics');
 const seededTemplates = JSON.parse(templateStorage.getItem('axyp-docx-templates') || '[]');
 const selectedTemplate = seededTemplates.find((template) => template.id === 'narcotics-01');
