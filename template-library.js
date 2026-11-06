@@ -769,6 +769,40 @@ function importTemplate(event) {
   });
 }
 
+function replaceLegacyLocalServiceReferences(xml) {
+  return xml
+    .replace(/,\\s*(?:κατοίκων|κάτοικων)\\s+Α\\.Τ\\.\\s+Τριφυλίας/gu, ' της ίδιας Υπηρεσίας')
+    .replace(/Αξιωματικό Υπηρεσίας του Α\\.Τ\\.\\s+Τριφυλίας/gu, 'Αξιωματικό Υπηρεσίας')
+    .replace(/στο κατάστημα του Αστυνομικού Τμήματος Τριφυλίας/gu, 'στο κατάστημα της Υπηρεσίας μας')
+    .replace(/του Αστυνομικού Τμήματος Τριφυλίας/gu, 'της Υπηρεσίας μας')
+    .replace(/του Α\\.Τ\\.\\s+Τριφυλίας/gu, 'της Υπηρεσίας μας')
+    .replace(/στο Α\\.Τ\\.\\s+Τριφυλίας/gu, 'στην Υπηρεσία μας')
+    .replace(/Αστυνομικού Τμήματος Τριφυλίας/gu, 'Υπηρεσίας μας')
+    .replace(/Αστυνομικό Τμήμα Τριφυλίας/gu, 'Υπηρεσία μας')
+    .replace(/Α\\.Τ\\.\\s+Τριφυλίας/gu, 'Υπηρεσία μας');
+}
+
+function replaceLegacyFixedDateText(xml, item) {
+  const day = valueFor('case.date.day', item);
+  const month = valueFor('case.date.monthName', item);
+  const year = valueFor('case.date.year', item);
+  const weekday = valueFor('case.date.weekdayName', item);
+  const dateMatch = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(item.date || ''));
+  if (!dateMatch || !day || !month || !year || !weekday) return xml;
+
+  const location = esc(item.location || 'Κυπαρισσία');
+  const numericDate = `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}`;
+  return xml
+    .replace(
+      /(Στην\\s+)Κυπαρισσία(\\s+σήμερα\\s+την\\s+)\\d{1,2}(η?)(\\s+του\\s+μην(?:ός|α)\\s+)[\\p{L}]+(\\s+του\\s+έτους\\s+)\\d{4}(\\s+ημέρα(?:\\s+της\\s+εβδομάδος)?\\s+)[\\p{L}.΄’']+/gu,
+      (_match, prefix, beforeDay, ordinal, monthPrefix, yearPrefix, weekdayPrefix) =>
+        `${prefix}${location}${beforeDay}${esc(day)}${ordinal}${monthPrefix}${esc(month)}${yearPrefix}${esc(year)}${weekdayPrefix}${esc(weekday)}`
+    )
+    .replace(/Κυπαρισσία,\\s*\\d{1,2}\\s+[\\p{L}]+\\s+\\d{4}/gu, `${location}, ${esc(day)} ${esc(month)} ${esc(year)}`)
+    .replace(/(ώρα\\s+της\\s+)\\d{1,2}\\/\\d{1,2}\\/\\d{4}/gu, `$1${numericDate}`)
+    .replace(/\\(\\d{1,2}\\/\\d{1,2}\\/\\d{4}\\)/gu, `(${numericDate})`);
+}
+
 export function buildDocx(template, item) {
   if (!template || !item) throw new Error('Template and case data are required');
   const files = getTemplateParts(template);
@@ -778,7 +812,10 @@ export function buildDocx(template, item) {
   Object.keys(files).forEach((filename) => {
     if (filename.startsWith('word/') && filename.endsWith('.xml')) {
       const xml = new TextDecoder().decode(files[filename]);
-      files[filename] = new TextEncoder().encode(replaceInXml(xml, template, item));
+      const populated = replaceInXml(xml, template, item);
+      const withCurrentDates = replaceLegacyFixedDateText(populated, item);
+      const withCurrentServiceReferences = replaceLegacyLocalServiceReferences(withCurrentDates);
+      files[filename] = new TextEncoder().encode(withCurrentServiceReferences);
     }
   });
 
