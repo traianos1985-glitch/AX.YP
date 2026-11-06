@@ -53,7 +53,7 @@ for (const id of ['counterfeit-01', 'counterfeit-02']) {
   const xml = new TextDecoder().decode(getTemplateParts(template)['word/document.xml'])
   assert.ok(xml.includes('{{officerB.service}}'), `${id} uses the B investigator service placeholder`)
 }
-for (const id of ['counterfeit-01', 'counterfeit-02', 'counterfeit-03']) {
+for (const id of ['counterfeit-03', 'counterfeit-01', 'counterfeit-02']) {
   const template = DEFAULT_COUNTERFEIT_TEMPLATES.find((entry) => entry.id === id)
   assert.ok(template, `${id} exists`)
   assert.ok(template.fields.includes('counterfeit.serialNumber'), `${id} declares the shared serial-number field`)
