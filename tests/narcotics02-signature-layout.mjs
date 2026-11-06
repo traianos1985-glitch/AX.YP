@@ -13,7 +13,6 @@ const syntheticCase = {
   date: '2026-11-06',
   time: '10:00',
   location: 'TEST-LOCATION',
-  date: '2026-11-06',
   arrestingOfficer: 'TEST-ARRESTING-OFFICER',
   officerA: { rank: 'TEST-RANK-A', surname: 'TEST-SURNAME-A', name: 'TEST-NAME-A', service: 'TEST-SERVICE-A' },
   officerB: { rank: 'TEST-RANK-B', surname: 'TEST-SURNAME-B', name: 'TEST-NAME-B', service: 'TEST-SERVICE-B' },
@@ -23,7 +22,7 @@ const syntheticCase = {
 
 const parts = unzipSync(buildDocx(template, syntheticCase));
 const xml = strFromU8(parts['word/document.xml']);
-const tables = [...xml.matchAll(/<w:tbl\\b[\\s\\S]*?<\\/w:tbl>/gu)].map((match) => match[0]);
+const tables = [...xml.matchAll(/<w:tbl\b[\s\S]*?<\/w:tbl>/gu)].map((match) => match[0]);
 assert.equal(tables.length, 2, 'Generated arrest form must retain its header table and one signature table');
 const signatureTable = tables[1];
 for (const value of [
@@ -39,15 +38,15 @@ assert.ok(signatureTable.includes('Ο Β΄ Ανακριτικός Υπάλληλ
 
 const signatureEnd = xml.indexOf(signatureTable) + signatureTable.length;
 const tail = xml.slice(signatureEnd);
-const nextParagraph = tail.match(/<w:p\\b[\\s\\S]*?<\\/w:p>/u);
+const nextParagraph = tail.match(/<w:p\b[\s\S]*?<\/w:p>/u);
 if (nextParagraph) {
   const text = nextParagraph[0].replace(/<[^>]+>/gu, '').replace(/&amp;/gu, '&').trim();
   const dotRuns = text.match(/[.·…_]{3,}/gu) || [];
   assert.ok(
-    !(/^[.·…_\\s]+$/u.test(text) && dotRuns.length >= 3),
+    !(/^[.·…_\s]+$/u.test(text) && dotRuns.length >= 3),
     'Old dotted signature line must not remain after the replacement table'
   );
 }
-assert.doesNotMatch(xml, /\\{\\{\\s*[\\p{L}\\p{N}_.-]+\\s*\\}\\}/u, 'Generated signature document must not retain unresolved placeholders');
+assert.doesNotMatch(xml, /\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/u, 'Generated signature document must not retain unresolved placeholders');
 
 console.log('Narcotics-02 signature table layout regression passed.');
