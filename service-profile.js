@@ -32,6 +32,16 @@ function initializeServiceProfile() {
     const input = form.elements.namedItem(field);
     if (input) input.value = current[field];
   });
+  const store = storage();
+  if (store && store.ready && typeof store.ready.then === 'function') {
+    store.ready.then(() => {
+      const hydrated = readServiceProfile(store);
+      SERVICE_PROFILE_FIELDS.forEach((field) => {
+        const input = form.elements.namedItem(field);
+        if (input && !input.value) input.value = hydrated[field];
+      });
+    });
+  }
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     try {
