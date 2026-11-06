@@ -882,13 +882,17 @@ export async function generate(template) {
 
 if (typeof document !== 'undefined') {
   $('template-file')?.addEventListener('change', importTemplate);
-  if (typeof window !== 'undefined') {
-    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts };
-  }
-  initializeDefaultTemplates()
-    .then(() => { render(); if (window.HypothesesView) window.HypothesesView.refresh(); })
+  const ready = initializeDefaultTemplates()
+    .then(() => {
+      render();
+      if (window.HypothesesView) window.HypothesesView.refresh();
+    })
     .catch((error) => {
       console.error('Template library initialization failed:', error);
       render();
+      throw error;
     });
+  if (typeof window !== 'undefined') {
+    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts, ready };
+  }
 }
