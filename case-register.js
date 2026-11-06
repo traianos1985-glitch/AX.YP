@@ -148,7 +148,8 @@ export function normalizeCaseRegister(data) {
 let initialized = false;
 function init() {
   if (initialized) return;
-  const root = $('case-register-root');
+  // Keep the initializer aligned with the actual fieldset ID in index.html.
+  const root = $('case-register-section');
   if (!root) return;
   initialized = true;
   root.addEventListener('click', (event) => {
