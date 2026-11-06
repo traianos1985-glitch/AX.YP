@@ -145,10 +145,10 @@ try {
   await waitForExpression("!document.getElementById('case-workflow-step-3').hidden", 'Firefox review step');
   await click('#case-form button[type="submit"]', 'Save case in Firefox');
 
-  const saved = await waitForExpression(`() => {
+  const saved = await waitForExpression(`(() => {
     const rows = JSON.parse(window.AXYP_STORAGE.getItem('axyp-hypotheses') || '[]');
     return rows.find((item) => item.title === 'FIREFOX E2E TEST CASE — LOCAL ONLY');
-  }`() , 'Firefox locally saved case');
+  })()`, 'Firefox locally saved case');
   assert.equal(saved.profile, 'narcotics');
   assert.equal(saved.protocolNumber, 'FF-E2E-2026-0001');
   assert.equal(saved.caseRegister.persons[0].fullName, 'FIREFOX E2E TEST PERSON');
