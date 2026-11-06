@@ -119,6 +119,27 @@ for (const id of ['narcotics-02', 'narcotics-03', 'narcotics-06', 'narcotics-08'
   assert.ok(xml.includes('άρθρου ........ του Ν. 4139/2013'), `${id} leaves the fact-dependent substantive article for officer selection`)
 }
 
+const dateValue = '2026-11-06'
+const expectedDate = new Intl.DateTimeFormat('el-GR', {
+  timeZone: 'UTC',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  weekday: 'long'
+}).formatToParts(new Date(Date.UTC(2026, 10, 6, 12)))
+const expectedDateParts = Object.fromEntries(expectedDate.filter((part) => ['day', 'month', 'year', 'weekday'].includes(part.type)).map((part) => [part.type, part.value]))
+for (const id of ['narcotics-01', 'narcotics-06']) {
+  const template = DEFAULT_NARCOTICS_TEMPLATES.find((entry) => entry.id === id)
+  for (const field of ['case.date.day', 'case.date.monthName', 'case.date.year', 'case.date.weekdayName']) {
+    assert.ok(template.fields.includes(field), `${id} declares derived date field ${field}`)
+    assert.equal(template.mappings[field], field)
+  }
+  const xml = new TextDecoder().decode(getTemplateParts(template)['word/document.xml'])
+  const rendered = replaceInXml(xml, template, { date: dateValue, timeline: { witnessStartTime: '12:00', examinationStartTime: '12:00' } })
+  for (const value of Object.values(expectedDateParts)) assert.ok(rendered.includes(value), `${id} renders derived Greek date component ${value}`)
+  for (const field of ['day', 'monthName', 'year', 'weekdayName']) assert.ok(!rendered.includes(`{{case.date.${field}}}`))
+}
+
 const greekMappings = {
   'ΗΜΕΡΟΜΗΝΙΑ_ΣΥΜΒΑΝΤΟΣ': 'incident.date',
   'ΩΡΑ_ΣΥΜΒΑΝΤΟΣ': 'incident.time',
