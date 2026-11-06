@@ -143,8 +143,8 @@ console.log('4. Testing offline and local-first architecture...');
 const swSource = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
 const viteSource = await readFile(new URL('../vite.config.js', import.meta.url), 'utf8');
 
-assert.ok(swSource.includes('./dossier-templates-data.js'), 'sw.js must cache dossier-templates-data.js');
-assert.ok(viteSource.includes('dossier-templates-data.js'), 'vite.config.js must include dossier-templates-data.js');
+assert.ok(swSource.includes('./template-data/narcotics.js'), 'sw.js must cache dossier-templates-data.js');
+assert.ok(viteSource.includes('template-data/narcotics.js'), 'vite.config.js must include dossier-templates-data.js');
 
 // Verify no external endpoints in loader or data
 const dataJsSource = await readFile(new URL('../dossier-templates-data.js', import.meta.url), 'utf8');
