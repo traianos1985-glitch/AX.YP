@@ -1,5 +1,11 @@
+## 2026-11-06 — Φόρτωση προτύπων DOCX ανά κατηγορία
+- Η βιβλιοθήκη DOCX δεν φορτώνει πλέον όλα τα ενσωματωμένα δεδομένα κατά το άνοιγμά της. Κάθε κατηγορία (ναρκωτικά, πλαστά, περιβάλλον, υγειονομικός κανονισμός, ηχορύπανση, camping, παρεμπόριο) έχει ανεξάρτητο dynamic import και αρχικοποιείται όταν ανοίξει η αντίστοιχη ενότητα.
+- Η αρχική φόρτωση περιμένει μόνο την ολοκλήρωση της τοπικής αποθήκευσης. Το seeding γίνεται ανά κατηγορία, με διατήρηση υπαρχόντων προτύπων, αντιστοιχίσεων και διαγραφών χρήστη.
+- Τα επιμέρους chunks παραμένουν στο precache του Service Worker, ώστε η πρώτη χρήση κάθε κατηγορίας να λειτουργεί και χωρίς σύνδεση.
+- Τα regression tests ελέγχουν πλέον την ανεξάρτητη φόρτωση, το category-scoped seeding και την offline διαθεσιμότητα.
+
 ## Unreleased
-- Split embedded DOCX template datasets into category-specific modules and load them through deferred dynamic imports when the template library initializes. Preserve offline first-use availability by precaching every category chunk in the service worker; keep seeding idempotent and wait for storage migration before seeding.
+- Load each category-specific DOCX data module only when its accordion is opened. Keep all chunks in the service-worker precache for offline first use, and seed each category idempotently after local storage hydration.
 
 ## 2026-11-06 — Τελικές διορθώσεις τεχνικού ελέγχου Claude
 - Η έκδοση της offline cache στο production παράγεται πλέον αυτόματα από SHA-256 hash των στατικών πόρων, των προτύπων DOCX και των νομικών πηγών. Προστέθηκε CI test που ελέγχει την αντικατάσταση του placeholder στο build.

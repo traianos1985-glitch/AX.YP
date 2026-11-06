@@ -7,157 +7,118 @@ let DEFAULT_HEALTH_TEMPLATES = [];
 let DEFAULT_NOISE_TEMPLATES = [];
 let DEFAULT_CAMPING_TEMPLATES = [];
 let DEFAULT_COMMERCE_TEMPLATES = [];
-let builtinTemplateDataPromise = null;
 
-export function loadBuiltinTemplateData() {
-  if (!builtinTemplateDataPromise) {
-    builtinTemplateDataPromise = Promise.all([
-      import('./template-data/narcotics.js'),
-      import('./template-data/counterfeit.js'),
-      import('./template-data/environment.js'),
-      import('./template-data/health.js'),
-      import('./noise-templates-data.js'),
-      import('./camping-templates-data.js'),
-      import('./paremporio-templates.js')
-    ]).then(([narcotics, counterfeit, environment, health, noise, camping, commerce]) => {
-      DEFAULT_NARCOTICS_TEMPLATES = narcotics.DEFAULT_NARCOTICS_TEMPLATES;
-      DEFAULT_COUNTERFEIT_TEMPLATES = counterfeit.DEFAULT_COUNTERFEIT_TEMPLATES;
-      DEFAULT_ENVIRONMENT_TEMPLATES = environment.DEFAULT_ENVIRONMENT_TEMPLATES;
-      DEFAULT_HEALTH_TEMPLATES = health.DEFAULT_HEALTH_TEMPLATES;
-      DEFAULT_NOISE_TEMPLATES = noise.DEFAULT_NOISE_TEMPLATES;
-      DEFAULT_CAMPING_TEMPLATES = camping.DEFAULT_CAMPING_TEMPLATES;
-      DEFAULT_COMMERCE_TEMPLATES = commerce.DEFAULT_COMMERCE_TEMPLATES;
-      return true;
-    }).catch((error) => {
-      builtinTemplateDataPromise = null;
-      throw error;
-    });
-  }
-  return builtinTemplateDataPromise;
+const CATEGORY_LOADERS = {
+  narcotics: () => import('./template-data/narcotics.js'),
+  counterfeit: () => import('./template-data/counterfeit.js'),
+  environment: () => import('./template-data/environment.js'),
+  health: () => import('./template-data/health.js'),
+  noise: () => import('./noise-templates-data.js'),
+  camping: () => import('./camping-templates-data.js'),
+  commerce: () => import('./paremporio-templates.js')
+};
+const CATEGORY_SEED_KEYS = {
+  narcotics: 'axyp-narcotics-templates-seeded-v1',
+  counterfeit: 'axyp-counterfeit-templates-seeded-v1',
+  environment: 'axyp-environment-templates-seeded-v1',
+  health: 'axyp-health-templates-seeded-v1',
+  noise: 'axyp-noise-templates-seeded-v1',
+  camping: 'axyp-camping-templates-seeded-v1',
+  commerce: 'axyp-commerce-templates-seeded-v1'
+};
+const loadedCategoryPromises = new Map();
+const expandedCategories = new Set();
+
+export function loadBuiltinTemplateData(category) {
+  const categories = category ? [category] : Object.keys(CATEGORY_LOADERS);
+  return Promise.all(categories.map((name) => {
+    if (!CATEGORY_LOADERS[name]) throw new Error('Unknown built-in template category: ' + name);
+    if (!loadedCategoryPromises.has(name)) {
+      const promise = CATEGORY_LOADERS[name]().then((module) => {
+        const values = {
+          narcotics: module.DEFAULT_NARCOTICS_TEMPLATES,
+          counterfeit: module.DEFAULT_COUNTERFEIT_TEMPLATES,
+          environment: module.DEFAULT_ENVIRONMENT_TEMPLATES,
+          health: module.DEFAULT_HEALTH_TEMPLATES,
+          noise: module.DEFAULT_NOISE_TEMPLATES,
+          camping: module.DEFAULT_CAMPING_TEMPLATES,
+          commerce: module.DEFAULT_COMMERCE_TEMPLATES
+        };
+        const target = {
+          narcotics: (value) => { DEFAULT_NARCOTICS_TEMPLATES = value; },
+          counterfeit: (value) => { DEFAULT_COUNTERFEIT_TEMPLATES = value; },
+          environment: (value) => { DEFAULT_ENVIRONMENT_TEMPLATES = value; },
+          health: (value) => { DEFAULT_HEALTH_TEMPLATES = value; },
+          noise: (value) => { DEFAULT_NOISE_TEMPLATES = value; },
+          camping: (value) => { DEFAULT_CAMPING_TEMPLATES = value; },
+          commerce: (value) => { DEFAULT_COMMERCE_TEMPLATES = value; }
+        };
+        target[name](values[name] || []);
+        return true;
+      }).catch((error) => {
+        loadedCategoryPromises.delete(name);
+        throw error;
+      });
+      loadedCategoryPromises.set(name, promise);
+    }
+    return loadedCategoryPromises.get(name);
+  })).then(() => true);
 }
 
 const KEY = 'axyp-docx-templates';
-const NARCOTICS_SEED_KEY = 'axyp-narcotics-templates-seeded-v1';
-const COUNTERFEIT_SEED_KEY = 'axyp-counterfeit-templates-seeded-v1';
-const ENVIRONMENT_SEED_KEY = 'axyp-environment-templates-seeded-v1';
-  const HEALTH_SEED_KEY = 'axyp-health-templates-seeded-v1';
-  const NOISE_SEED_KEY = 'axyp-noise-templates-seeded-v1';
-  const CAMPING_SEED_KEY = 'axyp-camping-templates-seeded-v1';
-  const COMMERCE_SEED_KEY = 'axyp-commerce-templates-seeded-v1';
 const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
 const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } catch (_) { return []; } };
 const write = (value) => storage().setItem(KEY, JSON.stringify(value));
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[ch]);
 
-export async function ensureDefaultTemplates(storageInstance = storage()) {
-  await loadBuiltinTemplateData();
-  try {
-    const existing = (() => {
-      try { return JSON.parse(storageInstance.getItem(KEY) || '[]'); } catch (_) { return []; }
-    })();
+function templatesForCategory(category) {
+  return {
+    narcotics: DEFAULT_NARCOTICS_TEMPLATES,
+    counterfeit: DEFAULT_COUNTERFEIT_TEMPLATES,
+    environment: DEFAULT_ENVIRONMENT_TEMPLATES,
+    health: DEFAULT_HEALTH_TEMPLATES,
+    noise: DEFAULT_NOISE_TEMPLATES,
+    camping: DEFAULT_CAMPING_TEMPLATES,
+    commerce: DEFAULT_COMMERCE_TEMPLATES
+  }[category] || [];
+}
 
-    const keyOf = (t) => (t.category ? `${t.category}:${t.name}` : t.name);
-    const existingKeys = new Set(existing.map(keyOf));
-    let updated = [...existing];
-    let hasChanges = false;
+async function seedCategory(storageInstance, category) {
+  await loadBuiltinTemplateData(category);
+  const seedKey = CATEGORY_SEED_KEYS[category];
+  if (storageInstance.getItem(seedKey)) return;
+  const existing = (() => {
+    try { return JSON.parse(storageInstance.getItem(KEY) || '[]'); } catch (_) { return []; }
+  })();
+  const keyOf = (template) => (template.category ? `${template.category}:${template.name}` : template.name);
+  const existingKeys = new Set(existing.map(keyOf));
+  const defaults = templatesForCategory(category) || [];
+  const additions = defaults
+    .filter((template) => !existingKeys.has(keyOf(template)))
+    .map((template) => category === 'counterfeit' ? prepareCounterfeitTemplate(template) : template);
+  if (additions.length) storageInstance.setItem(KEY, JSON.stringify([...existing, ...additions]));
+  storageInstance.setItem(seedKey, 'true');
+}
 
-    // 1. Narcotics templates seeding
-    if (!storageInstance.getItem(NARCOTICS_SEED_KEY)) {
-      const toAddNarcotics = (DEFAULT_NARCOTICS_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
-      if (toAddNarcotics.length > 0) {
-        updated = [...updated, ...toAddNarcotics];
-        toAddNarcotics.forEach((t) => existingKeys.add(keyOf(t)));
-        hasChanges = true;
-      }
-      storageInstance.setItem(NARCOTICS_SEED_KEY, 'true');
-    }
-
-    // 2. Counterfeit templates seeding. Add the category-specific serial-number
-    // field to the three source documents where the same value is repeated.
-    if (!storageInstance.getItem(COUNTERFEIT_SEED_KEY)) {
-      const toAddCounterfeit = (DEFAULT_COUNTERFEIT_TEMPLATES || [])
-        .filter((t) => !existingKeys.has(keyOf(t)))
-        .map(prepareCounterfeitTemplate);
-      if (toAddCounterfeit.length > 0) {
-        updated = [...updated, ...toAddCounterfeit];
-        toAddCounterfeit.forEach((t) => existingKeys.add(keyOf(t)));
-        hasChanges = true;
-      }
-      storageInstance.setItem(COUNTERFEIT_SEED_KEY, 'true');
-    }
-
-    // 3. Environment templates seeding
-    if (!storageInstance.getItem(ENVIRONMENT_SEED_KEY)) {
-      const toAddEnvironment = (DEFAULT_ENVIRONMENT_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
-      if (toAddEnvironment.length > 0) {
-        updated = [...updated, ...toAddEnvironment];
-        toAddEnvironment.forEach((t) => existingKeys.add(keyOf(t)));
-        hasChanges = true;
-      }
-      storageInstance.setItem(ENVIRONMENT_SEED_KEY, 'true');
-    }
-
-    // 4. Health templates seeding
-    if (!storageInstance.getItem(HEALTH_SEED_KEY)) {
-      const toAddHealth = (DEFAULT_HEALTH_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
-      if (toAddHealth.length > 0) {
-        updated = [...updated, ...toAddHealth];
-        toAddHealth.forEach((t) => existingKeys.add(keyOf(t)));
-        hasChanges = true;
-      }
-      storageInstance.setItem(HEALTH_SEED_KEY, 'true');
-    }
-
-
-    // 5. Noise-pollution templates for health-interest establishments.
-    if (!storageInstance.getItem(NOISE_SEED_KEY)) {
-      const toAddNoise = (DEFAULT_NOISE_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
-      if (toAddNoise.length > 0) {
-        updated = [...updated, ...toAddNoise];
-        toAddNoise.forEach((t) => existingKeys.add(keyOf(t)));
-        hasChanges = true;
-      }
-      storageInstance.setItem(NOISE_SEED_KEY, 'true');
-    }
-
-    // 6. Camping templates.
-    if (!storageInstance.getItem(CAMPING_SEED_KEY)) {
-      const toAddCamping = (DEFAULT_CAMPING_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
-      if (toAddCamping.length > 0) {
-        updated = [...updated, ...toAddCamping];
-        toAddCamping.forEach((t) => existingKeys.add(keyOf(t)));
-        hasChanges = true;
-      }
-      storageInstance.setItem(CAMPING_SEED_KEY, 'true');
-    }
-
-    // 7. Commerce templates: every document is anonymized and keeps actor A/B fields separate.
-    if (!storageInstance.getItem(COMMERCE_SEED_KEY)) {
-      const toAddCommerce = (DEFAULT_COMMERCE_TEMPLATES || []).filter((t) => !existingKeys.has(keyOf(t)));
-      if (toAddCommerce.length > 0) {
-        updated = [...updated, ...toAddCommerce];
-        toAddCommerce.forEach((t) => existingKeys.add(keyOf(t)));
-        hasChanges = true;
-      }
-      storageInstance.setItem(COMMERCE_SEED_KEY, 'true');
-    }
-
-    if (hasChanges) {
-      storageInstance.setItem(KEY, JSON.stringify(updated));
-    }
-  } catch (e) {
-    console.error('Failed to seed default templates:', e);
+export async function ensureDefaultTemplates(storageInstance = storage(), category) {
+  if (storageInstance && storageInstance.ready && typeof storageInstance.ready.then === 'function') {
+    await storageInstance.ready;
+  }
+  const categories = category ? [category] : Object.keys(CATEGORY_LOADERS);
+  for (const name of categories) {
+    if (!CATEGORY_LOADERS[name]) throw new Error('Unknown built-in template category: ' + name);
+    await seedCategory(storageInstance, name);
   }
 }
 
 export async function initializeDefaultTemplates(storageInstance = storage()) {
-  // Το storage.js ολοκληρώνει πρώτα την ανάγνωση/μεταφορά από IndexedDB.
-  // Έτσι το seed δεν μπορεί να πατήσει πάνω σε νεότερα αποθηκευμένα δεδομένα.
+  // Περιμένουμε μόνο την ενυδάτωση της τοπικής αποθήκευσης.
+  // Τα μεγάλα DOCX data chunks φορτώνονται όταν ανοιχτεί η αντίστοιχη κατηγορία.
   if (storageInstance && storageInstance.ready && typeof storageInstance.ready.then === 'function') {
     await storageInstance.ready;
   }
-  await ensureDefaultTemplates(storageInstance);
+  return true;
 }
 
 function uint8ToBase64(bytes) {
@@ -677,22 +638,48 @@ function render() {
   const isCustom = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && !isCommerce(t) && !isNarcotics(t);
 
   const groups = [
-    { title: (count) => `Δικογραφία Ναρκωτικών (${count} πρότυπα)`, items: allTemplates.filter(isNarcotics) },
-    { title: (count) => `Δικογραφία Πλαστών Νομισμάτων (${count} πρότυπα)`, items: allTemplates.filter(isCounterfeit) },
-    { title: (count) => `Δικογραφία Ρύπανσης Περιβάλλοντος (${count} πρότυπα)`, items: allTemplates.filter(isEnvironment) },
-    { title: (count) => `Δικογραφία Υγειονομικού Κανονισμού (${count} πρότυπα)`, items: allTemplates.filter(isHealth) },
-    { title: (count) => `Δικογραφία Ηχορύπανσης Κ.Υ.Ε. (${count} πρότυπα)`, items: allTemplates.filter(isNoise) },
-    { title: (count) => `Δικογραφία Παράνομου Camping (${count} πρότυπα)`, items: allTemplates.filter(isCamping) },
-    { title: (count) => `Προσωρινά πρότυπα παρεμπορίου (${count})`, items: allTemplates.filter(isCommerce) },
-    { title: (count) => `Πρόσθετα / προσαρμοσμένα πρότυπα (${count})`, items: allTemplates.filter(isCustom) }
+    { category: 'narcotics', title: (count) => `Δικογραφία Ναρκωτικών (${count} πρότυπα)`, items: allTemplates.filter(isNarcotics) },
+    { category: 'counterfeit', title: (count) => `Δικογραφία Πλαστών Νομισμάτων (${count} πρότυπα)`, items: allTemplates.filter(isCounterfeit) },
+    { category: 'environment', title: (count) => `Δικογραφία Ρύπανσης Περιβάλλοντος (${count} πρότυπα)`, items: allTemplates.filter(isEnvironment) },
+    { category: 'health', title: (count) => `Δικογραφία Υγειονομικού Κανονισμού (${count} πρότυπα)`, items: allTemplates.filter(isHealth) },
+    { category: 'noise', title: (count) => `Δικογραφία Ηχορύπανσης Κ.Υ.Ε. (${count} πρότυπα)`, items: allTemplates.filter(isNoise) },
+    { category: 'camping', title: (count) => `Δικογραφία Παράνομου Camping (${count} πρότυπα)`, items: allTemplates.filter(isCamping) },
+    { category: 'commerce', title: (count) => `Προσωρινά πρότυπα παρεμπορίου (${count})`, items: allTemplates.filter(isCommerce) },
+    { category: null, title: (count) => `Πρόσθετα / προσαρμοσμένα πρότυπα (${count})`, items: allTemplates.filter(isCustom) }
   ];
 
   groups.forEach((group) => {
-    if (!group.items.length) return;
-    const heading = document.createElement('h3');
+    if (!group.category && !group.items.length) return;
+    const details = document.createElement('details');
+    details.className = 'template-category';
+    const categoryKey = group.category || 'custom';
+    details.open = expandedCategories.has(categoryKey);
+    const heading = document.createElement('summary');
     heading.className = 'template-category-heading';
-    heading.textContent = group.title(group.items.length);
-    root.appendChild(heading);
+    const categorySeeded = !group.category || !!storage().getItem(CATEGORY_SEED_KEYS[group.category]);
+    heading.textContent = group.title(group.items.length) + (categorySeeded ? '' : ' · άνοιγμα για φόρτωση');
+    details.appendChild(heading);
+    const panel = document.createElement('div');
+    panel.className = 'template-category-content';
+    details.appendChild(panel);
+    root.appendChild(details);
+    details.addEventListener('toggle', async () => {
+      if (!details.open) {
+        expandedCategories.delete(categoryKey);
+        return;
+      }
+      expandedCategories.add(categoryKey);
+      if (!group.category) return;
+      panel.textContent = 'Φόρτωση προτύπων…';
+      try {
+        await ensureDefaultTemplates(storage(), group.category);
+        render();
+      } catch (error) {
+        panel.textContent = 'Δεν ήταν δυνατή η φόρτωση αυτής της κατηγορίας. Έλεγξε τη σύνδεση και δοκίμασε ξανά.';
+        console.error('Template category loading failed:', group.category, error);
+      }
+    });
+    if (!details.open) return;
 
     group.items.forEach((template) => {
       const card = document.createElement('article');
@@ -766,7 +753,7 @@ function render() {
       };
 
       if (template.mappingConfirmedAt) card.querySelector('.generate').disabled = false;
-      root.appendChild(card);
+      panel.appendChild(card);
     });
   });
 
