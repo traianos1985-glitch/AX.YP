@@ -1029,8 +1029,9 @@ function ensureTemplateVersionFooter(files, template) {
     ? footerRelationship.find((entry) => entry.id === referencedDefault[1])
     : footerRelationship[0];
   let footerPath = footerRel ? targetToPath(footerRel.target) : '';
+  const canReuseExistingFooterReference = Boolean(footerRel && files[footerPath]);
 
-  if (!footerPath || !files[footerPath]) {
+  if (!canReuseExistingFooterReference) {
     let index = 1;
     do { footerPath = `word/footer${index++}.xml`; } while (files[footerPath]);
     const usedIds = [...relsXml.matchAll(/\bId="rId(\d+)"/gu)].map((match) => Number(match[1]));
@@ -1055,6 +1056,9 @@ function ensureTemplateVersionFooter(files, template) {
   files[relsPath] = encode(relsXml);
 
   let updatedDocumentXml = documentXml;
+  if (referencedDefault && !canReuseExistingFooterReference) {
+    updatedDocumentXml = updatedDocumentXml.replace(/(<w:footerReference\b(?=[^>]*\bw:type="default")[^>]*\br:id=")[^"]+("[^>]*\/?\s*>)/u, `$1${footerRel.id}$2`);
+  }
   if (!/<w:footerReference\b(?=[^>]*\bw:type="default")/u.test(updatedDocumentXml)) {
     const reference = `<w:footerReference w:type="default" r:id="${footerRel.id}"/>`;
     if (/<w:sectPr\b[^>]*>/u.test(updatedDocumentXml)) {
