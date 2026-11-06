@@ -9,7 +9,7 @@ globalThis.window = {
       address: 'TEST-SERVICE-ADDRESS',
       phone: 'TEST-SERVICE-PHONE',
       email: 'test-service@example.invalid',
-      prosecutor: 'TEST-SERVICE-PROSECUTOR',
+      prosecutor: 'TEST-PROSECUTOR',
       chemicalService: 'TEST-CHEMICAL-SERVICE'
     })
   }
