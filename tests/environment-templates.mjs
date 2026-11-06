@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { unzipSync, zipSync, strFromU8, strToU8 } from '../vendor/fflate.js';
-import { DEFAULT_ENVIRONMENT_TEMPLATES } from '../dossier-templates-data.js';
+import { DEFAULT_ENVIRONMENT_TEMPLATES } from '../template-data/environment.js';
 import { ensureDefaultTemplates, initializeDefaultTemplates, getTemplateParts, replaceInXml, valueFor } from '../template-library.js';
 
 console.log('--- Starting Environment Templates & Auto-loader Test Suite ---');
