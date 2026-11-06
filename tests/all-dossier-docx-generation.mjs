@@ -10,7 +10,7 @@ const mockStorage = {
   setItem(key, value) { values.set(key, String(value)); }
 };
 
-await await ensureDefaultTemplates(mockStorage);
+await ensureDefaultTemplates(mockStorage);
 const templates = JSON.parse(mockStorage.getItem('axyp-docx-templates') || '[]');
 const expectedCounts = {
   narcotics: 10,
