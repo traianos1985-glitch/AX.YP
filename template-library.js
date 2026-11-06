@@ -892,11 +892,11 @@ function replaceLegacyLocalServiceReferences(xml) {
   }
 
   let previousParagraphText = '';
-  result = result.replace(/<w:p\\b[^>]*>[\\s\\S]*?<\\/w:p>/gu, (paragraph) => {
-    const paragraphText = [...paragraph.matchAll(/<w:t\\b[^>]*>([\\s\\S]*?)<\\/w:t>/gu)]
+  result = result.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/gu, (paragraph) => {
+    const paragraphText = [...paragraph.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)]
       .map((match) => match[1])
       .join('');
-    if (/Πλημ\\/κων\\s*$/u.test(previousParagraphText.trim()) && /^\\s*Κυπαρισσίας\\./u.test(paragraphText.trim())) {
+    if (/Πλημ\/κων\s*$/u.test(previousParagraphText.trim()) && /^\s*Κυπαρισσίας\./u.test(paragraphText.trim())) {
       paragraph = replaceTextAcrossWordRuns(paragraph, /Κυπαρισσίας/gu, '');
     }
     previousParagraphText = paragraphText;
