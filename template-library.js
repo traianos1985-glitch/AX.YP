@@ -265,6 +265,7 @@ const FIELD_OPTIONS = [
   { path: 'case.offence', label: 'Υπόθεση · Είδος αδικήματος' },
   { path: 'case.status', label: 'Υπόθεση · Κατάσταση' },
   { path: 'case.date', label: 'Υπόθεση · Ημερομηνία' },
+  { path: 'case.releaseDate', label: 'Υπόθεση · Ημερομηνία απόλυσης' },
   { path: 'case.time', label: 'Υπόθεση · Ώρα σύνταξης' },
   { path: 'incident.date', label: 'Συμβάν · Ημερομηνία' },
   { path: 'incident.time', label: 'Συμβάν · Ώρα' },
@@ -393,7 +394,8 @@ const FIELD_OPTIONS = [
   { path: 'timeline.weighing.startTime', label: "5. Έκθεση ζύγισης · Ώρα έναρξης (+1')" },
   { path: 'timeline.weighing.endTime', label: "5. Έκθεση ζύγισης · Ώρα περάτωσης (+5')" },
   { path: 'timeline.examination.startTime', label: "6. Έκθεση απολογίας · Ώρα έναρξης (+1')" },
-  { path: 'timeline.examination.endTime', label: "6. Έκθεση απολογίας · Ώρα περάτωσης (+5')" }
+  { path: 'timeline.examination.endTime', label: "6. Έκθεση απολογίας · Ώρα περάτωσης (+5')" },
+  { path: 'timeline.release.startTime', label: 'Απόλυση · Ώρα' }
 ];
 
 function mappingFor(template, field) {
@@ -429,6 +431,7 @@ export function valueFor(path, item) {
     'case.offence': item.offence,
     'case.status': item.status,
     'case.date': item.date,
+    'case.releaseDate': item.releaseDate,
     'case.time': item.time,
     'incident.date': item.incidentDate || item.date,
     'incident.time': item.incidentTime || item.time,
@@ -540,6 +543,7 @@ export function valueFor(path, item) {
     'timeline.weighing.endTime': getTime('weighingEndTime'),
     'timeline.examination.startTime': getTime('examinationStartTime'),
     'timeline.examination.endTime': getTime('examinationEndTime'),
+    'timeline.release.startTime': getTime('releaseStartTime'),
     'case.witnessStartTime': getTime('witnessStartTime'),
     'case.witnessEndTime': getTime('witnessEndTime'),
     'case.arrestStartTime': getTime('arrestStartTime'),
