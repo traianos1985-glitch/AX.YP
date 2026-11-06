@@ -835,11 +835,11 @@ export function patchNarcoticsTemplateXml(xml, templateId) {
       // paragraph is replaced by a real table, that old line is redundant.
       const tableEnd = xml.indexOf(signatureTable) + signatureTable.length;
       const tail = xml.slice(tableEnd);
-      const nextParagraph = tail.match(/^\s*(<w:p\\b[\\s\\S]*?<\\/w:p>)/u);
+      const nextParagraph = tail.match(/^\s*(<w:p\b[\s\S]*?<\/w:p>)/u);
       if (nextParagraph) {
         const text = nextParagraph[1].replace(/<[^>]+>/gu, '').replace(/&amp;/gu, '&').trim();
         const dotRuns = text.match(/[.·…_]{3,}/gu) || [];
-        if (/^[.·…_\\s]+$/u.test(text) && dotRuns.length >= 3) {
+        if (/^[.·…_\s]+$/u.test(text) && dotRuns.length >= 3) {
           xml = xml.slice(0, tableEnd) + tail.replace(nextParagraph[1], '');
         }
       }
