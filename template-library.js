@@ -402,6 +402,19 @@ const FIELD_OPTIONS = [
   { path: 'timeline.release.startTime', label: 'Απόλυση · Ώρα' }
 ];
 
+export function getMissingTemplateFields(template, item) {
+  const fields = Array.isArray(template && template.fields) ? template.fields : [];
+  return fields.flatMap((field) => {
+    const mapped = mappingFor(template, field);
+    if (!mapped) return [{ field, reason: 'δεν έχει αντιστοιχιστεί' }];
+    const value = valueFor(mapped, item);
+    if (value === null || value === undefined || String(value).trim() === '' || String(value).trim() === '—') {
+      return [{ field, reason: 'δεν έχει συμπληρωθεί' }];
+    }
+    return [];
+  });
+}
+
 function mappingFor(template, field) {
   if (template.mappings && template.mappings[field]) return template.mappings[field];
   if (field === 'officerB.service') return field;
@@ -938,6 +951,12 @@ export async function generate(template) {
       window.alert('Επίλεξε ρητά την υπόθεση που αφορά το έγγραφο πριν από τη συμπλήρωση.');
     }
     return;
+  }
+  const missingFields = getMissingTemplateFields(template, item);
+  if (missingFields.length) {
+    const details = missingFields.map(({ field, reason }) => `• {{${field}}} — ${reason}`).join('\\n');
+    const message = 'Πριν από τη λήψη του Word εντοπίστηκαν τα παρακάτω πεδία που χρειάζονται έλεγχο:\\n\\n' + details + '\\n\\nΘέλεις να συνεχίσεις τη λήψη με αυτά τα πεδία κενά;';
+    if (typeof window.confirm === 'function' && !window.confirm(message)) return;
   }
   const blob = new Blob([buildDocx(template, item)], {
     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
