@@ -17,11 +17,6 @@ import { zipSync } from './vendor/fflate.js';
     return list.filter(function (item) { return item.id === id; })[0] || null;
   }
 
-  function syncProfileSections() {
-    var section = $('case-narcotics-release-section');
-    if (section) section.hidden = !$('case-profile') || $('case-profile').value !== 'narcotics';
-  }
-
   function selectedChecks() {
     return ['check-safety', 'check-source', 'check-notify'].filter(function (id) {
       var el = $(id);
@@ -34,7 +29,6 @@ import { zipSync } from './vendor/fflate.js';
     if (!item) return;
     item.protocolNumber = ($('case-protocol-number') ? $('case-protocol-number').value.trim() : '');
     item.profile = ($('case-profile') ? $('case-profile').value : 'generic');
-    syncProfileSections();
     item.people = ($('case-people') ? $('case-people').value.trim() : '');
     item.location = ($('case-location') ? $('case-location').value.trim() : '');
     item.time = ($('case-time') ? $('case-time').value : '');
@@ -117,7 +111,6 @@ import { zipSync } from './vendor/fflate.js';
     var item = current();
     if (!item) return;
     if ($('case-profile')) $('case-profile').value = item.profile || 'generic';
-    syncProfileSections();
     if ($('case-people')) $('case-people').value = item.people || '';
     if ($('case-location')) $('case-location').value = item.location || '';
     if ($('case-time')) $('case-time').value = item.time || '';
@@ -318,12 +311,9 @@ import { zipSync } from './vendor/fflate.js';
       : 'Εξήχθη ZIP με τα στοιχεία της υπόθεσης. Δεν έχει συνδεθεί ακόμη δικογραφία-πρότυπο.';
   }
 
-  $('case-profile')?.addEventListener('change', syncProfileSections);
-  syncProfileSections();
   $('case-form')?.addEventListener('submit', function () { setTimeout(loadExtraFields, 0); });
   $('case-reset')?.addEventListener('click', function () {
     if ($('case-profile')) $('case-profile').value = 'generic';
-    syncProfileSections();
     if ($('case-people')) $('case-people').value = '';
     if ($('case-evidence')) $('case-evidence').value = '';
     ['check-safety', 'check-source', 'check-notify'].forEach(function (id) {
