@@ -11,11 +11,18 @@ const files = [
   'app.js',
   'case-bundles.js',
   'case-enhancements.js',
+  'case-workflow.js',
   'hypotheses.js',
   'security.js',
   'storage.js',
+  'case-folder-storage.js',
+  'incident-search.js',
+  'dossier-categories.js',
   'template-library.js',
   'dossier-templates-data.js',
+  'noise-templates-data.js',
+  'camping-templates-data.js',
+  'paremporio-templates.js',
   'templates.js',
   'sw.js',
   'manifest.json',
@@ -26,7 +33,8 @@ const files = [
   'icon-512.svg',
   'icon-maskable.svg',
   'CHANGELOG.md',
-  'PENDING.md'
+  'PENDING.md',
+  'ΟΔΗΓΙΕΣ-ΧΡΗΣΗΣ.md'
 ];
 
 function copyStaticFiles() {
