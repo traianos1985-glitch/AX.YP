@@ -112,7 +112,7 @@ for (const template of templates) {
     const xml = new TextDecoder().decode(bytes);
     assert.doesNotMatch(
       xml,
-      /\{\{\s*[a-zA-Z0-9_.-]+\s*\}\}/,
+      /\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/u,
       `${template.id} (${filename}) must not retain unresolved placeholders`
     );
   }
