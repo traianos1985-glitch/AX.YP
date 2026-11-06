@@ -117,6 +117,34 @@ const TASK_FIELDS = [
   { label: 'Κατάσταση', name: 'status', options: [['pending','Εκκρεμεί'],['in_progress','Σε εξέλιξη'],['completed','Ολοκληρώθηκε'],['not_applicable','Δεν απαιτείται']] },
   { label: 'Σημειώσεις', name: 'notes', type: 'textarea' }
 ];
+const MAX_RECORDS = 100;
+const ALLOWED = {
+  persons: { role: ROLE_OPTIONS.map((x) => x[0]), examinationStatus: ['pending','completed','not_required'], fields: ['fullName','fatherName','idNumber','address','phone','notes'] },
+  evidence: { category: EVIDENCE_OPTIONS.map((x) => x[0]), custodyStatus: ['unknown','seized','stored','delivered','returned','other'], fields: ['description','quantity','unit','serialNumber','sealNumber','notes'] },
+  actions: { type: TASK_OPTIONS.map((x) => x[0]), status: ['pending','in_progress','completed','not_applicable'], fields: ['title','assignedTo','dueDate','notes'] }
+};
+function bounded(value, max = 500) {
+  return clean(value).slice(0, max);
+}
+export function normalizeCaseRegister(data) {
+  const source = data && typeof data === 'object' ? data : {};
+  const result = { schemaVersion: 1, persons: [], evidence: [], actions: [] };
+  Object.keys(ALLOWED).forEach((group) => {
+    const config = ALLOWED[group];
+    const records = Array.isArray(source[group]) ? source[group].slice(0, MAX_RECORDS) : [];
+    result[group] = records.filter((record) => record && typeof record === 'object' && !Array.isArray(record)).map((record) => {
+      const normalized = { id: bounded(record.id, 100) || uid() };
+      config.fields.forEach((key) => { normalized[key] = bounded(record[key], key === 'notes' ? 2000 : 500); });
+      Object.keys(config).filter((key) => key !== 'fields').forEach((key) => {
+        const value = bounded(record[key], 80);
+        normalized[key] = config[key].includes(value) ? value : config[key][0];
+      });
+      if (group === 'evidence' && normalized.quantity && (!Number.isFinite(Number(normalized.quantity)) || Number(normalized.quantity) < 0)) normalized.quantity = '';
+      return normalized;
+    });
+  });
+  return result;
+}
 let initialized = false;
 function init() {
   if (initialized) return;
@@ -158,19 +186,18 @@ function collect(listId, kind) {
 }
 export function getCaseRegisterData() {
   init();
-  return {
-    schemaVersion: 1,
+  return normalizeCaseRegister({
     persons: collect('person-register-list','person'),
     evidence: collect('evidence-register-list','evidence'),
     actions: collect('task-register-list','task')
-  };
+  });
 }
 export function loadCaseRegister(data) {
   init();
-  const source = data && typeof data === 'object' ? data : {};
-  renderList($('person-register-list'),'person',Array.isArray(source.persons) ? source.persons : [],'Πρόσωπο',PERSON_FIELDS);
-  renderList($('evidence-register-list'),'evidence',Array.isArray(source.evidence) ? source.evidence : [],'Πειστήριο',EVIDENCE_FIELDS);
-  renderList($('task-register-list'),'task',Array.isArray(source.actions) ? source.actions : [],'Ενέργεια',TASK_FIELDS);
+  const source = normalizeCaseRegister(data);
+  renderList($('person-register-list'),'person',source.persons,'Πρόσωπο',PERSON_FIELDS);
+  renderList($('evidence-register-list'),'evidence',source.evidence,'Πειστήριο',EVIDENCE_FIELDS);
+  renderList($('task-register-list'),'task',source.actions,'Ενέργεια',TASK_FIELDS);
 }
 export function resetCaseRegister() {
   loadCaseRegister({ persons: [], evidence: [], actions: [] });
