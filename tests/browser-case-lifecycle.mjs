@@ -256,7 +256,24 @@ try {
   console.log('Browser case lifecycle E2E passed: category creation, guided entry, register persistence, reload/reopen and full backup.');
 } finally {
   if (socket) socket.close();
-  if (chrome && !chrome.killed) chrome.kill('SIGTERM');
-  if (!server.killed) server.kill('SIGTERM');
-  await rm(profileDir, { recursive: true, force: true });
+
+  async function stopProcess(child) {
+    if (!child || child.exitCode !== null || child.signalCode !== null) return;
+    child.kill('SIGTERM');
+    const exited = await Promise.race([
+      new Promise((resolve) => child.once('close', () => resolve(true))),
+      delay(5000).then(() => false)
+    ]);
+    if (!exited && child.exitCode === null && child.signalCode === null) {
+      child.kill('SIGKILL');
+      await Promise.race([
+        new Promise((resolve) => child.once('close', resolve)),
+        delay(2000)
+      ]);
+    }
+  }
+
+  await stopProcess(chrome);
+  await stopProcess(server);
+  await rm(profileDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }
