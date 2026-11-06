@@ -731,107 +731,90 @@ function uid() {
     reader.onload = async function () {
       try {
         var parsed = JSON.parse(reader.result);
-        if (!parsed || (parsed.schema !== 2 && parsed.schema !== 1) || !Array.isArray(parsed.hypotheses)) {
+        if (!parsed || (parsed.schema !== 2 && parsed.schema !== 1) || !Array.isArray(parsed.hypotheses) ||
+            !parsed.hypotheses.every(function (item) { return item && typeof item === 'object' && typeof item.id === 'string' && item.id; })) {
           throw new Error('invalid schema');
         }
 
+        function parseArray(raw, label) {
+          if (raw === null || raw === undefined) return [];
+          var value = JSON.parse(raw);
+          if (!Array.isArray(value)) throw new Error('invalid ' + label);
+          return value;
+        }
+
+        var incomingBundles = parsed.bundles === null || parsed.bundles === undefined ? null : parseArray(parsed.bundles, 'bundles');
+        var incomingTemplates = parsed.templates === null || parsed.templates === undefined ? null : parseArray(parsed.templates, 'templates');
         var shouldMerge = window.confirm(
           'Επαναφορά αντιγράφου:\n\n' +
-          '• Πάτησε [OK] για ΣΥΓΧΩΝΕΥΣΗ (διατήρηση των υπαρχουσών υποθέσεων και προσθήκη των νέων).\n' +
+          '• Πάτησε [OK] για ΣΥΓΧΩΝΕΥΣΗ (διατήρηση των υπαρχουσών υποθέσεων και προσθήκη/ενημέρωση των εισαγόμενων).\n' +
           '• Πάτησε [Άκυρο] για επιλογή Πλήρους Αντικατάστασης.'
         );
 
         var s = window.AXYP_STORAGE || localStorage;
-        var currentItems = read();
-
+        var entries = [];
         if (shouldMerge) {
-          // Merge logic: match by ID or append
-          var merged = currentItems.slice();
+          var merged = read().slice();
           parsed.hypotheses.forEach(function (incoming) {
-            var idx = -1;
-            for (var i = 0; i < merged.length; i++) {
-              if (merged[i].id === incoming.id) { idx = i; break; }
-            }
-            if (idx >= 0) {
-              merged[idx] = Object.assign({}, merged[idx], incoming);
-            } else {
-              merged.push(incoming);
-            }
+            var index = merged.findIndex(function (item) { return item.id === incoming.id; });
+            if (index >= 0) merged[index] = Object.assign({}, merged[index], incoming);
+            else merged.push(incoming);
           });
-          write(merged);
+          entries.push(['axyp-hypotheses', JSON.stringify(merged)]);
 
-          // Merge bundles
-          if (parsed.bundles) {
-            try {
-              var currBundles = JSON.parse(s.getItem('axyp-case-bundles') || '[]');
-              var incBundles = JSON.parse(parsed.bundles);
-              if (Array.isArray(incBundles)) {
-                incBundles.forEach(function (b) {
-                  if (!currBundles.some(function (cb) { return cb.id === b.id; })) {
-                    currBundles.push(b);
-                  }
-                });
-                s.setItem('axyp-case-bundles', JSON.stringify(currBundles));
-              }
-            } catch (_) {}
+          if (incomingBundles) {
+            var currentBundles = parseArray(s.getItem('axyp-case-bundles') || '[]', 'υπαρχόντων bundles');
+            incomingBundles.forEach(function (bundle) {
+              if (!currentBundles.some(function (entry) { return entry.id === bundle.id; })) currentBundles.push(bundle);
+            });
+            entries.push(['axyp-case-bundles', JSON.stringify(currentBundles)]);
           }
-
-          // Merge templates
-          if (parsed.templates) {
-            try {
-              var currTemplates = JSON.parse(s.getItem('axyp-docx-templates') || '[]');
-              var incTemplates = JSON.parse(parsed.templates);
-              if (Array.isArray(incTemplates)) {
-                incTemplates.forEach(function (t) {
-                  if (!currTemplates.some(function (ct) { return ct.id === t.id; })) {
-                    currTemplates.push(t);
-                  }
-                });
-                s.setItem('axyp-docx-templates', JSON.stringify(currTemplates));
-              }
-            } catch (_) {}
+          if (incomingTemplates) {
+            var currentTemplates = parseArray(s.getItem('axyp-docx-templates') || '[]', 'υπαρχόντων προτύπων');
+            incomingTemplates.forEach(function (template) {
+              if (!currentTemplates.some(function (entry) { return entry.id === template.id; })) currentTemplates.push(template);
+            });
+            entries.push(['axyp-docx-templates', JSON.stringify(currentTemplates)]);
           }
+        } else {
+          var confirmReplace = window.confirm(
+            'ΠΡΟΣΟΧΗ: Επιβεβαιώνεις την ΠΛΗΡΗ ΑΝΤΙΚΑΤΑΣΤΑΣΗ;\n\n' +
+            'Οι τρέχουσες τοπικές υποθέσεις, τα πρότυπα και οι ρυθμίσεις θα αντικατασταθούν από το αντίγραφο.'
+          );
+          if (!confirmReplace) {
+            $('case-flash').textContent = 'Η επαναφορά ακυρώθηκε χωρίς αλλαγές.';
+            return;
+          }
+          entries = [
+            ['axyp-hypotheses', JSON.stringify(parsed.hypotheses)],
+            ['axyp-favorites', parsed.favorites],
+            ['axyp-form-profile', parsed.profile],
+            ['axyp-theme', parsed.theme],
+            ['axyp-privacy', parsed.privacy],
+            ['axyp-case-bundles', parsed.bundles],
+            ['axyp-docx-templates', parsed.templates],
+            ['axyp-template-mappings', parsed.templateMappings]
+          ];
+        }
 
+        if (s.setItemsDurable) {
+          await s.setItemsDurable(entries);
+        } else {
+          entries.forEach(function (entry) {
+            if (entry[1] === null || entry[1] === undefined) s.removeItem(entry[0]);
+            else s.setItem(entry[0], entry[1]);
+          });
           if (s.flush) await s.flush();
-          $('case-flash').textContent = 'Η συγχώνευση αντιγράφου ολοκληρώθηκε και η τοπική αποθήκευση επιβεβαιώθηκε.';
-          setTimeout(function () { location.reload(); }, 600);
-          return;
         }
-
-        // User chose Cancel -> ask for full overwrite confirmation
-        var confirmReplace = window.confirm(
-          'ΠΡΟΣΟΧΗ: Επιβεβαιώνεις την ΠΛΗΡΗ ΑΝΤΙΚΑΤΑΣΤΑΣΗ;\n\n' +
-          'Όλες οι τρέχουσες τοπικές υποθέσεις θα αντικατασταθούν με τα δεδομένα του αρχείου.'
-        );
-        if (!confirmReplace) {
-          $('case-flash').textContent = 'Η επαναφορά ακυρώθηκε χωρίς αλλαγές.';
-          return;
-        }
-
-        write(parsed.hypotheses);
-        [
-          ['axyp-favorites', parsed.favorites],
-          ['axyp-form-profile', parsed.profile],
-          ['axyp-theme', parsed.theme],
-          ['axyp-privacy', parsed.privacy],
-          ['axyp-case-bundles', parsed.bundles],
-          ['axyp-docx-templates', parsed.templates],
-          ['axyp-template-mappings', parsed.templateMappings]
-        ].forEach(function (entry) {
-          if (entry[1] === null || entry[1] === undefined) {
-            s.removeItem(entry[0]);
-          } else {
-            s.setItem(entry[0], entry[1]);
-          }
-        });
-
-        if (s.flush) await s.flush();
-        $('case-flash').textContent = 'Η πλήρης επαναφορά ολοκληρώθηκε και η τοπική αποθήκευση επιβεβαιώθηκε. Ανανεώνεται η εφαρμογή.';
+        $('case-flash').textContent = 'Η επαναφορά ολοκληρώθηκε και η τοπική αποθήκευση επιβεβαιώθηκε. Ανανεώνεται η εφαρμογή.';
         setTimeout(function () { location.reload(); }, 500);
-      } catch (e) {
-        $('case-flash').textContent = 'Το αρχείο δεν έχει έγκυρη μορφή αντιγράφου AX.YP.';
+      } catch (error) {
+        $('case-flash').textContent = error && error.message === 'invalid schema'
+          ? 'Το αρχείο δεν έχει έγκυρη μορφή αντιγράφου AX.YP.'
+          : 'Η επαναφορά δεν ολοκληρώθηκε. Τα δεδομένα δεν επιβεβαιώθηκαν ως αποθηκευμένα: ' + (error.message || 'Άγνωστο σφάλμα.');
+      } finally {
+        event.target.value = '';
       }
-      event.target.value = '';
     };
     reader.readAsText(file);
   }
