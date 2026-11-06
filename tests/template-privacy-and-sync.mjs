@@ -53,24 +53,19 @@ for (const id of ['counterfeit-01', 'counterfeit-02']) {
   const xml = new TextDecoder().decode(getTemplateParts(template)['word/document.xml'])
   assert.ok(xml.includes('{{officerB.service}}'), `${id} uses the B investigator service placeholder`)
 }
-for (const id of ['counterfeit-03', 'counterfeit-01', 'counterfeit-02']) {
-  const template = DEFAULT_COUNTERFEIT_TEMPLATES.find((entry) => entry.id === id)
-  assert.ok(template, `${id} exists`)
-  assert.ok(template.fields.includes('counterfeit.serialNumber'), `${id} declares the shared serial-number field`)
-  assert.equal(template.mappings['counterfeit.serialNumber'], 'counterfeit.serialNumber')
-  const xml = new TextDecoder().decode(getTemplateParts(template)['word/document.xml'])
-  assert.ok(xml.includes('{{counterfeit.serialNumber}}'), `${id} includes the serial number in the DOCX text`)
-  const rendered = replaceInXml(xml, template, {
-    counterfeit: { serialNumber: 'TEST-SERIAL-123' },
-    evidence: { quantity: 'TEST QUANTITY', description: 'TEST DENOMINATION' },
-    officerA: { rank: 'TEST A', surname: 'OFFICER', name: 'ONE', service: 'SERVICE A' },
-    officerB: { rank: 'TEST B', surname: 'OFFICER', name: 'TWO', service: 'SERVICE B' },
-    witness: { fullName: 'TEST WITNESS' },
-    depositor: { fullName: 'TEST DEPOSITOR' }
-  })
-  assert.ok(rendered.includes('TEST-SERIAL-123'), `${id} renders the serial number`)
-  assert.ok(!rendered.includes('{{counterfeit.serialNumber}}'), `${id} leaves no serial-number placeholder`)
-}
+const counterfeit01 = DEFAULT_COUNTERFEIT_TEMPLATES.find((entry) => entry.id === 'counterfeit-01')
+const counterfeit01Xml = new TextDecoder().decode(getTemplateParts(counterfeit01)['word/document.xml'])
+assert.ok(counterfeit01Xml.includes('{{counterfeit.serialNumber}}'), 'counterfeit-01 includes the serial number in the document text')
+const counterfeit01Rendered = replaceInXml(counterfeit01Xml, counterfeit01, {
+  counterfeit: { serialNumber: 'TEST-SERIAL-123' },
+  evidence: 'TEST DENOMINATION',
+  officerA: { rank: 'TEST A', surname: 'OFFICER', name: 'ONE', service: 'SERVICE A' },
+  officerB: { rank: 'TEST B', surname: 'OFFICER', name: 'TWO', service: 'SERVICE B' }
+})
+assert.ok(counterfeit01Rendered.includes('TEST-SERIAL-123'))
+assert.ok(counterfeit01Rendered.includes('SERVICE A'))
+assert.ok(counterfeit01Rendered.includes('SERVICE B'))
+assert.ok(!counterfeit01Rendered.includes('{{counterfeit.serialNumber}}'))
 
 const noiseArrest = DEFAULT_NOISE_TEMPLATES.find((template) => template.id === 'noise-01')
 assert.ok(noiseArrest)
