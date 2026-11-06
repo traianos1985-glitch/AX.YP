@@ -154,6 +154,10 @@ assert.ok(narcotics02.text.includes('TEST-SERVICE-B'), 'narcotics-02 must use in
 assert.ok(!narcotics02.text.includes('κάτοικων Α.Τ. Τριφυλίας'), 'narcotics-02 must not retain the fixed investigator-B service');
 assert.equal((narcotics02.text.match(/<w:tbl>/g) || []).length > 0, true, 'narcotics-02 signatures must use a real Word table');
 assert.ok(narcotics02.text.includes('Ο Β΄ Ανακριτικός Υπάλληλος'), 'narcotics-02 table must label investigator B');
+assert.ok(narcotics02.text.includes('TEST-ARRESTING-OFFICER'), 'narcotics-02 signature table must populate the arresting officer');
+assert.ok(narcotics02.text.includes('TEST-RANK-A TEST-SURNAME-A TEST-NAME-A'), 'narcotics-02 signature table must populate investigator A full name');
+assert.ok(narcotics02.text.includes('TEST-RANK-B TEST-SURNAME-B TEST-NAME-B'), 'narcotics-02 signature table must populate investigator B full name');
+assert.ok(narcotics02.text.includes('TEST-SERVICE-B'), 'narcotics-02 must populate investigator B service in the generated document');
 
 const narcotics08 = generatedText('narcotics-08');
 assert.ok(narcotics08.text.includes('TEST-PROSECUTOR'), 'narcotics-08 must populate the prosecutor recipient from the case');
