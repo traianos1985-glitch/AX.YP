@@ -6,7 +6,7 @@ import { defineConfig } from 'vite';
 const files = [
   'data.js', 'forms.js', 'docx-export.js', 'forms-view.js', 'docs-view.js', 'app.js',
   'case-bundles.js', 'case-enhancements.js', 'case-workflow.js', 'hypotheses.js',
-  'security.js', 'storage.js', 'case-folder-storage.js', 'incident-search.js',
+  'security.js', 'storage.js', 'service-profile.js', 'case-folder-storage.js', 'incident-search.js',
   'dossier-categories.js', 'template-library.js', 'template-data/narcotics.js', 'template-data/counterfeit.js', 'template-data/environment.js', 'template-data/health.js',
   'noise-templates-data.js', 'camping-templates-data.js', 'paremporio-templates.js',
   'templates.js', 'sw.js', 'manifest.json', 'vendor/fflate.js',
