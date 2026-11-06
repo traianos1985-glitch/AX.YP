@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { replaceInXml } from '../template-library.js'
 import vm from 'node:vm'
 import { readFile } from 'node:fs/promises'
 
@@ -510,3 +511,10 @@ assert.match(workflowSource, /beforeunload/)
 assert.match(workflowSource, /Υπάρχουν αλλαγές που δεν έχουν αποθηκευτεί/)
 assert.match(workflowSource, /event\.key !== 'Enter'/)
 assert.match(workflowSource, /case-workflow-summary/)
+
+
+// Greek placeholders must survive DOCX XML normalization and resolve like Latin identifiers.
+const greekPlaceholder = '<w:p><w:r><w:t>{{ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ}}</w:t></w:r></w:p>';
+const greekRendered = replaceInXml(greekPlaceholder, { mappings: { 'ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ': 'case.prosecutor' } }, { prosecutor: 'Εισαγγελία Πρωτοδικών' });
+assert.ok(greekRendered.includes('Εισαγγελία Πρωτοδικών'));
+assert.ok(!greekRendered.includes('{{ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ}}'));
