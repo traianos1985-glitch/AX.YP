@@ -821,7 +821,7 @@ export function patchNarcoticsTemplateXml(xml, templateId) {
       xml = xml.replace(oldService, 'που υπηρετεί στο {{officerB.service}} και ενεργεί ως Β΄ Ανακριτικός Υπάλληλος');
     }
     let replacedSignature = false;
-        xml = xml.replace(new RegExp('<w:p[^>]*>[\s\S]*?</w:p>', 'gu'), (paragraph) => {
+            xml = xml.replace(new RegExp('<w:p[^>]*>[^]*?</w:p>', 'gu'), (paragraph) => {
       if (!replacedSignature && /Ο\s+Συλλαβών/u.test(paragraph) && /Ο\s+Συλληφθείς/u.test(paragraph) && /Ανακριτικός Υπάλληλος/u.test(paragraph)) {
         replacedSignature = true;
         return signatureParagraphTable();
