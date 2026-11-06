@@ -20,7 +20,7 @@ const APP_SHELL = [
   "./dossier-categories.js",
   "./security.js",
   "./template-library.js",
-  "./dossier-templates-data.js",
+  "./template-data/narcotics.js",\n  "./template-data/counterfeit.js",\n  "./template-data/environment.js",\n  "./template-data/health.js",
   "./noise-templates-data.js",
   "./camping-templates-data.js",
   "./paremporio-templates.js",
