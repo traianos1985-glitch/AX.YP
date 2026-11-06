@@ -258,7 +258,7 @@
 
   async function connect() {
     if (!window.showDirectoryPicker) {
-      throw new Error('Ο browser δεν υποστηρίζει επιλογή φακέλου. Χρησιμοποίησε πρόσφατο Microsoft Edge ή Google Chrome.');
+      throw new Error('Η επιλογή προσωπικού φακέλου υποστηρίζεται μόνο σε πρόσφατο Chrome ή Edge για υπολογιστή. Σε κινητό ή μη συμβατό browser, οι δικογραφίες παραμένουν στην τοπική αποθήκευση του browser· μην καθαρίσεις τα δεδομένα του browser χωρίς να έχεις πρώτα κρατήσει αντίγραφο ασφαλείας.');
     }
     // Επιλέγεται ο ίδιος ο προσωπικός φάκελος που έχει δημιουργήσει το στέλεχος.
     var selected = await window.showDirectoryPicker({ mode: 'readwrite' });

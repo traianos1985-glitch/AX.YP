@@ -131,7 +131,7 @@ for (const template of DEFAULT_NOISE_TEMPLATES) {
     .join('\n');
 
   // No template placeholder may survive in any Word XML part (document, headers, footers, etc.).
-  assert.doesNotMatch(combinedXml, /\{\{\s*[a-zA-Z0-9_.-]+\s*\}\}/, `${template.id}: unresolved placeholder`);
+  assert.doesNotMatch(combinedXml, /\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/, `${template.id}: unresolved placeholder`);
 
   // Check that each field's distinctive synthetic value reached the generated DOCX XML.
   for (const field of template.fields) {

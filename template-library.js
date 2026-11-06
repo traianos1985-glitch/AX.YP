@@ -638,8 +638,9 @@ function render() {
   const isHealth = (t) => t.category === 'health';
   const isNoise = (t) => t.category === 'noise';
   const isCamping = (t) => t.category === 'camping';
-  const isNarcotics = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
-  const isCustom = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && !isNarcotics(t);
+  const isCommerce = (t) => t.category === 'commerce';
+  const isNarcotics = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && !isCommerce(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
+  const isCustom = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && !isCommerce(t) && !isNarcotics(t);
 
   const groups = [
     { title: (count) => `Δικογραφία Ναρκωτικών (${count} πρότυπα)`, items: allTemplates.filter(isNarcotics) },
@@ -648,6 +649,7 @@ function render() {
     { title: (count) => `Δικογραφία Υγειονομικού Κανονισμού (${count} πρότυπα)`, items: allTemplates.filter(isHealth) },
     { title: (count) => `Δικογραφία Ηχορύπανσης Κ.Υ.Ε. (${count} πρότυπα)`, items: allTemplates.filter(isNoise) },
     { title: (count) => `Δικογραφία Παράνομου Camping (${count} πρότυπα)`, items: allTemplates.filter(isCamping) },
+    { title: (count) => `Προσωρινά πρότυπα παρεμπορίου (${count})`, items: allTemplates.filter(isCommerce) },
     { title: (count) => `Πρόσθετα / προσαρμοσμένα πρότυπα (${count})`, items: allTemplates.filter(isCustom) }
   ];
 
@@ -674,9 +676,9 @@ function render() {
         isNarcotics(template) ? 'Δικογραφία Ναρκωτικών' :
         'Προσαρμοσμένο'
       );
-      card.querySelector('.mapping-status').textContent = catLabel;
+      card.querySelector('.mapping-status').textContent = template.status === 'temporary' ? 'ΠΡΟΣΩΡΙΝΟ' : catLabel;
       const caseNote = currentCase && currentCase.title ? ` (ενεργή υπόθεση: «${currentCase.title}»)` : ' (δεν έχει επιλεγεί υπόθεση)';
-      card.querySelector('p').textContent = `${template.fields.length} placeholders εντοπίστηκαν${caseNote}.`;
+      card.querySelector('p').textContent = `${template.statusLabel ? template.statusLabel + '. ' : ''}${template.fields.length} placeholders εντοπίστηκαν${caseNote}.`;
 
       const mappingRoot = card.querySelector('.mapping-review');
       template.fields.forEach((field) => {
@@ -791,7 +793,7 @@ function replaceLegacyFixedDateText(xml, item) {
   const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(item.date || ''));
   if (!dateMatch || !day || !month || !year || !weekday) return xml;
 
-  const location = esc(item.location || 'Κυπαρισσία');
+  const location = esc(item.location || 'έδρα της Υπηρεσίας');
   const numericDate = `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}`;
   return xml
     .replace(
@@ -804,6 +806,27 @@ function replaceLegacyFixedDateText(xml, item) {
     .replace(/\(\d{1,2}\/\d{1,2}\/\d{4}\)/gu, `(${numericDate})`);
 }
 
+export function correctOfficerServicePlaceholders(xml) {
+  return xml
+    .replace(/(?:κατοίκων|κάτοικων)\s*\{\{\s*officerA\.service\s*\}\}/gu, 'που υπηρετεί στο {{officerB.service}}')
+    .replace(/κατ\.\s*\{\{\s*officerA\.service\s*\}\}/gu, 'που υπηρετεί στο {{officerB.service}}');
+}
+
+export function normalizeGreekDocxXml(xml) {
+  const fixes = (value) => value
+    .replace(/ενώπιιον/gu, 'ενώπιον')
+    .replace(/κατηγορούμενου/gu, 'κατηγορουμένου')
+    .replace(/κρατούμενου/gu, 'κρατουμένου')
+    .replace(/επισκέψείς/gu, 'επισκέψεις')
+    .replace(/ποιά/gu, 'ποια')
+    .replace(/σηματική αναφορά μας/gu, 'σχετική αναφορά μας')
+    .replace(/Yποβολή/gu, 'Υποβολή')
+    .replace(/Β[’']/gu, 'Β΄')
+    .replace(/ {2,}/gu, ' ')
+    .replace(/\s+([,.;:!?])/gu, '$1');
+  return xml.replace(/(<w:t\b[^>]*>)([\s\S]*?)(<\/w:t>)/gu, (_match, open, text, close) => open + fixes(text) + close);
+}
+
 export function buildDocx(template, item) {
   if (!template || !item) throw new Error('Template and case data are required');
   const files = getTemplateParts(template);
@@ -813,10 +836,11 @@ export function buildDocx(template, item) {
   Object.keys(files).forEach((filename) => {
     if (filename.startsWith('word/') && filename.endsWith('.xml')) {
       const xml = new TextDecoder().decode(files[filename]);
-      const populated = replaceInXml(xml, template, item);
+      const correctedServicePlaceholders = correctOfficerServicePlaceholders(xml);
+      const populated = replaceInXml(correctedServicePlaceholders, template, item);
       const withCurrentDates = replaceLegacyFixedDateText(populated, item);
       const withCurrentServiceReferences = replaceLegacyLocalServiceReferences(withCurrentDates);
-      files[filename] = new TextEncoder().encode(withCurrentServiceReferences);
+      files[filename] = new TextEncoder().encode(normalizeGreekDocxXml(withCurrentServiceReferences));
     }
   });
 
