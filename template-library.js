@@ -50,7 +50,8 @@ const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } 
 const write = (value) => storage().setItem(KEY, JSON.stringify(value));
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[ch]);
 
-export async function ensureDefaultTemplates(storageInstance = storage()) {\n  await loadBuiltinTemplateData();
+export async function ensureDefaultTemplates(storageInstance = storage()) {
+  await loadBuiltinTemplateData();
   try {
     const existing = (() => {
       try { return JSON.parse(storageInstance.getItem(KEY) || '[]'); } catch (_) { return []; }
