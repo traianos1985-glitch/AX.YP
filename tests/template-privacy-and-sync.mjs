@@ -137,3 +137,5 @@ console.log('Template privacy/synchronization regressions passed.')
 // Keep this regression suite in the guarded template-sanitization PR workflow.
 
 // Re-run guarded DOCX synchronization validation after workflow updates.
+
+// The generated DOCX and embedded copies are verified by the PR workflow.
