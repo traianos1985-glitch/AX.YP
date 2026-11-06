@@ -68,8 +68,7 @@ const syntheticCase = {
   environment: { description: 'TEST-ENVIRONMENT-DESCRIPTION' },
   health: { description: 'TEST-HEALTH-DESCRIPTION' },
   noise: {
-    description: 'TEST & <NOISE> "DESCRIPTION"',
-    establishmentName: 'TEST-ESTABLISHMENT',
+    establishmentName: 'TEST & <NOISE> "DESCRIPTION"',
     measuredDecibels: 'TEST-MEASURED-DB',
     limitDecibels: 'TEST-LIMIT-DB',
     legalProvision: 'TEST-LEGAL-PROVISION',
@@ -108,13 +107,31 @@ for (const template of templates) {
     .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'));
   assert.ok(wordXml.length > 0, `${template.id} must contain Word XML parts`);
 
-  for (const [filename, bytes] of wordXml) {
-    const xml = new TextDecoder().decode(bytes);
-    assert.doesNotMatch(
-      xml,
-      /\{\{\s*[a-zA-Z0-9_.-]+\s*\}\}/,
-      `${template.id} (${filename}) must not retain unresolved placeholders`
-    );
+  const combinedXml = wordXml
+    .map(([filename, bytes]) => {
+      const xml = new TextDecoder().decode(bytes);
+      assert.doesNotMatch(
+        xml,
+        /\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/u,
+        `${template.id} (${filename}) must not retain unresolved placeholders`
+      );
+      return xml;
+    })
+    .join('\n');
+
+  assert.doesNotMatch(
+    combinedXml,
+    /Α\.Τ\.\s*Τριφυλίας|Αστυνομικό Τμήμα Τριφυλίας|Αστυνομικού Τμήματος Τριφυλίας/u,
+    `${template.id} must not hardcode the issuing Triphylia police service in generated text`
+  );
+  assert.doesNotMatch(
+    combinedXml,
+    /Στην Κυπαρισσία σήμερα την 16η του μήνα Απριλίου του έτους 2021|Στην Κυπαρισσία σήμερα την 21 του μηνός Απριλίου του έτους 2022|Κυπαρισσία,\s*(?:01 Απριλίου 2021|31 Μαρτίου 2021|21\s+Απριλίου 2022)|ώρα της 21\/4\/2022|\(21\/4\/2022\)/u,
+    `${template.id} must not retain a fixed legacy case date`
+  );
+  if (/^(camping-0[1-4]|noise-0[1-3])$/.test(template.id)) {
+    assert.ok(combinedXml.includes('TEST-LOCATION'), `${template.id} must use the current case location`);
+    assert.ok(combinedXml.includes('Νοεμβρίου') && combinedXml.includes('2026'), `${template.id} must use the current Greek case date`);
   }
   generated += 1;
 }
