@@ -10,7 +10,7 @@ import {
   DEFAULT_COUNTERFEIT_TEMPLATES,
   DEFAULT_ENVIRONMENT_TEMPLATES,
   DEFAULT_HEALTH_TEMPLATES
-} from '../dossier-templates-data.js'
+} from '../template-data/narcotics.js'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const pairs = [
