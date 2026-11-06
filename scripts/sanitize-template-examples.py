@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sanitize legacy personal examples in DOCX templates and resync embedded copies.
+"""Sanitize legacy personal examples, correct verified narcotics references, and resync embedded copies.
 
 This file intentionally contains no original personal identifiers. Edits are
 anchored to paragraph offsets from the verified main-branch template snapshot.
