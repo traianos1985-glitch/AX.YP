@@ -162,7 +162,7 @@ const storageSource = await readFile(new URL('../storage.js', import.meta.url), 
 assert.match(storageSource, /axyp-counterfeit-templates-seeded-v1/, 'Counterfeit seed marker must be in KNOWN_KEYS');
 
 const swSource = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
-assert.ok(swSource.includes('./dossier-templates-data.js'), 'sw.js must cache dossier-templates-data.js');
+assert.ok(swSource.includes('./template-data/narcotics.js'), 'sw.js must cache dossier-templates-data.js');
 assert.ok(swSource.includes('./dossier-categories.js'), 'sw.js must cache dossier-categories.js');
 console.log('✓ Offline cache and local-first requirements fully verified.');
 
