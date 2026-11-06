@@ -34,18 +34,18 @@ const narcotics02 = patchDocx('narcotics-02', (xml) => {
   const oldService = 'της ίδιας Υπηρεσίας, που προσλήφθηκε ως Β’ Ανακριτικός Υπάλληλος, κάτοικων Α.Τ. Τριφυλίας';
   assert.ok(xml.includes(oldService), 'Expected the legacy investigator-B service wording');
   xml = xml.replace(oldService, 'που υπηρετεί στο {{officerB.service}} και ενεργεί ως Β΄ Ανακριτικός Υπάλληλος');
-  const paragraphs = [...xml.matchAll(/<w:p\\b[\\s\\S]*?<\\/w:p>/gu)];
+  const paragraphs = [...xml.matchAll(/<w:p\b[\s\S]*?<\/w:p>/gu)];
   const signature = paragraphs.find((match) => match[0].includes('Ο  Συλλαβών'));
   assert.ok(signature, 'Expected the existing four-signature paragraph');
   return xml.replace(signature[0], signatureTable());
 });
 const narcotics08 = patchDocx('narcotics-08', (xml) => {
-  const pattern = /Εισαγγελία Πρωτοδικών\\s*\\.{5,}/u;
+  const pattern = /Εισαγγελία Πρωτοδικών\s*\.{5,}/u;
   assert.ok(pattern.test(xml), 'Expected the blank prosecutor recipient line');
   return xml.replace(pattern, 'Εισαγγελία Πρωτοδικών {{case.prosecutor}}');
 });
 const narcotics09 = patchDocx('narcotics-09', (xml) => {
-  const pattern = /ΚΑΛΑΜΑΤΑ\\s+Τ\\.Κ\\.\\s*241\\s*00/u;
+  const pattern = /ΚΑΛΑΜΑΤΑ\s+Τ\.Κ\.\s*241\s*00/u;
   assert.ok(pattern.test(xml), 'Expected the outdated Kalamata postal code');
   return xml.replace(pattern, 'Πάρκο Λιμενικού, Τ.Κ. 24131, Καλαμάτα');
 });
