@@ -9,7 +9,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "validate": "node validate-data.mjs",
     "check-links": "node check-links.mjs",
-    "test": "node tests/smoke.mjs && node tests/template-privacy-and-sync.mjs"
+    "test": "node tests/smoke.mjs && node tests/template-privacy-and-sync.mjs && node tests/all-dossier-docx-generation.mjs"
   },
   "devDependencies": {
     "vite": "^7.0.0"
