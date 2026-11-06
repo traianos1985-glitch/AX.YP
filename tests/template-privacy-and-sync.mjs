@@ -82,6 +82,23 @@ const noiseXml = new TextDecoder().decode(noiseParts['word/document.xml'])
 assert.ok(!noiseXml.includes('{{owner.'), 'legacy owner personal data is not left as unresolved placeholders')
 assert.ok(noiseXml.includes('τα πλήρη στοιχεία θα συμπληρωθούν από τον συντάκτη'), 'owner details are left as a deliberate manual completion field')
 
+for (const id of ['narcotics-02', 'narcotics-03', 'narcotics-04', 'narcotics-06', 'narcotics-08']) {
+  const template = DEFAULT_NARCOTICS_TEMPLATES.find((entry) => entry.id === id)
+  assert.ok(template, `${id} exists`)
+  const xml = new TextDecoder().decode(getTemplateParts(template)['word/document.xml'])
+  assert.ok(!xml.includes('3459/06'), `${id} no longer cites the repealed article numbering`)
+  assert.ok(!xml.includes('άρθρο 38'), `${id} does not misidentify old article 38 as the current offence provision`)
+}
+const notificationTemplate = DEFAULT_NARCOTICS_TEMPLATES.find((entry) => entry.id === 'narcotics-04')
+const notificationXml = new TextDecoder().decode(getTemplateParts(notificationTemplate)['word/document.xml'])
+assert.ok(notificationXml.includes('άρθρο 41 παρ. 2 του Ν. 4139/2013'), 'narcotics notification cites the current procedural notice provision')
+assert.ok(notificationXml.includes('των διατάξεων του Ν. 4139/2013'), 'narcotics notification refers to the current law')
+for (const id of ['narcotics-02', 'narcotics-03', 'narcotics-06', 'narcotics-08']) {
+  const template = DEFAULT_NARCOTICS_TEMPLATES.find((entry) => entry.id === id)
+  const xml = new TextDecoder().decode(getTemplateParts(template)['word/document.xml'])
+  assert.ok(xml.includes('άρθρου ........ του Ν. 4139/2013'), `${id} leaves the fact-dependent substantive article for officer selection`)
+}
+
 const greekMappings = {
   'ΗΜΕΡΟΜΗΝΙΑ_ΣΥΜΒΑΝΤΟΣ': 'incident.date',
   'ΩΡΑ_ΣΥΜΒΑΝΤΟΣ': 'incident.time',
