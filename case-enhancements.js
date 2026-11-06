@@ -33,6 +33,7 @@ import { zipSync } from './vendor/fflate.js';
     item.location = ($('case-location') ? $('case-location').value.trim() : '');
     item.time = ($('case-time') ? $('case-time').value : '');
     item.prosecutor = ($('case-prosecutor') ? $('case-prosecutor').value.trim() : '');
+    item.releaseDate = ($('case-release-date') ? $('case-release-date').value : '');
     item.arrestingOfficer = ($('case-arresting-officer') ? $('case-arresting-officer').value.trim() : '');
     item.officerA = {
       rank: ($('officer-a-rank') ? $('officer-a-rank').value.trim() : ''),
@@ -58,7 +59,8 @@ import { zipSync } from './vendor/fflate.js';
       weighingStartTime: ($('timeline-weighing-start') ? $('timeline-weighing-start').value : ''),
       weighingEndTime: ($('timeline-weighing-end') ? $('timeline-weighing-end').value : ''),
       examinationStartTime: ($('timeline-examination-start') ? $('timeline-examination-start').value : ''),
-      examinationEndTime: ($('timeline-examination-end') ? $('timeline-examination-end').value : '')
+      examinationEndTime: ($('timeline-examination-end') ? $('timeline-examination-end').value : ''),
+      releaseStartTime: ($('timeline-release-time') ? $('timeline-release-time').value : '')
     };
     item.offender = {
       surname: ($('offender-surname') ? $('offender-surname').value.trim() : ''),
@@ -76,6 +78,19 @@ import { zipSync } from './vendor/fflate.js';
       taxOffice: ($('offender-tax-office') ? $('offender-tax-office').value.trim() : ''),
       phone: ($('offender-phone') ? $('offender-phone').value.trim() : ''),
       email: ($('offender-email') ? $('offender-email').value.trim() : '')
+    };
+    item.owner = {
+      fullName: ($('noise-owner-full-name') ? $('noise-owner-full-name').value.trim() : ''),
+      fatherName: ($('noise-owner-father-name') ? $('noise-owner-father-name').value.trim() : ''),
+      motherName: ($('noise-owner-mother-name') ? $('noise-owner-mother-name').value.trim() : ''),
+      birthDate: ($('noise-owner-birth-date') ? $('noise-owner-birth-date').value : ''),
+      birthPlace: ($('noise-owner-birth-place') ? $('noise-owner-birth-place').value.trim() : ''),
+      city: ($('noise-owner-city') ? $('noise-owner-city').value.trim() : ''),
+      idNumber: ($('noise-owner-id-number') ? $('noise-owner-id-number').value.trim() : ''),
+      idDate: ($('noise-owner-id-date') ? $('noise-owner-id-date').value : ''),
+      idService: ($('noise-owner-id-service') ? $('noise-owner-id-service').value.trim() : ''),
+      taxId: ($('noise-owner-tax-id') ? $('noise-owner-tax-id').value.trim() : ''),
+      taxOffice: ($('noise-owner-tax-office') ? $('noise-owner-tax-office').value.trim() : '')
     };
     item.evidence = ($('case-evidence') ? $('case-evidence').value.trim() : '');
     item.checks = selectedChecks();
@@ -95,11 +110,15 @@ import { zipSync } from './vendor/fflate.js';
   function loadExtraFields() {
     var item = current();
     if (!item) return;
-    if ($('case-profile')) $('case-profile').value = item.profile || 'generic';
+    if ($('case-profile')) {
+      $('case-profile').value = item.profile || 'generic';
+      $('case-profile').dispatchEvent(new Event('change', { bubbles: true }));
+    }
     if ($('case-people')) $('case-people').value = item.people || '';
     if ($('case-location')) $('case-location').value = item.location || '';
     if ($('case-time')) $('case-time').value = item.time || '';
     if ($('case-prosecutor')) $('case-prosecutor').value = item.prosecutor || '';
+    if ($('case-release-date')) $('case-release-date').value = item.releaseDate || '';
     if ($('case-arresting-officer')) $('case-arresting-officer').value = item.arrestingOfficer || '';
     var officerA = item.officerA || {};
     if ($('officer-a-rank')) $('officer-a-rank').value = officerA.rank || '';
@@ -124,12 +143,30 @@ import { zipSync } from './vendor/fflate.js';
       ['timeline-weighing-start', timeline.weighingStartTime],
       ['timeline-weighing-end', timeline.weighingEndTime],
       ['timeline-examination-start', timeline.examinationStartTime],
-      ['timeline-examination-end', timeline.examinationEndTime]
+      ['timeline-examination-end', timeline.examinationEndTime],
+      ['timeline-release-time', timeline.releaseStartTime]
     ];
     timeFields.forEach(function (pair) {
       if ($(pair[0]) && pair[1]) $(pair[0]).value = pair[1];
     });
     if ($('case-evidence')) $('case-evidence').value = item.evidence || '';
+    var owner = item.owner || {};
+    [
+      ['noise-owner-full-name', owner.fullName],
+      ['noise-owner-father-name', owner.fatherName],
+      ['noise-owner-mother-name', owner.motherName],
+      ['noise-owner-birth-date', owner.birthDate],
+      ['noise-owner-birth-place', owner.birthPlace],
+      ['noise-owner-city', owner.city],
+      ['noise-owner-id-number', owner.idNumber],
+      ['noise-owner-id-date', owner.idDate],
+      ['noise-owner-id-service', owner.idService],
+      ['noise-owner-tax-id', owner.taxId],
+      ['noise-owner-tax-office', owner.taxOffice]
+    ].forEach(function (pair) {
+      if ($(pair[0])) $(pair[0]).value = pair[1] || '';
+    });
+
     var checks = item.checks || [];
     var completeness = item.completeness || {};
     ['check-safety', 'check-source', 'check-notify'].forEach(function (id) {
@@ -277,9 +314,13 @@ import { zipSync } from './vendor/fflate.js';
       : 'Εξήχθη ZIP με τα στοιχεία της υπόθεσης. Δεν έχει συνδεθεί ακόμη δικογραφία-πρότυπο.';
   }
 
+  $('case-form')?.addEventListener('submit', function () { syncExtraFields(); }, true);
   $('case-form')?.addEventListener('submit', function () { setTimeout(loadExtraFields, 0); });
   $('case-reset')?.addEventListener('click', function () {
-    if ($('case-profile')) $('case-profile').value = 'generic';
+    if ($('case-profile')) {
+      $('case-profile').value = 'generic';
+      $('case-profile').dispatchEvent(new Event('change', { bubbles: true }));
+    }
     if ($('case-people')) $('case-people').value = '';
     if ($('case-evidence')) $('case-evidence').value = '';
     ['check-safety', 'check-source', 'check-notify'].forEach(function (id) {

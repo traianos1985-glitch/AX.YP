@@ -203,7 +203,7 @@ const normalizeDocxXml = (xml) => {
     return p.replace(/\{\{(?:(?!\{\{|\}\})[\s\S])*?\}\}/g, (match) => {
       if (!match.includes('<')) return match;
       const plain = match.replace(/<[^>]+>/g, '');
-      const field = plain.match(/^\s*\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}\s*$/);
+      const field = plain.match(/^\s*\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}\s*$/u);
       if (field) {
         return `</w:t></w:r><w:r><w:t xml:space="preserve">{{${field[1]}}}</w:t></w:r><w:r><w:t xml:space="preserve">`;
       }
@@ -212,7 +212,7 @@ const normalizeDocxXml = (xml) => {
   });
 };
 
-const extractFields = (xml) => [...new Set((normalizeDocxXml(xml).match(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g) || []).map((val) => val.replace(/\{\{|\}\}|\s/g, '')))];
+const extractFields = (xml) => [...new Set((normalizeDocxXml(xml).match(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu) || []).map((val) => val.replace(/\{\{|\}\}|\s/g, '')))];
 const display = (value) => value || '—';
 
 export function addMinutes(timeStr, mins) {
@@ -265,6 +265,11 @@ const FIELD_OPTIONS = [
   { path: 'case.offence', label: 'Υπόθεση · Είδος αδικήματος' },
   { path: 'case.status', label: 'Υπόθεση · Κατάσταση' },
   { path: 'case.date', label: 'Υπόθεση · Ημερομηνία' },
+  { path: 'case.date.day', label: 'Ημερομηνία · Ημέρα' },
+  { path: 'case.date.monthName', label: 'Ημερομηνία · Μήνας' },
+  { path: 'case.date.year', label: 'Ημερομηνία · Έτος' },
+  { path: 'case.date.weekdayName', label: 'Ημερομηνία · Ημέρα εβδομάδας' },
+  { path: 'case.releaseDate', label: 'Υπόθεση · Ημερομηνία απόλυσης' },
   { path: 'case.time', label: 'Υπόθεση · Ώρα σύνταξης' },
   { path: 'incident.date', label: 'Συμβάν · Ημερομηνία' },
   { path: 'incident.time', label: 'Συμβάν · Ώρα' },
@@ -393,7 +398,8 @@ const FIELD_OPTIONS = [
   { path: 'timeline.weighing.startTime', label: "5. Έκθεση ζύγισης · Ώρα έναρξης (+1')" },
   { path: 'timeline.weighing.endTime', label: "5. Έκθεση ζύγισης · Ώρα περάτωσης (+5')" },
   { path: 'timeline.examination.startTime', label: "6. Έκθεση απολογίας · Ώρα έναρξης (+1')" },
-  { path: 'timeline.examination.endTime', label: "6. Έκθεση απολογίας · Ώρα περάτωσης (+5')" }
+  { path: 'timeline.examination.endTime', label: "6. Έκθεση απολογίας · Ώρα περάτωσης (+5')" },
+  { path: 'timeline.release.startTime', label: 'Απόλυση · Ώρα' }
 ];
 
 function mappingFor(template, field) {
@@ -423,12 +429,33 @@ export function valueFor(path, item) {
   const timeline = item.timeline || {};
   const computed = item.profile === 'narcotics' ? computeTimeline(item.time || '') : {};
   const getTime = (key) => timeline[key] || computed[key] || item[key] || '';
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(item.date || ''));
+  const dateParts = {};
+  if (dateMatch) {
+    const date = new Date(Date.UTC(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]), 12));
+    const parts = new Intl.DateTimeFormat('el-GR', {
+      timeZone: 'UTC',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      weekday: 'long'
+    }).formatToParts(date);
+    for (const type of ['day', 'month', 'year', 'weekday']) {
+      const part = parts.find((entry) => entry.type === type);
+      dateParts[type] = part ? part.value : '';
+    }
+  }
   const map = {
     'case.title': item.title,
     'case.protocolNumber': item.protocolNumber,
     'case.offence': item.offence,
     'case.status': item.status,
     'case.date': item.date,
+    'case.date.day': dateParts.day,
+    'case.date.monthName': dateParts.month,
+    'case.date.year': dateParts.year,
+    'case.date.weekdayName': dateParts.weekday,
+    'case.releaseDate': item.releaseDate,
     'case.time': item.time,
     'incident.date': item.incidentDate || item.date,
     'incident.time': item.incidentTime || item.time,
@@ -540,6 +567,7 @@ export function valueFor(path, item) {
     'timeline.weighing.endTime': getTime('weighingEndTime'),
     'timeline.examination.startTime': getTime('examinationStartTime'),
     'timeline.examination.endTime': getTime('examinationEndTime'),
+    'timeline.release.startTime': getTime('releaseStartTime'),
     'case.witnessStartTime': getTime('witnessStartTime'),
     'case.witnessEndTime': getTime('witnessEndTime'),
     'case.arrestStartTime': getTime('arrestStartTime'),
@@ -589,7 +617,7 @@ export function valueFor(path, item) {
 }
 
 export function replaceInXml(xml, template, item) {
-  return xml.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, path) => {
+  return xml.replace(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu, (_, path) => {
     const mapped = mappingFor(template, path);
     const raw = mapped ? valueFor(mapped, item) : `{{${path}}}`;
     if (!raw || raw === '—') return '—';

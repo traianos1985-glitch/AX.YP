@@ -219,6 +219,8 @@
     var selected = profile ? profile.value : 'generic';
     var commerce = $('commerce-offenders');
     if (commerce) commerce.hidden = selected !== 'commerce';
+    var narcoticsReleaseFields = $('case-narcotics-release-section');
+    if (narcoticsReleaseFields) narcoticsReleaseFields.hidden = selected !== 'narcotics';
     var noiseFields = $('noise-fields');
     if (noiseFields) noiseFields.hidden = selected !== 'noise';
     var campingFields = $('camping-fields');
