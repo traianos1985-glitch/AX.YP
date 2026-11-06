@@ -187,3 +187,5 @@ console.log('Template privacy/synchronization regressions passed.')
 // Re-run guarded DOCX synchronization validation after workflow updates.
 
 // The generated DOCX and embedded copies are verified by the PR workflow.
+
+// Confirm the final incremental DOCX patch remains covered by CI.
