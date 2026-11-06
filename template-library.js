@@ -873,15 +873,17 @@ function replaceTextAcrossWordRuns(xml, pattern, replacement) {
 function replaceLegacyLocalServiceReferences(xml) {
   const replacements = [
     [/ΑΣΤΥΝΟΜΙΚΟ\\s+ΤΜΗΜΑ\\s+ΤΡΙΦΥΛΙΑΣ(?:\\s+ΜΕΣΣΗΝΙΑΣ)?/giu, '{{service.name}}'],
-    [/ΤΑΧ\.\s*Δ\/ΝΣΗ:\s*60ο\s*χλμ\.\s*Ε\.Ο\.\s*ΠΥΡΓΟΥ-ΜΕΘΩΝΗΣ/giu, 'ΤΑΧ. Δ/ΝΣΗ: {{service.address}}'],
-    [/Τ\.?\s*Κ\.?\s*24500\s*ΚΥΠΑΡΙΣΣΙΑ\s*ΜΕΣΣΗΝΙΑ/giu, ''],
+    [/ΤΑΧ\\.\\s*Δ\\/ΝΣΗ:\\s*60ο\\s*χλμ\\.\\s*Ε\\.Ο\\.\\s*ΠΥΡΓΟΥ-ΜΕΘΩΝΗΣ/giu, 'ΤΑΧ. Δ/ΝΣΗ: {{service.address}}'],
+    [/Τ\\.?\\s*Κ\\.?\\s*24500\\s*ΚΥΠΑΡΙΣΣΙΑ(?:\\s*ΜΕΣΣΗΝΙΑ)?/giu, ''],
     [/2761440970|2761062000/gu, '{{service.phone}}'],
-    [/at\.trifylias@astynomia\.gr/giu, '{{service.email}}'],
-    [/,?\s*Fax\s*2131527691/giu, ''],
-    [/Εισαγγελία\s+(?:Πλημμελειοδικών|Πρωτοδικών)\s+Κυπαρισσίας/giu, '{{service.prosecutor}}'],
-    [/δικηγορικού\s+Συλλόγου\s+Κυπαρισσίας/giu, 'οικείου Δικηγορικού Συλλόγου'],
-    [/E-mail:\s*forgelab@otenet\.gr/giu, ''],
-    [/Ελαία\s+Τριφυλίας\s+Μεσσηνίας/giu, '{{case.location}}']
+    [/at\\.trifylias@astynomia\\.gr/giu, '{{service.email}}'],
+    [/,?\\s*Fax\\s*2131527691/giu, ''],
+    [/Αντεισαγγελέα\\s+Πλημ\\/κων\\s+Κυπαρισσίας/giu, 'αρμόδιου Αντεισαγγελέα'],
+    [/Εισαγγελία\\s+(?:Πλημμελειοδικών|Πρωτοδικών)\\s+Κυπαρισσίας/giu, '{{service.prosecutor}}'],
+    [/(?:Πλημμελειοδικών|Πρωτοδικών)\\s+Κυπαρισσίας/giu, '{{service.prosecutor}}'],
+    [/δικηγορικού\\s+Συλλόγου\\s+Κυπαρισσίας/giu, 'οικείου Δικηγορικού Συλλόγου'],
+    [/E-mail:\\s*forgelab@otenet\\.gr/giu, ''],
+    [/Ελαία\\s+Τριφυλίας\\s+Μεσσηνίας/giu, '{{case.location}}']
   ];
 
   let result = xml;
