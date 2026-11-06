@@ -583,7 +583,18 @@
     document.getElementById('wizard-mode').onclick = function () { showMode('wizard'); };
     document.getElementById('forms-mode').onclick = function () { showMode('forms'); };
     document.getElementById('cases-mode').onclick = function () { showMode('cases'); HypothesesView.refresh(); if (window.CaseBundles) CaseBundles.refresh(); };
-    document.getElementById('templates-mode').onclick = function () { showMode('templates'); TemplatesView.refresh(); };
+    document.getElementById('templates-mode').onclick = async function () {
+      showMode('templates');
+      try {
+        // The DOCX seed data is large; do not parse it during the initial app load.
+        await import('./template-library.js');
+        await window.TemplateLibrary.ready;
+        TemplatesView.refresh();
+      } catch (error) {
+        console.error('Template library could not be loaded:', error);
+        document.getElementById('flash').textContent = 'Δεν ήταν δυνατή η φόρτωση των προτύπων Word. Έλεγξε τη σύνδεση ή δοκίμασε ξανά.';
+      }
+    };
     document.getElementById('docs-changelog').onclick = function () { showDocs('CHANGELOG.md', 'Αρχείο αλλαγών'); };
     document.getElementById('docs-pending').onclick = function () { showDocs('PENDING.md', 'Εκκρεμότητες περιεχομένου'); };
     document.getElementById('docs-close').onclick = function () { showMode('search'); };
