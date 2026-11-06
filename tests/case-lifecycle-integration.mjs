@@ -33,8 +33,8 @@ class MockElement {
     (this.listeners[type] ||= []).push(callback);
   }
   matches(selector) {
-    if (selector === '.case-register-entry') return this.className.split(/\\s+/).includes('case-register-entry');
-    if (selector === '.case-register-empty') return this.className.split(/\\s+/).includes('case-register-empty');
+    if (selector === '.case-register-entry') return this.className.split(/\s+/).includes('case-register-entry');
+    if (selector === '.case-register-empty') return this.className.split(/\s+/).includes('case-register-empty');
     if (selector === '[data-field]') return Object.hasOwn(this.dataset, 'field');
     if (selector === 'button[data-action]') return this.tagName === 'BUTTON' && Object.hasOwn(this.dataset, 'action');
     if (selector === 'button') return this.tagName === 'BUTTON';
@@ -165,6 +165,15 @@ const caseRecord = {
   incidentTime: '21:30',
   evidence: 'TEST EVIDENCE SUMMARY',
   notes: 'TEST CASE NOTES',
+  time: '21:30',
+  offender: {
+    surname: 'TEST SURNAME', name: 'TEST NAME', fatherName: 'TEST FATHER', motherName: 'TEST MOTHER',
+    birthDate: '1990-01-01', birthPlace: 'TEST BIRTH PLACE', city: 'TEST CITY', address: 'TEST ADDRESS',
+    idNumber: 'TEST-ID-001', idDate: '2015-01-01', idService: 'TEST ISSUING SERVICE'
+  },
+  officerA: { rank: 'TEST RANK A', surname: 'TEST OFFICER A', name: 'ALPHA', service: 'TEST SERVICE A' },
+  officerB: { rank: 'TEST RANK B', surname: 'TEST OFFICER B', name: 'BETA', service: 'TEST SERVICE B' },
+  timeline: { witnessStartTime: '21:35', witnessEndTime: '21:40' },
   caseRegister: collected
 };
 local.set('axyp-hypotheses', JSON.stringify([caseRecord]));
@@ -217,7 +226,7 @@ const packageFiles = unzipSync(docx);
 assert.ok(packageFiles['[Content_Types].xml']);
 assert.ok(packageFiles['word/document.xml']);
 const documentXml = new TextDecoder().decode(packageFiles['word/document.xml']);
-assert.doesNotMatch(documentXml, /\\{\\{\\s*[\\p{L}\\p{N}_.-]+\\s*\\}\\}/u,
+assert.doesNotMatch(documentXml, /\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/u,
   'The generated Word document must not contain unresolved placeholders');
 assert.ok(documentXml.includes('TEST LOCATION') || documentXml.includes('TEST CASE LIFECYCLE'),
   'The generated Word document must contain data from the reopened case');
@@ -233,11 +242,11 @@ assert.equal(JSON.parse(local.get('axyp-hypotheses'))[0].caseRegister.persons.le
 // Guard the UI integration points that connect this exercised register flow to case save/reopen/backup.
 const { readFile } = await import('node:fs/promises');
 const appSource = await readFile(new URL('../hypotheses.js', import.meta.url), 'utf8');
-assert.match(appSource, /caseRegister: getCaseRegisterData\\(\\)/);
-assert.match(appSource, /loadCaseRegister\\(item\\.caseRegister \\|\\| \\{\\}\\)/);
-assert.match(appSource, /resetCaseRegister\\(\\)/);
-assert.match(appSource, /await window\\.AXYP_STORAGE\\.flush\\(\\)/);
-assert.match(appSource, /hypotheses: read\\(\\)/,
+assert.match(appSource, /caseRegister: getCaseRegisterData\(\)/);
+assert.match(appSource, /loadCaseRegister\(item\.caseRegister \|\| \{\}\)/);
+assert.match(appSource, /resetCaseRegister\(\)/);
+assert.match(appSource, /await window\.AXYP_STORAGE\.flush\(\)/);
+assert.match(appSource, /hypotheses: read\(\)/,
   'Full backup must include the locally saved case records and their register data');
 
 console.log('Case lifecycle integration tests passed: register UI, local save/reopen, completeness review, DOCX generation and reset.');
