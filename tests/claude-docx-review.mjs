@@ -40,7 +40,8 @@ const signatureFindings = paragraphs(arrestForm)
     hasOfficerA: text.includes('{{officerA.fullName}}'),
     hasOfficerB: text.includes('{{officerB.fullName}}'),
     hasServiceA: text.includes('{{officerA.service}}'),
-    hasServiceB: text.includes('{{officerB.service}}')
+    hasServiceB: text.includes('{{officerB.service}}'),
+    safeText: text.replace(/\\{\\{[^}]+\\}\\}/gu, '[FIELD]')
   }));
 console.log('NARCOTICS_10_LAYOUT_DIAGNOSTIC', JSON.stringify(dateFindings));
 console.log('NARCOTICS_02_SIGNATURE_DIAGNOSTIC', JSON.stringify(signatureFindings));
@@ -94,6 +95,18 @@ console.log('NARCOTICS_09_RECIPIENT_INFO', JSON.stringify({
   phonePrefix: chemicalText.includes('27213'),
   aadeServiceLabel: chemicalText.includes('Χημική Υπηρεσία')
 }));
+function mediaInfo(id) {
+  const template = DEFAULT_NARCOTICS_TEMPLATES.find((item) => item.id === id);
+  return Object.entries(getTemplateParts(template))
+    .filter(([name]) => name.startsWith('word/media/'))
+    .map(([name, bytes]) => ({
+      name,
+      size: bytes.length,
+      type: bytes[0] === 0x89 && bytes[1] === 0x50 ? 'png' : bytes[0] === 0xff && bytes[1] === 0xd8 ? 'jpeg' : 'other'
+    }));
+}
+console.log('NARCOTICS_09_MEDIA_INFO', JSON.stringify(mediaInfo('narcotics-09')));
+console.log('NARCOTICS_08_MEDIA_INFO', JSON.stringify(mediaInfo('narcotics-08')));
 console.log('NARCOTICS_08_PROSECUTOR_INFO', JSON.stringify({
   kyparissiaAddress: prosecutorText.includes('25ης Μαρτίου'),
   postalCode: prosecutorText.includes('24500'),
