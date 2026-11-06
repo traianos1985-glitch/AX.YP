@@ -79,7 +79,7 @@ const document = {
 globalThis.document = document;
 
 const root = new MockElement('div');
-elements.set('case-register-root', root);
+elements.set('case-register-section', root);
 for (const id of ['person-register-list', 'evidence-register-list', 'task-register-list']) {
   const list = new MockElement('div');
   elements.set(id, list);
