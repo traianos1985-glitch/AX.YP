@@ -9,6 +9,12 @@ on:
       - 'scripts/sanitize-template-examples.py'
       - 'docs/**'
       - 'package.json'
+      - 'index.html'
+      - 'case-enhancements.js'
+      - 'case-workflow.js'
+      - 'template-library.js'
+      - 'noise-templates-data.js'
+      - 'dossier-templates-data.js'
 
 permissions:
   contents: write
