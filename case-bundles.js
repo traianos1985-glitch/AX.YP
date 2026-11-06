@@ -108,6 +108,8 @@ async function useBundle(bundle) {
 
 $('bundle-new')?.addEventListener('click', () => { $('bundle-form').hidden = false; $('bundle-title').focus(); });
 $('bundle-cancel')?.addEventListener('click', () => { $('bundle-form').reset(); $('bundle-form').hidden = true; });
-$('bundle-form')?.addEventListener('submit', save);
+$('bundle-form')?.addEventListener('submit', (event) => {
+  save(event).catch((error) => { $('case-flash').textContent = 'Δεν επιβεβαιώθηκε η αποθήκευση του προτύπου: ' + error.message; });
+});
 window.CaseBundles = { refresh: render };
 render();
