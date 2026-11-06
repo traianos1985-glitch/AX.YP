@@ -176,7 +176,7 @@ OPERATIONS = [
     "paragraph_index": 31,
     "start": 33,
     "end": 52,
-    "replacement": "case.date"
+    "replacement": "case.releaseDate"
   },
   {
     "path": "templates/dossiers/narcotics/08_ΥΠΟΒΟΛΗ_ΣΧΗΜΑΤΙΣΘΕΙΣΑΣ_ΔΙΚΟΓΡΑΦΙΑΣ.docx",
@@ -188,9 +188,107 @@ OPERATIONS = [
   {
     "path": "templates/noise/01_ΕΚΘΕΣΗ_ΣΥΛΛΗΨΗΣ_ΚΑΙ_ΒΕΒΑΙΩΣΗΣ_ΠΛΗΜΜΕΛΗΜΑΤΟΣ.docx",
     "paragraph_index": 8,
-    "start": 1225,
+    "start": 1269,
+    "end": 1285,
+    "replacement": "{{owner.fullName}}"
+  },
+  {
+    "path": "templates/noise/01_ΕΚΘΕΣΗ_ΣΥΛΛΗΨΗΣ_ΚΑΙ_ΒΕΒΑΙΩΣΗΣ_ΠΛΗΜΜΕΛΗΜΑΤΟΣ.docx",
+    "paragraph_index": 8,
+    "start": 1290,
+    "end": 1300,
+    "replacement": "{{owner.fatherName}}"
+  },
+  {
+    "path": "templates/noise/01_ΕΚΘΕΣΗ_ΣΥΛΛΗΨΗΣ_ΚΑΙ_ΒΕΒΑΙΩΣΗΣ_ΠΛΗΜΜΕΛΗΜΑΤΟΣ.docx",
+    "paragraph_index": 8,
+    "start": 1309,
+    "end": 1319,
+    "replacement": "{{owner.motherName}}"
+  },
+  {
+    "path": "templates/noise/01_ΕΚΘΕΣΗ_ΣΥΛΛΗΨΗΣ_ΚΑΙ_ΒΕΒΑΙΩΣΗΣ_ΠΛΗΜΜΕΛΗΜΑΤΟΣ.docx",
+    "paragraph_index": 8,
+    "start": 1325,
+    "end": 1335,
+    "replacement": "{{owner.birthDate}}"
+  },
+  {
+    "path": "templates/noise/01_ΕΚΘΕΣΗ_ΣΥΛΛΗΨΗΣ_ΚΑΙ_ΒΕΒΑΙΩΣΗΣ_ΠΛΗΜΜΕΛΗΜΑΤΟΣ.docx",
+    "paragraph_index": 8,
+    "start": 1336,
+    "end": 1384,
+    "replacement": "στα {{owner.birthPlace}} κάτοικος {{owner.city}}"
+  },
+  {
+    "path": "templates/noise/01_ΕΚΘΕΣΗ_ΣΥΛΛΗΨΗΣ_ΚΑΙ_ΒΕΒΑΙΩΣΗΣ_ΠΛΗΜΜΕΛΗΜΑΤΟΣ.docx",
+    "paragraph_index": 8,
+    "start": 1395,
+    "end": 1428,
+    "replacement": "{{owner.idNumber}}/{{owner.idDate}}/{{owner.idService}}"
+  },
+  {
+    "path": "templates/noise/01_ΕΚΘΕΣΗ_ΣΥΛΛΗΨΗΣ_ΚΑΙ_ΒΕΒΑΙΩΣΗΣ_ΠΛΗΜΜΕΛΗΜΑΤΟΣ.docx",
+    "paragraph_index": 8,
+    "start": 1440,
+    "end": 1449,
+    "replacement": "{{owner.taxId}}"
+  },
+  {
+    "path": "templates/noise/01_ΕΚΘΕΣΗ_ΣΥΛΛΗΨΗΣ_ΚΑΙ_ΒΕΒΑΙΩΣΗΣ_ΠΛΗΜΜΕΛΗΜΑΤΟΣ.docx",
+    "paragraph_index": 8,
+    "start": 1450,
     "end": 1470,
-    "replacement": "Ιδιοκτήτης του ανωτέρω καταστήματος είναι το πρόσωπο του οποίου τα πλήρη στοιχεία θα συμπληρωθούν από τον συντάκτη: ........................................................"
+    "replacement": "{{owner.taxOffice}}"
+  },
+  {
+    "path": "templates/dossiers/narcotics/02_ΕΚΘΕΣΗ_ΣΥΛΛΗΨΗΣ.docx",
+    "paragraph_index": 10,
+    "start": 890,
+    "end": 1010,
+    "replacement": "του άρθρου ........ του Ν. 4139/2013 ‘‘Περί Εξαρτησιογόνων ουσιών’’"
+  },
+  {
+    "path": "templates/dossiers/narcotics/03_ΕΚΘΕΣΗ_ΠΑΡΑΔΟΣΕΩΣ_ΚΑΙ_ΚΑΤΑΣΧΕΣΕΩΣ.docx",
+    "paragraph_index": 7,
+    "start": 471,
+    "end": 591,
+    "replacement": "του άρθρου ........ του Ν. 4139/2013 ‘‘Περί Εξαρτησιογόνων ουσιών’’"
+  },
+  {
+    "path": "templates/dossiers/narcotics/06_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ_ΑΠΟΛΟΓΙΑ.docx",
+    "paragraph_index": 11,
+    "start": 65,
+    "end": 185,
+    "replacement": "του άρθρου ........ του Ν. 4139/2013 ‘‘Περί Εξαρτησιογόνων ουσιών’’"
+  },
+  {
+    "path": "templates/dossiers/narcotics/08_ΥΠΟΒΟΛΗ_ΣΧΗΜΑΤΙΣΘΕΙΣΑΣ_ΔΙΚΟΓΡΑΦΙΑΣ.docx",
+    "paragraph_index": 29,
+    "start": 391,
+    "end": 511,
+    "replacement": "του άρθρου ........ του Ν. 4139/2013 ‘‘Περί Εξαρτησιογόνων ουσιών’’"
+  },
+  {
+    "path": "templates/dossiers/narcotics/04_ΕΚΘΕΣΗ_ΓΝΩΣΤΟΠΟΙΗΣΗΣ.docx",
+    "paragraph_index": 3,
+    "start": 78,
+    "end": 157,
+    "replacement": "των διατάξεων του Ν. 4139/2013 ‘‘Περί εξαρτησιογόνων ουσιών’’"
+  },
+  {
+    "path": "templates/dossiers/narcotics/04_ΕΚΘΕΣΗ_ΓΝΩΣΤΟΠΟΙΗΣΗΣ.docx",
+    "paragraph_index": 3,
+    "start": 770,
+    "end": 899,
+    "replacement": "σύμφωνα με το άρθρο 41 παρ. 2 του Ν. 4139/2013 ‘‘Περί εξαρτησιογόνων ουσιών’’"
+  },
+  {
+    "path": "templates/dossiers/narcotics/08_ΥΠΟΒΟΛΗ_ΣΧΗΜΑΤΙΣΘΕΙΣΑΣ_ΔΙΚΟΓΡΑΦΙΑΣ.docx",
+    "paragraph_index": 32,
+    "start": 106,
+    "end": 125,
+    "replacement": "Χημική Υπηρεσία Καλαμάτας"
   }
 ]
 
