@@ -45,8 +45,8 @@ const datePartFindings = Object.entries(dateParts)
   .filter(([name]) => name.startsWith('word/') && name.endsWith('.xml'))
   .flatMap(([name, bytes]) => {
     const xml = strFromU8(bytes);
-    const text = [...xml.matchAll(/<w:t\\b[^>]*>([\\s\\S]*?)<\\/w:t>/gu)].map((part) => part[1]).join('');
-    const runs = [...text.matchAll(/(?:\\.{3,}|…{2,}|·{3,}|_{3,})/gu)].map((match) => match[0].length);
+    const text = [...xml.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)].map((part) => part[1]).join('');
+    const runs = [...text.matchAll(/(?:\.{3,}|…{2,}|·{3,}|_{3,})/gu)].map((match) => match[0].length);
     return runs.length ? [{ name, runs, dateCue: /ημερομην|ημέρα|τόπος|χρόνος|ώρα|ηλικία/iu.test(text) }] : [];
   });
 console.log('NARCOTICS_10_ALL_XML_DOTS', JSON.stringify(datePartFindings));
