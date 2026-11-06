@@ -180,6 +180,8 @@ import { zipSync } from './vendor/fflate.js';
 
   async function downloadWord() {
     syncExtraFields();
+    try { if (storage().flush) await storage().flush(); }
+    catch (error) { $('case-flash').textContent = 'Δεν επιβεβαιώθηκε η αποθήκευση των στοιχείων της υπόθεσης. Δεν δημιουργήθηκε Word: ' + error.message; return; }
     var item = current();
     if (!item) {
       $('case-flash').textContent = 'Αποθήκευσε πρώτα μια υπόθεση.';
@@ -270,6 +272,8 @@ import { zipSync } from './vendor/fflate.js';
 
   async function downloadArchive() {
     syncExtraFields();
+    try { if (storage().flush) await storage().flush(); }
+    catch (error) { $('case-flash').textContent = 'Δεν επιβεβαιώθηκε η αποθήκευση των στοιχείων της υπόθεσης. Δεν δημιουργήθηκε ZIP: ' + error.message; return; }
     var item = current();
     if (!item) {
       $('case-flash').textContent = 'Αποθήκευσε πρώτα μια υπόθεση.';
