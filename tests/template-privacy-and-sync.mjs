@@ -5,12 +5,10 @@ import { fileURLToPath } from 'node:url'
 import { replaceInXml, getTemplateParts } from '../template-library.js'
 import { DEFAULT_NOISE_TEMPLATES } from '../noise-templates-data.js'
 import { DEFAULT_CAMPING_TEMPLATES } from '../camping-templates-data.js'
-import {
-  DEFAULT_NARCOTICS_TEMPLATES,
-  DEFAULT_COUNTERFEIT_TEMPLATES,
-  DEFAULT_ENVIRONMENT_TEMPLATES,
-  DEFAULT_HEALTH_TEMPLATES
-} from '../template-data/narcotics.js'
+import { DEFAULT_NARCOTICS_TEMPLATES } from '../template-data/narcotics.js'
+import { DEFAULT_COUNTERFEIT_TEMPLATES } from '../template-data/counterfeit.js'
+import { DEFAULT_ENVIRONMENT_TEMPLATES } from '../template-data/environment.js'
+import { DEFAULT_HEALTH_TEMPLATES } from '../template-data/health.js'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const pairs = [
