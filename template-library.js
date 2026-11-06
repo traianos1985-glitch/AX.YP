@@ -429,7 +429,7 @@ export function valueFor(path, item) {
   const timeline = item.timeline || {};
   const computed = item.profile === 'narcotics' ? computeTimeline(item.time || '') : {};
   const getTime = (key) => timeline[key] || computed[key] || item[key] || '';
-  const dateMatch = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(item.date || ''));
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(item.date || ''));
   const dateParts = {};
   if (dateMatch) {
     const date = new Date(Date.UTC(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]), 12));
