@@ -932,7 +932,7 @@ function replaceLegacyFixedDateText(xml, item) {
       (_match, prefix, beforeDay, ordinal, monthPrefix, yearPrefix, weekdayPrefix) =>
         `${prefix}${location}${beforeDay}${esc(day)}${ordinal}${monthPrefix}${esc(month)}${yearPrefix}${esc(year)}${weekdayPrefix}${esc(weekday)}`
     )
-    .replace(/Κυπαρισσία,\\s*\\d{4}-\\d{2}-\\d{2}/gu, `${location}, ${numericDate}`)
+    .replace(/Κυπαρισσία,\s*\d{4}-\d{2}-\d{2}/gu, `${location}, ${numericDate}`)
     .replace(/Κυπαρισσία,\s*\d{1,2}\s+[\p{L}]+\s+\d{4}/gu, `${location}, ${esc(day)} ${esc(month)} ${esc(year)}`)
     .replace(/(ώρα\s+της\s+)\d{1,2}\/\d{1,2}\/\d{4}/gu, `$1${numericDate}`)
     .replace(/\(\d{1,2}\/\d{1,2}\/\d{4}\)/gu, `(${numericDate})`);
