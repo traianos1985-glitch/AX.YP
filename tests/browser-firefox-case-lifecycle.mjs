@@ -34,6 +34,9 @@ async function request(path, method = 'GET', body) {
   if (!response.ok || payload.value?.error) {
     throw new Error(payload.value?.message || payload.message || ('WebDriver ' + method + ' ' + path + ' failed: ' + response.status));
   }
+  if (path === '/session' && method === 'POST') {
+    return { ...payload.value, sessionId: payload.sessionId || payload.value?.sessionId };
+  }
   return payload.value;
 }
 
@@ -53,24 +56,24 @@ async function waitForExpression(expression, label, timeout = 30000) {
 }
 
 async function click(selector, label = selector) {
-  const result = await execute(`() => {
+  const result = await execute(`(() => {
     const element = document.querySelector(${JSON.stringify(selector)});
     if (!element) return false;
     element.click();
     return true;
-  }`() );
+  })()`);
   assert.equal(result, true, 'Could not click ' + label);
 }
 
 async function setValue(selector, value) {
-  const result = await execute(`() => {
+  const result = await execute(`(() => {
     const field = document.querySelector(${JSON.stringify(selector)});
     if (!field) return false;
     field.value = ${JSON.stringify(String(value))};
     field.dispatchEvent(new Event('input', { bubbles: true }));
     field.dispatchEvent(new Event('change', { bubbles: true }));
     return true;
-  }`() );
+  })()`);
   assert.equal(result, true, 'Expected form field ' + selector);
 }
 
@@ -107,14 +110,14 @@ try {
   });
 
   await openCases();
-  const categoryOpened = await execute(`() => {
+  const categoryOpened = await execute(`(() => {
     const category = [...document.querySelectorAll('.dossier-category')]
       .find((card) => card.querySelector('h3')?.textContent.includes('Ναρκωτικά'));
     const create = [...(category?.querySelectorAll('button') || [])]
       .find((button) => button.textContent.includes('Νέα υπόθεση'));
     create?.click();
     return !!create;
-  }`() );
+  })()`);
   assert.equal(categoryOpened, true, 'Narcotics category must offer new-case creation');
   await waitForExpression("!document.getElementById('case-form').hidden", 'Firefox new case form');
 
@@ -158,7 +161,7 @@ try {
     script: 'const done = arguments[arguments.length - 1]; Promise.resolve(window.AXYP_STORAGE.ready).then(() => done(true), error => done({ error: String(error) }));',
     args: []
   });
-  const afterReload = await execute(`() => {
+  const afterReload = await execute(`(() => {
     const rows = JSON.parse(window.AXYP_STORAGE.getItem('axyp-hypotheses') || '[]');
     const item = rows.find((row) => row.title === 'FIREFOX E2E TEST CASE — LOCAL ONLY');
     return item ? {
@@ -167,7 +170,7 @@ try {
       evidence: item.caseRegister.evidence[0]?.description,
       action: item.caseRegister.actions[0]?.title
     } : null;
-  }`() );
+  })()`);
   assert.deepEqual(afterReload, {
     protocol: 'FF-E2E-2026-0001',
     person: 'FIREFOX E2E TEST PERSON',
