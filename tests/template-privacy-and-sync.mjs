@@ -40,6 +40,33 @@ for (const template of DEFAULT_COUNTERFEIT_TEMPLATES) {
   assert.ok(embedded.includes(Buffer.from('word/document.xml')), `${template.id}: DOCX contains the main Word document part`)
 }
 
+const noiseExamination = DEFAULT_NOISE_TEMPLATES.find((template) => template.id === 'noise-02')
+assert.ok(noiseExamination.fields.includes('officerB.service'))
+assert.equal(noiseExamination.mappings['officerB.service'], 'officerB.service')
+const noiseExaminationXml = new TextDecoder().decode(getTemplateParts(noiseExamination)['word/document.xml'])
+assert.ok(noiseExaminationXml.includes('{{officerB.service}}'), 'noise-02 uses the B investigator service field')
+
+for (const id of ['counterfeit-01', 'counterfeit-02']) {
+  const template = DEFAULT_COUNTERFEIT_TEMPLATES.find((entry) => entry.id === id)
+  assert.ok(template.fields.includes('officerB.service'), `${id} declares the B investigator service`)
+  assert.equal(template.mappings['officerB.service'], 'officerB.service')
+  const xml = new TextDecoder().decode(getTemplateParts(template)['word/document.xml'])
+  assert.ok(xml.includes('{{officerB.service}}'), `${id} uses the B investigator service placeholder`)
+}
+const counterfeit01 = DEFAULT_COUNTERFEIT_TEMPLATES.find((entry) => entry.id === 'counterfeit-01')
+const counterfeit01Xml = new TextDecoder().decode(getTemplateParts(counterfeit01)['word/document.xml'])
+assert.ok(counterfeit01Xml.includes('{{counterfeit.serialNumber}}'), 'counterfeit-01 includes the serial number in the document text')
+const counterfeit01Rendered = replaceInXml(counterfeit01Xml, counterfeit01, {
+  counterfeit: { serialNumber: 'TEST-SERIAL-123' },
+  evidence: 'TEST DENOMINATION',
+  officerA: { rank: 'TEST A', surname: 'OFFICER', name: 'ONE', service: 'SERVICE A' },
+  officerB: { rank: 'TEST B', surname: 'OFFICER', name: 'TWO', service: 'SERVICE B' }
+})
+assert.ok(counterfeit01Rendered.includes('TEST-SERIAL-123'))
+assert.ok(counterfeit01Rendered.includes('SERVICE A'))
+assert.ok(counterfeit01Rendered.includes('SERVICE B'))
+assert.ok(!counterfeit01Rendered.includes('{{counterfeit.serialNumber}}'))
+
 const noiseArrest = DEFAULT_NOISE_TEMPLATES.find((template) => template.id === 'noise-01')
 assert.ok(noiseArrest)
 const ownerFields = ['owner.fullName', 'owner.fatherName', 'owner.motherName', 'owner.birthDate', 'owner.birthPlace', 'owner.city', 'owner.idNumber', 'owner.idDate', 'owner.idService', 'owner.taxId', 'owner.taxOffice']
