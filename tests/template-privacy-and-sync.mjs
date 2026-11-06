@@ -135,3 +135,5 @@ assert.ok(!rendered.includes('{{ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ}}'), 'Gr
 console.log('Template privacy/synchronization regressions passed.')
 
 // Keep this regression suite in the guarded template-sanitization PR workflow.
+
+// Re-run guarded DOCX synchronization validation after workflow updates.
