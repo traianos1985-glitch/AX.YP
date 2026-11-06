@@ -6,9 +6,9 @@ const root = new URL('../templates/noise/', import.meta.url)
 const directory = new URL('../templates/noise/', import.meta.url)
 const files = fs.readdirSync(directory).filter((name) => name.endsWith('.docx')).sort()
 const patterns = [
-  /02[./-]10[./-]1985/g,
-  /2[./-]10[./-]1985/g,
-  /1985[./-]10[./-]02/g
+  /02[./-]10[./-]1985/,
+  /2[./-]10[./-]1985/,
+  /1985[./-]10[./-]02/
 ]
 for (const filename of files) {
   const bytes = fs.readFileSync(new URL(filename, directory))
