@@ -19,7 +19,7 @@ assert.match(hypotheses, /async function renderDossierTemplates/);
 assert.match(hypotheses, /async function exportCategoryDossier/);
 assert.match(hypotheses, /template\.source === 'user-uploaded' \|\| template\.source === 'published-package'/);
 assert.match(hypotheses, /buildCategoryArchive\(selectedTemplates, saved\)/);
-assert.match(hypotheses, /reset\(\);\s*\$\('case-date'\)\.value = ''/);
+assert.doesNotMatch(hypotheses, /reset\(\);\s*\$\('case-date'\)\.value = ''/, 'Successful export must preserve the automatically populated date for the next case');
 assert.match(library, /source === 'published-package'/);
 assert.match(library, /loadPublishedDossierPackages/);
 assert.match(library, /enteredName = window\.prompt/);
