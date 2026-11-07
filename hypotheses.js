@@ -21,6 +21,12 @@ if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.
   function write(value) {
     var s = window.AXYP_STORAGE || localStorage;
     s.setItem(KEY, JSON.stringify(value));
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        var bc = new BroadcastChannel('axyp-hypotheses-sync');
+        bc.postMessage({ type: 'hypotheses-updated' });
+      } catch (_) {}
+    }
   }
 
     function addMinutes(timeStr, mins) {
@@ -739,8 +745,23 @@ function uid() {
     reader.onload = async function () {
       try {
         var parsed = JSON.parse(reader.result);
+        function isValidHypothesis(item) {
+          if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+          if (typeof item.id !== 'string' || !item.id.trim()) return false;
+          if (item.title !== undefined && typeof item.title !== 'string') return false;
+          if (item.snapshots !== undefined && !Array.isArray(item.snapshots)) return false;
+          var objectFields = ['offender', 'offenderA', 'offenderB', 'officerA', 'officerB', 'counterfeit', 'vehicle', 'noise', 'camping', 'timeline', 'interpreter'];
+          for (var i = 0; i < objectFields.length; i++) {
+            var f = objectFields[i];
+            if (item[f] !== undefined && item[f] !== null && (typeof item[f] !== 'object' || Array.isArray(item[f]))) {
+              return false;
+            }
+          }
+          return true;
+        }
+
         if (!parsed || (parsed.schema !== 2 && parsed.schema !== 1) || !Array.isArray(parsed.hypotheses) ||
-            !parsed.hypotheses.every(function (item) { return item && typeof item === 'object' && typeof item.id === 'string' && item.id; })) {
+            !parsed.hypotheses.every(isValidHypothesis)) {
           throw new Error('invalid schema');
         }
 
@@ -827,8 +848,8 @@ function uid() {
             $('case-flash').textContent = 'Η επαναφορά ακυρώθηκε χωρίς αλλαγές.';
             return;
           }
-          entries = [
-            ['axyp-hypotheses', JSON.stringify(parsed.hypotheses)],
+          entries = [['axyp-hypotheses', JSON.stringify(parsed.hypotheses)]];
+          var optionalKeys = [
             ['axyp-favorites', parsed.favorites],
             ['axyp-form-profile', parsed.profile],
             ['axyp-theme', parsed.theme],
@@ -837,6 +858,11 @@ function uid() {
             ['axyp-docx-templates', parsed.templates],
             ['axyp-template-mappings', parsed.templateMappings]
           ];
+          optionalKeys.forEach(function (pair) {
+            if (pair[1] !== undefined && pair[1] !== null) {
+              entries.push([pair[0], typeof pair[1] === 'string' ? pair[1] : JSON.stringify(pair[1])]);
+            }
+          });
         }
 
         if (s.setItemsDurable) {
@@ -915,6 +941,42 @@ function uid() {
   $('case-import').onchange = importData;
   $('full-backup').onclick = fullBackup;
   $('full-restore').onchange = restoreBackup;
+
+  // Cross-tab synchronization via storage event and BroadcastChannel (M6)
+  function handleExternalHypothesesUpdate() {
+    try {
+      var latest = read();
+      var list = $('cases-list');
+      if (list) {
+        var currentFilter = activeProfileFilter;
+        var filtered = latest.filter(function (item) { return !currentFilter || (item.profile || 'generic') === currentFilter; });
+        var activeItem = latest.find(function (item) { return item.id === selectedId; });
+        if (selectedId && !activeItem) {
+          // The selected case was removed in another tab
+          selectedId = null;
+          reset();
+        }
+        render();
+      }
+    } catch (_) {}
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', function (e) {
+      if (e.key === KEY) handleExternalHypothesesUpdate();
+    });
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        var bc = new BroadcastChannel('axyp-hypotheses-sync');
+        bc.onmessage = function (e) {
+          if (e.data && e.data.type === 'hypotheses-updated') {
+            handleExternalHypothesesUpdate();
+          }
+        };
+      } catch (_) {}
+    }
+  }
+
   reset();
   showDashboard();
   render();
