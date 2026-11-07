@@ -17,6 +17,7 @@ assert.match(html, /id="case-export-dossier"/);
 assert.match(html, /Συμπλήρωση και εξαγωγή όλων των Word/);
 assert.match(hypotheses, /async function renderDossierTemplates/);
 assert.match(hypotheses, /async function exportCategoryDossier/);
+assert.match(hypotheses, /template\.source === 'user-uploaded' \|\| template\.source === 'published-package'/);
 assert.match(hypotheses, /buildCategoryArchive\(selectedTemplates, saved\)/);
 assert.match(hypotheses, /reset\(\);\s*\$\('case-date'\)\.value = ''/);
 assert.match(library, /source === 'published-package'/);
