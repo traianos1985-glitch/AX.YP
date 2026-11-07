@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { anonymizeDocxParts, detectDocxPersonalData } from '../docx-anonymization.js';
+import { anonymizeDocxParts, createManualAnonymizationCandidates, detectDocxPersonalData } from '../docx-anonymization.js';
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>
@@ -41,5 +41,12 @@ const repeatedCandidate = detectDocxPersonalData(repeatedParts);
 const repeatedOutput = new TextDecoder().decode(anonymizeDocxParts(repeatedParts, repeatedCandidate)['word/document.xml']);
 assert.ok(repeatedOutput.includes('{{person.taxId}}'));
 assert.ok(repeatedOutput.includes('Απλός αριθμός αναφοράς 123456789'), 'Only the reviewed paragraph may be changed');
+
+const manualParts = { 'word/document.xml': new TextEncoder().encode('<w:p><w:r><w:t>Ο τόπος είναι Οδός Δοκιμής 12.</w:t></w:r></w:p>') };
+const manual = createManualAnonymizationCandidates(manualParts, [{ value: 'Οδός Δοκιμής 12', placeholder: '{{person.address}}' }]);
+assert.equal(manual.length, 1, 'Manual review should locate exact text that automatic rules do not recognize');
+const manualOutput = new TextDecoder().decode(anonymizeDocxParts(manualParts, manual)['word/document.xml']);
+assert.ok(manualOutput.includes('{{person.address}}'));
+assert.ok(!manualOutput.includes('Οδός Δοκιμής 12'));
 
 console.log('DOCX anonymization tests passed.');
