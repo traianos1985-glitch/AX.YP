@@ -160,11 +160,12 @@
   });
 
   function getStatus() {
-    var hasError = pendingFailures.length > 0 || !!lastError;
+    var firstFailure = pendingFailures[0];
+    var hasError = !!firstFailure || (!!lastError && !indexedDBAvailable);
     return {
       indexedDBAvailable: indexedDBAvailable,
       degraded: hasError,
-      error: hasError ? (pendingFailures[0] ? String(pendingFailures[0].message || pendingFailures[0]) : String(lastError.message || lastError)) : null
+      error: hasError ? (firstFailure ? String(firstFailure.error.message || firstFailure.error) : String(lastError ? (lastError.message || lastError) : '')) : null
     };
   }
 
@@ -178,8 +179,10 @@
     return readLocalStorage(key);
   }
 
-  function trackWrite(operation) {
+  function trackWrite(operation, key) {
     var tracked = Promise.resolve(operation).then(function () {
+      pendingFailures = pendingFailures.filter(function (failure) { return failure.key !== key; });
+      if (!pendingFailures.length) lastError = null;
       return { ok: true };
     }).catch(function (error) {
       lastError = error;
@@ -187,7 +190,10 @@
     });
     pendingWrites.push(tracked);
     tracked.then(function (result) {
-      if (!result.ok) pendingFailures.push(result.error);
+      if (!result.ok) {
+        pendingFailures = pendingFailures.filter(function (failure) { return failure.key !== key; });
+        pendingFailures.push({ key: key, error: result.error });
+      }
       var index = pendingWrites.indexOf(tracked);
       if (index !== -1) pendingWrites.splice(index, 1);
     });
@@ -202,7 +208,6 @@
       if (remove) store.delete(key);
       else store.put(value, key);
       return transactionDone(tx).then(function () {
-        lastError = null;
       });
     });
   }
@@ -216,12 +221,14 @@
       localStorage.setItem(key, stringValue);
       localOk = true;
     } catch (error) {
-      lastError = error;
+      if (!indexedDBAvailable) {
+        lastError = error;
+      }
     }
     trackWrite(writeToDB(key, stringValue, false).catch(function (error) {
       if (localOk) return;
       throw makeError('Δεν αποθηκεύτηκαν τα δεδομένα ούτε στο IndexedDB ούτε στο localStorage.', error);
-    }));
+    }), key);
   }
 
   function setItemDurable(key, value) {
@@ -237,12 +244,14 @@
       localStorage.removeItem(key);
       localOk = true;
     } catch (error) {
-      lastError = error;
+      if (!indexedDBAvailable) {
+        lastError = error;
+      }
     }
     trackWrite(writeToDB(key, null, true).catch(function (error) {
       if (localOk) return;
       throw makeError('Δεν διαγράφηκαν τα δεδομένα ούτε από το IndexedDB ούτε από το localStorage.', error);
-    }));
+    }), key);
   }
 
   function removeItemDurable(key) {
@@ -310,8 +319,13 @@
                 else localStorage.setItem(entry[0], entry[1]);
               });
             } catch (error) {
-              lastError = error;
+              // localStorage quota exceeded is expected for large datasets (>5MB).
+              // Since IndexedDB committed successfully, storage remains non-degraded.
             }
+            var restoredKeys = Object.create(null);
+            normalized.forEach(function (entry) { restoredKeys[entry[0]] = true; });
+            pendingFailures = pendingFailures.filter(function (failure) { return !restoredKeys[failure.key]; });
+            if (!pendingFailures.length) lastError = null;
           }
           normalized.forEach(function (entry) {
             dirtyKeys[entry[0]] = true;
@@ -328,11 +342,12 @@
     return ready.then(function () {
       var tasks = pendingWrites.slice();
       return Promise.all(tasks).then(function () {
-        var failures = pendingFailures.splice(0);
+        var failures = pendingFailures.slice();
         if (failures.length) {
-          var first = failures[0];
+          var first = failures[0].error;
           throw makeError('Η αποθήκευση δεν επιβεβαιώθηκε: ' + (first.message || first), first);
         }
+        lastError = null;
         return getStatus();
       });
     });

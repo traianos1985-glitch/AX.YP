@@ -30,3 +30,9 @@ This note records the disposition of the remaining findings from the Claude revi
 ## Safety constraints
 
 No legal provision was automatically selected or changed by this follow-up. No real personal data was added. The application remains local-first; no cloud sync, telemetry, or AI processing was introduced.
+
+## Low-severity findings resolution (2026-11-07)
+
+- **Storage degraded state recovery (Low 1):** `storage.js` dynamically clears the `degraded` flag within the session whenever writes or flushes succeed. `localStorage` quota errors on datasets exceeding 5 MB do not mark storage permanently degraded when IndexedDB is operational and commits successfully.
+- **Test suite hygiene (Low 2):** Removed ad-hoc patch generation and review scripts (`tests/claude-docx-review.mjs` and `tests/prepare-claude-docx-patches.mjs`) that were left outside `npm test`.
+- **Manifest and PWA verification (Low 3):** Added comprehensive automated checks in `tests/low-issues-validation.mjs` for manifest structure, icon asset existence and formats, and service worker offline precache completeness.
