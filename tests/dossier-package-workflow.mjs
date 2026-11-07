@@ -6,6 +6,8 @@ import { unzipSync } from '../vendor/fflate.js';
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const hypotheses = await readFile(new URL('../hypotheses.js', import.meta.url), 'utf8');
 const library = await readFile(new URL('../template-library.js', import.meta.url), 'utf8');
+const vite = await readFile(new URL('../vite.config.js', import.meta.url), 'utf8');
+const serviceWorker = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
 const catalog = JSON.parse(await readFile(new URL('../dossier-packages/manifest.json', import.meta.url), 'utf8'));
 
 assert.equal(catalog.schemaVersion, 1);
@@ -19,6 +21,9 @@ assert.match(hypotheses, /buildCategoryArchive\(selectedTemplates, saved\)/);
 assert.match(hypotheses, /reset\(\);\s*\$\('case-date'\)\.value = ''/);
 assert.match(library, /source === 'published-package'/);
 assert.match(library, /loadPublishedDossierPackages/);
+assert.match(library, /new URL\\('dossier-packages\\/manifest\\.json', document\\.baseURI\\)/);
+assert.match(vite, /dossier-packages/);
+assert.match(serviceWorker, /dossier-packages\\/manifest\\.json/);
 
 const local = { id: 'local-1', category: 'generic', source: 'user-uploaded', name: 'local.docx' };
 const published = { id: 'published-1', category: 'generic', source: 'published-package', name: 'published.docx' };
