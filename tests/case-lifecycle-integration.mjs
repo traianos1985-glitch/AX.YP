@@ -247,6 +247,8 @@ const appSource = await readFile(new URL('../hypotheses.js', import.meta.url), '
 assert.match(appSource, /caseRegister: getCaseRegisterData\(\)/);
 assert.match(appSource, /loadCaseRegister\(item\.caseRegister \|\| \{\}\)/);
 assert.match(appSource, /resetCaseRegister\(\)/);
+assert.doesNotMatch(appSource, /reset\(\);\s*\$\('case-date'\)\.value\s*=\s*''/,
+  'Successful export must leave the next new-case form prefilled with the current local date');
 assert.match(appSource, /await window\.AXYP_STORAGE\.flush\(\)/);
 assert.match(appSource, /write\(items\);[\s\S]{0,180}await window\.AXYP_STORAGE\.flush\(\)/, 'Case save waits for durable flush before success');
 assert.match(appSource, /hypotheses: read\(\)/,
