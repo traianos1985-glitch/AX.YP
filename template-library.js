@@ -78,7 +78,7 @@ export async function loadPublishedDossierPackages() {
   if (publishedPackagesPromise) return publishedPackagesPromise;
   publishedPackagesPromise = (async () => {
     let response;
-    try { response = await fetch(new URL('./dossier-packages/manifest.json', import.meta.url)); }
+    try { response = await fetch(new URL('dossier-packages/manifest.json', document.baseURI)); }
     catch (_) { return []; }
     if (!response.ok) return [];
     const catalog = await response.json();
@@ -90,7 +90,7 @@ export async function loadPublishedDossierPackages() {
       if (!entry || typeof entry.file !== 'string' || !/^[\\p{L}\\p{N}._-]+\\.axyp\\.zip$/u.test(entry.file)) {
         throw new Error('Invalid dossier package filename in catalog.');
       }
-      const packageResponse = await fetch(new URL('./dossier-packages/' + entry.file, import.meta.url));
+      const packageResponse = await fetch(new URL('dossier-packages/' + entry.file, document.baseURI));
       if (!packageResponse.ok) throw new Error('Could not load dossier package: ' + entry.file);
       const packageParts = unzipSync(new Uint8Array(await packageResponse.arrayBuffer()));
       if (!packageParts['manifest.json']) throw new Error('Dossier package manifest is missing: ' + entry.file);
