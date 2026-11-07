@@ -12,7 +12,9 @@
   var channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('axyp-storage') : null;
   var conflicts = Object.create(null);
   var conflictListeners = [];
+  var changeListeners = [];
   var localRevisions = Object.create(null);
+  var localRevisionSources = Object.create(null);
   var dbPromise = null;
   var cache = Object.create(null);
   var dirtyKeys = Object.create(null);
@@ -114,7 +116,7 @@
       var raw = localStorage.getItem(META_PREFIX + key);
       var parsed = raw ? JSON.parse(raw) : null;
       if (!parsed || !Number.isFinite(Number(parsed.revision))) return null;
-      return { revision: Number(parsed.revision), updatedAt: String(parsed.updatedAt || '') };
+      return { revision: Number(parsed.revision), updatedAt: String(parsed.updatedAt || ''), deleted: parsed.deleted === true, source: String(parsed.source || '') };
     } catch (_) { return null; }
   }
 
@@ -123,22 +125,44 @@
     return revisionClock;
   }
 
-  function makeRecord(value, revision) {
-    return { __axypRecord: 1, value: value, revision: revision, updatedAt: new Date().toISOString() };
+  function makeRecord(value, revision, deleted, source) {
+    var isDeleted = deleted === true || value === null;
+    return { __axypRecord: 1, value: isDeleted ? null : value, deleted: isDeleted, revision: revision, source: String(source || ''), updatedAt: new Date().toISOString() };
   }
 
   function asRecord(value) {
-    if (value && typeof value === 'object' && value.__axypRecord === 1 && Number.isFinite(Number(value.revision)) && typeof value.value === 'string') {
-      return { value: value.value, revision: Number(value.revision), updatedAt: String(value.updatedAt || '') };
+    if (value && typeof value === 'object' && value.__axypRecord === 1 && Number.isFinite(Number(value.revision)) &&
+        (typeof value.value === 'string' || (value.deleted === true && value.value === null))) {
+      return { value: value.value, deleted: value.deleted === true, revision: Number(value.revision), source: String(value.source || ''), updatedAt: String(value.updatedAt || '') };
     }
     return null;
   }
 
+  function compareVersion(left, right) {
+    if (left.revision !== right.revision) return left.revision - right.revision;
+    return String(left.source || '').localeCompare(String(right.source || ''));
+  }
+
   function preferRecord(localValue, localMeta, indexedValue) {
     var indexedRecord = asRecord(indexedValue);
-    if (!indexedRecord) return localValue !== null ? { value: localValue, revision: localMeta ? localMeta.revision : 0 } : (indexedValue !== undefined && indexedValue !== null ? { value: String(indexedValue), revision: 0 } : null);
-    if (localValue === null || !localMeta) return indexedRecord;
-    return indexedRecord.revision > localMeta.revision ? indexedRecord : { value: localValue, revision: localMeta.revision };
+    var localRecord = null;
+    if (localMeta) {
+      if (localMeta.deleted) localRecord = { value: null, deleted: true, revision: localMeta.revision, source: localMeta.source || '' };
+      else if (localValue !== null) localRecord = { value: localValue, deleted: false, revision: localMeta.revision, source: localMeta.source || '' };
+      else localRecord = { value: null, deleted: false, unavailable: true, revision: localMeta.revision, source: localMeta.source || '' };
+    } else if (localValue !== null) {
+      localRecord = { value: localValue, deleted: false, revision: 0, source: '' };
+    }
+    if (!indexedRecord) {
+      if (localRecord) return localRecord;
+      return indexedValue !== undefined && indexedValue !== null ? { value: String(indexedValue), deleted: false, revision: 0, source: '' } : null;
+    }
+    if (!localRecord) return indexedRecord;
+    if (compareVersion(indexedRecord, localRecord) > 0) return indexedRecord;
+    if (compareVersion(indexedRecord, localRecord) < 0) return localRecord;
+    if (localRecord.deleted) return localRecord;
+    if (localRecord.unavailable) return indexedRecord;
+    return localRecord;
   }
 
   // Το σύγχρονο API διατηρείται για συμβατότητα με τις υπάρχουσες ενότητες.
@@ -181,10 +205,15 @@
             var localValue = readLocalStorage(key);
             var localMeta = readLocalMeta(key);
             var chosen = preferRecord(localValue, localMeta, request.result);
-            if (chosen) {
-              cache[key] = chosen.value;
+            if (chosen && !chosen.unavailable) {
+              if (chosen.deleted) delete cache[key];
+              else cache[key] = chosen.value;
               localRevisions[key] = chosen.revision;
-              if (chosen.value !== localValue || !localMeta || chosen.revision > localMeta.revision) pendingMigration.push([key, chosen.value, chosen.revision]);
+              localRevisionSources[key] = chosen.source || '';
+              var indexedRecord = asRecord(request.result);
+              var localMatches = !!localMeta && localMeta.revision === chosen.revision && localMeta.deleted === chosen.deleted && (chosen.deleted || localValue === chosen.value);
+              var indexedMatches = !!indexedRecord && indexedRecord.revision === chosen.revision && indexedRecord.deleted === chosen.deleted && (chosen.deleted || indexedRecord.value === chosen.value);
+              if (!localMatches || !indexedMatches) pendingMigration.push([key, chosen.value, chosen.revision, chosen.deleted, chosen.source || '']);
             }
           };
         });
@@ -194,13 +223,14 @@
             var writeTx = db.transaction(STORE_NAME, 'readwrite');
             var writeStore = writeTx.objectStore(STORE_NAME);
             pendingMigration.forEach(function (entry) {
-              if (!dirtyKeys[entry[0]]) writeStore.put(makeRecord(entry[1], entry[2]), entry[0]);
+              if (!dirtyKeys[entry[0]]) writeStore.put(makeRecord(entry[1], entry[2], entry[3], entry[4]), entry[0]);
             });
             transactionDone(writeTx).then(function () {
               pendingMigration.forEach(function (entry) {
                 try {
-                  localStorage.setItem(entry[0], entry[1]);
-                  localStorage.setItem(META_PREFIX + entry[0], JSON.stringify({ revision: entry[2], updatedAt: new Date().toISOString() }));
+                  if (entry[3]) localStorage.removeItem(entry[0]);
+                  else localStorage.setItem(entry[0], entry[1]);
+                  localStorage.setItem(META_PREFIX + entry[0], JSON.stringify({ revision: entry[2], deleted: !!entry[3], source: entry[4] || '', updatedAt: new Date().toISOString() }));
                 } catch (_) {}
               });
               resolve(getStatus());
@@ -247,18 +277,31 @@
     try { window.dispatchEvent(new CustomEvent('axyp:storage-conflict', { detail: conflict })); } catch (_) {}
   }
 
+  function notifyChange(key, value, revision, remote) {
+    var event = { key: key, value: value, revision: Number(revision || 0), remote: !!remote, source: remote ? 'remote' : 'local' };
+    changeListeners.slice().forEach(function (listener) { try { listener(event); } catch (_) {} });
+    try { window.dispatchEvent(new CustomEvent('axyp:storage-change', { detail: event })); } catch (_) {}
+  }
+
   function receiveRemoteChange(message) {
     if (!message || message.source === TAB_ID || !message.key || message.key.indexOf('axyp-') !== 0) return;
     var revision = Number(message.revision || 0);
-    if (revision <= (localRevisions[message.key] || 0)) return;
-    localRevisions[message.key] = revision;
-    if (dirtyKeys[message.key] || pendingWrites.length) {
-      conflicts[message.key] = { key: message.key, localValue: cache[message.key] ?? null, remoteValue: message.value ?? null, revision: revision, detectedAt: new Date().toISOString() };
+    var incomingSource = String(message.source || '');
+    var currentRevision = localRevisions[message.key] || 0;
+    var currentSource = localRevisionSources[message.key] || '';
+    if (revision < currentRevision) return;
+    var hasPendingKeyWrite = pendingWrites.some(function (write) { return write.storageKey === message.key; });
+    if (dirtyKeys[message.key] || hasPendingKeyWrite) {
+      conflicts[message.key] = { key: message.key, localValue: cache[message.key] ?? null, remoteValue: message.value ?? null, revision: revision, source: incomingSource, detectedAt: new Date().toISOString() };
       notifyConflict(conflicts[message.key]);
       return;
     }
+    if (revision === currentRevision && incomingSource <= currentSource) return;
+    localRevisions[message.key] = revision;
+    localRevisionSources[message.key] = incomingSource;
     if (message.value === null) delete cache[message.key];
     else cache[message.key] = message.value;
+    notifyChange(message.key, message.value ?? null, revision, true);
   }
   if (channel) channel.onmessage = function (event) { receiveRemoteChange(event.data); };
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') window.addEventListener('storage', function (event) { receiveRemoteChange({ key: event.key, value: event.newValue, revision: Date.now(), source: 'storage-event' }); });
@@ -271,18 +314,27 @@
   function broadcastChange(key, value, explicitRevision) {
     var revision = explicitRevision || nextRevision();
     localRevisions[key] = revision;
+    localRevisionSources[key] = TAB_ID;
     if (channel) channel.postMessage({ source: TAB_ID, key: key, value: value, revision: revision });
+    return revision;
   }
 
   function getConflicts() { return Object.values(conflicts); }
   function resolveConflict(key, choice) {
     var conflict = conflicts[key];
     if (!conflict) return Promise.resolve(getStatus());
+    if (choice !== 'remote' && choice !== 'local') return Promise.reject(new Error('Μη έγκυρη επιλογή επίλυσης σύγκρουσης.'));
     delete conflicts[key];
-    if (choice === 'remote') return setItemDurable(key, conflict.remoteValue);
-    return setItemDurable(key, conflict.localValue);
+    var selectedValue = choice === 'remote' ? conflict.remoteValue : conflict.localValue;
+    var operation = selectedValue === null ? removeItemDurable(key) : setItemDurable(key, selectedValue);
+    return operation.catch(function (error) {
+      conflicts[key] = conflict;
+      notifyConflict(conflict);
+      throw error;
+    });
   }
   function onConflict(listener) { if (typeof listener === 'function') conflictListeners.push(listener); return function () { conflictListeners = conflictListeners.filter(function (entry) { return entry !== listener; }); }; }
+  function onChange(listener) { if (typeof listener !== 'function') return function () {}; changeListeners.push(listener); return function () { changeListeners = changeListeners.filter(function (entry) { return entry !== listener; }); }; }
 
   function trackWrite(operation, key) {
     var tracked = Promise.resolve(operation).then(function () {
@@ -294,6 +346,7 @@
       lastError = error;
       return { ok: false, error: error };
     });
+    tracked.storageKey = key;
     pendingWrites.push(tracked);
     tracked.then(function (result) {
       if (!result.ok) {
@@ -311,10 +364,8 @@
       if (!db) throw lastError || makeError('Το IndexedDB δεν είναι διαθέσιμο.');
       var tx = db.transaction(STORE_NAME, 'readwrite');
       var store = tx.objectStore(STORE_NAME);
-      if (remove) store.delete(key);
-      else store.put(makeRecord(value, revision), key);
-      return transactionDone(tx).then(function () {
-      });
+      store.put(makeRecord(remove ? null : value, revision, remove, TAB_ID), key);
+      return transactionDone(tx).then(function () {});
     });
   }
 
@@ -328,12 +379,13 @@
     var revision = nextRevision();
     cache[key] = stringValue;
     localRevisions[key] = revision;
+    localRevisionSources[key] = TAB_ID;
     broadcastChange(key, stringValue, revision);
     dirtyKeys[key] = true;
     var localOk = false;
     try {
       localStorage.setItem(key, stringValue);
-      localStorage.setItem(META_PREFIX + key, JSON.stringify({ revision: revision, updatedAt: new Date().toISOString() }));
+      localStorage.setItem(META_PREFIX + key, JSON.stringify({ revision: revision, deleted: false, source: TAB_ID, updatedAt: new Date().toISOString() }));
       localOk = true;
     } catch (error) {
       if (!indexedDBAvailable) {
@@ -344,37 +396,45 @@
       if (localOk) return;
       throw makeError('Δεν αποθηκεύτηκαν τα δεδομένα ούτε στο IndexedDB ούτε στο localStorage.', error);
     }), key);
+    notifyChange(key, stringValue, revision, false);
+    return true;
   }
 
   function setItemDurable(key, value) {
-    setItem(key, value);
+    if (setItem(key, value) === false) return Promise.reject(makeError('Η αποθήκευση μπλοκαρίστηκε λόγω ανεπίλυτης σύγκρουσης.'));
     return flush();
   }
 
   function removeItem(key) {
+    if (conflicts[key]) {
+      lastError = makeError('Η διαγραφή απορρίφθηκε: υπάρχει νεότερη αλλαγή σε άλλη καρτέλα.');
+      notifyConflict(conflicts[key]);
+      return false;
+    }
     var revision = nextRevision();
     delete cache[key];
     localRevisions[key] = revision;
+    localRevisionSources[key] = TAB_ID;
     broadcastChange(key, null, revision);
     dirtyKeys[key] = true;
     var localOk = false;
     try {
       localStorage.removeItem(key);
-      localStorage.removeItem(META_PREFIX + key);
+      localStorage.setItem(META_PREFIX + key, JSON.stringify({ revision: revision, deleted: true, source: TAB_ID, updatedAt: new Date().toISOString() }));
       localOk = true;
     } catch (error) {
-      if (!indexedDBAvailable) {
-        lastError = error;
-      }
+      if (!indexedDBAvailable) lastError = error;
     }
-    trackWrite(writeToDB(key, null, true).catch(function (error) {
+    trackWrite(writeToDB(key, null, true, revision).catch(function (error) {
       if (localOk) return;
       throw makeError('Δεν διαγράφηκαν τα δεδομένα ούτε από το IndexedDB ούτε από το localStorage.', error);
     }), key);
+    notifyChange(key, null, revision, false);
+    return true;
   }
 
   function removeItemDurable(key) {
-    removeItem(key);
+    if (removeItem(key) === false) return Promise.reject(makeError('Η διαγραφή μπλοκαρίστηκε λόγω ανεπίλυτης σύγκρουσης.'));
     return flush();
   }
 
@@ -388,8 +448,9 @@
         if (!Array.isArray(entry) || typeof entry[0] !== 'string' || entry[0].indexOf('axyp-') !== 0) {
           throw new Error('Το αντίγραφο περιέχει μη επιτρεπτό κλειδί αποθήκευσης.');
         }
-        return [entry[0], entry[1] === null || entry[1] === undefined ? null : String(entry[1]), nextRevision()];
+        return [entry[0], entry[1] === null || entry[1] === undefined ? null : String(entry[1]), nextRevision(), TAB_ID];
       });
+      normalized.forEach(function (entry) { dirtyKeys[entry[0]] = true; });
       return openDB().then(function (db) {
         var committedToDb = false;
         var dbError = null;
@@ -397,13 +458,8 @@
           try {
             var tx = db.transaction(STORE_NAME, 'readwrite');
             var store = tx.objectStore(STORE_NAME);
-            normalized.forEach(function (entry) {
-              if (entry[1] === null) store.delete(entry[0]);
-              else store.put(makeRecord(entry[1], entry[2]), entry[0]);
-            });
-            return transactionDone(tx).then(function () {
-              committedToDb = true;
-            }).catch(function (error) {
+            normalized.forEach(function (entry) { store.put(makeRecord(entry[1], entry[2], entry[1] === null, entry[3]), entry[0]); });
+            return transactionDone(tx).then(function () { committedToDb = true; }).catch(function (error) {
               dbError = error;
               lastError = error;
             }).then(finish);
@@ -413,28 +469,23 @@
           }
         }
         return finish();
-
         function finish() {
           if (!committedToDb) {
             var previous = [];
             try {
+              normalized.forEach(function (entry) { previous.push([entry[0], localStorage.getItem(entry[0]), localStorage.getItem(META_PREFIX + entry[0])]); });
               normalized.forEach(function (entry) {
-                previous.push([entry[0], localStorage.getItem(entry[0])]);
-              });
-              normalized.forEach(function (entry) {
-                if (entry[1] === null) {
-                  localStorage.removeItem(entry[0]);
-                  localStorage.removeItem(META_PREFIX + entry[0]);
-                } else {
-                  localStorage.setItem(entry[0], entry[1]);
-                  localStorage.setItem(META_PREFIX + entry[0], JSON.stringify({ revision: entry[2], updatedAt: new Date().toISOString() }));
-                }
+                if (entry[1] === null) localStorage.removeItem(entry[0]);
+                else localStorage.setItem(entry[0], entry[1]);
+                localStorage.setItem(META_PREFIX + entry[0], JSON.stringify({ revision: entry[2], deleted: entry[1] === null, source: entry[3], updatedAt: new Date().toISOString() }));
               });
             } catch (error) {
               previous.forEach(function (entry) {
                 try {
                   if (entry[1] === null) localStorage.removeItem(entry[0]);
                   else localStorage.setItem(entry[0], entry[1]);
+                  if (entry[2] === null) localStorage.removeItem(META_PREFIX + entry[0]);
+                  else localStorage.setItem(META_PREFIX + entry[0], entry[2]);
                 } catch (_) {}
               });
               throw makeError('Η επαναφορά δεν αποθηκεύτηκε. Δεν επιβεβαιώθηκε εγγραφή στο IndexedDB ή στο localStorage.', dbError || error);
@@ -442,17 +493,12 @@
           } else {
             try {
               normalized.forEach(function (entry) {
-                if (entry[1] === null) {
-                  localStorage.removeItem(entry[0]);
-                  localStorage.removeItem(META_PREFIX + entry[0]);
-                } else {
-                  localStorage.setItem(entry[0], entry[1]);
-                  localStorage.setItem(META_PREFIX + entry[0], JSON.stringify({ revision: entry[2], updatedAt: new Date().toISOString() }));
-                }
+                if (entry[1] === null) localStorage.removeItem(entry[0]);
+                else localStorage.setItem(entry[0], entry[1]);
+                localStorage.setItem(META_PREFIX + entry[0], JSON.stringify({ revision: entry[2], deleted: entry[1] === null, source: entry[3], updatedAt: new Date().toISOString() }));
               });
-            } catch (error) {
-              // localStorage quota exceeded is expected for large datasets (>5MB).
-              // Since IndexedDB committed successfully, storage remains non-degraded.
+            } catch (_) {
+              // IndexedDB is authoritative after the complete batch transaction.
             }
             var restoredKeys = Object.create(null);
             normalized.forEach(function (entry) { restoredKeys[entry[0]] = true; });
@@ -460,12 +506,19 @@
             if (!pendingFailures.length) lastError = null;
           }
           normalized.forEach(function (entry) {
-            dirtyKeys[entry[0]] = true;
             if (entry[1] === null) delete cache[entry[0]];
             else cache[entry[0]] = entry[1];
+            localRevisions[entry[0]] = entry[2];
+            localRevisionSources[entry[0]] = entry[3];
+            broadcastChange(entry[0], entry[1], entry[2]);
+            notifyChange(entry[0], entry[1], entry[2], false);
+            delete dirtyKeys[entry[0]];
           });
           return getStatus();
         }
+      }).catch(function (error) {
+        normalized.forEach(function (entry) { delete dirtyKeys[entry[0]]; });
+        throw error;
       });
     });
   }
@@ -474,6 +527,8 @@
     return ready.then(function () {
       var tasks = pendingWrites.slice();
       return Promise.all(tasks).then(function () {
+        var unresolvedConflicts = Object.keys(conflicts);
+        if (unresolvedConflicts.length) throw makeError('Η αποθήκευση δεν επιβεβαιώθηκε: υπάρχουν ανεπίλυτες αλλαγές σε άλλη καρτέλα (' + unresolvedConflicts.join(', ') + ').');
         var failures = pendingFailures.slice();
         if (failures.length) {
           var first = failures[0].error;
@@ -572,6 +627,7 @@
     getConflicts: getConflicts,
     resolveConflict: resolveConflict,
     onConflict: onConflict,
+    onChange: onChange,
     clearError: clearError,
     ready: ready
   };
