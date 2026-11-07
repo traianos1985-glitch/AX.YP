@@ -13,7 +13,7 @@ const sw=await readFile(new URL('../sw.js',import.meta.url),'utf8');
 assert.match(html,/id="dossier-dashboard"/); assert.match(html,/id="dossier-category-grid"/);
 assert.match(html,/id="dossier-workspace"/); assert.match(html,/id="dossier-back"/);
 assert.match(html,/id="dossier-new-case"/);
-assert.equal(html.split('<option value="counterfeit">Πλαστά νομίσματα</option>').length - 1, 2, 'Counterfeit category must exist in both case and bundle selectors');
+assert.equal(html.split('<option value="counterfeit">Πλαστά νομίσματα</option>').length - 1, 3, 'Counterfeit category must exist in the case, bundle and admin template selectors');
 assert.match(html,/id="case-counterfeit-section"/);
 assert.match(html,/id="case-counterfeit-witness-section"/);
 assert.match(html,/id="counterfeit-witness-surname"/);
