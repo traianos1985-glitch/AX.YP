@@ -1352,7 +1352,7 @@ function signatureParagraphTable() {
   const paragraph = (value) => `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">${esc(value)}</w:t></w:r></w:p>`;
   const cell = (label, field) => `<w:tc><w:tcPr><w:tcW w:w="4680" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>${paragraph(label)}${paragraph('________________________')}${paragraph(`{{${field}}}`)}</w:tc>`;
   const nil = '<w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/>';
-  return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblLayout w:type="fixed"/><w:tblBorders>${nil}</w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="4680"/><w:gridCol w:w="4680"/></w:tblGrid><w:tr>${cell('Ο Συλλαβών','case.arrestingOfficer')}${cell('Ο Συλληφθείς','person.fullName')}</w:tr><w:tr>${cell('Ο Β΄ Ανακριτικός Υπάλληλος','officerB.fullName')}${cell('Ο Α΄ Ανακριτικός Υπάλληλος','officerA.fullName')}</w:tr></w:tbl>`;
+  return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblLayout w:type="fixed"/><w:tblBorders>${nil}</w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="4680"/><w:gridCol w:w="4680"/></w:tblGrid><w:tr>${cell('Ο Συλλαβών','case.arrestingOfficer')}${cell('Ο Συλληφθείς','person.fullName')}</w:tr><w:tr>${cell('Ο Β΄ Ανακριτικός Υπάλληλος','officerB.fullName')}${cell('Ο Α΄ Ανακριτικός Υπάλληλος','officerA.nominativeFullName')}</w:tr></w:tbl>`;
 }
 
 export function patchNarcoticsTemplateXml(xml, templateId) {
