@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS, SERVICE_PROFILE_STORAGE_KEY } from '../service-profile.js';
+import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS, SERVICE_PROFILE_STORAGE_KEY, getServiceProfileBackupValue, getServiceProfileRestoreEntry } from '../service-profile.js';
 
 assert.equal(SERVICE_PROFILE_STORAGE_KEY, 'axyp-service-profile-v1');
 const values = new Map();
@@ -24,6 +24,12 @@ assert.equal(saved.name, 'Αστυνομικό Τμήμα Δοκιμής');
 assert.equal(saved.chemicalService, 'Χημική Υπηρεσία Δοκιμής');
 assert.ok(!Object.hasOwn(saved, 'ignored'));
 assert.deepEqual(readServiceProfile(storage), saved);
+assert.equal(getServiceProfileBackupValue(storage), JSON.stringify(saved));
+const restoredEntry = getServiceProfileRestoreEntry({ serviceProfile: JSON.stringify(saved) });
+assert.deepEqual(restoredEntry, [SERVICE_PROFILE_STORAGE_KEY, JSON.stringify(saved)]);
+assert.equal(getServiceProfileRestoreEntry({ schema: 2 }), null);
+assert.throws(() => getServiceProfileRestoreEntry({ serviceProfile: '{invalid' }), /έγκυρο JSON/u);
+
 
 globalThis.window = { AXYP_SERVICE_PROFILE: { get: () => saved } };
 const { valueFor } = await import('../template-library.js');
