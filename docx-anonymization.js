@@ -114,7 +114,7 @@ export function anonymizeDocxParts(parts, approvedCandidates) {
     if (!output[partName]) continue;
     let paragraphIndex = 0;
     let xml = new TextDecoder().decode(output[partName]);
-    xml = xml.replace(/<w:p\\b[^>]*>[\\s\\S]*?<\\/w:p>/gu, (paragraph) => {
+    xml = xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/gu, (paragraph) => {
       const replacements = paragraphReplacements.get(paragraphIndex++);
       if (!replacements) return paragraph;
       let updated = paragraph;
