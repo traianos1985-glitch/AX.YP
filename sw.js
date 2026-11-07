@@ -32,6 +32,7 @@ const APP_SHELL = [
   "./paremporio-templates.js",
   "./templates.js",
   "./manifest.json",
+  "./dossier-packages/manifest.json",
   "./vendor/fflate.js",
   "./icon-192.png",
   "./icon-512.png",
