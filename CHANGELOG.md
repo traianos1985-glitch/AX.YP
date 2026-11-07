@@ -1,3 +1,5 @@
+- Added a detailed agent playbook for multi-batch authentic dossier intake, document inventory, fixed-versus-variable content, Service Profile and investigator mappings, per-case required second investigator, historical author preservation, and final package quality gates. Documentation only; no application behavior or templates changed.
+
 ## Unreleased
 - Make the installation Service Profile the sole source of truth for the first investigating officer and report author; remove per-case first-investigator inputs while retaining editable second-investigator details per case.
 - Ignore legacy case-level first-investigator values during DOCX generation and cover profile precedence with regression tests.
