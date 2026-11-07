@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { unzipSync, strFromU8 } from 'fflate';
+import { unzipSync, strFromU8 } from '../vendor/fflate.js';
 import {
   buildDocx,
   ensureDefaultTemplates,
