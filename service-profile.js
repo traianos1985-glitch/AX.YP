@@ -5,9 +5,9 @@ export const DEFAULT_SERVICE_PROFILE = Object.freeze({
   name: 'Αστυνομικό Τμήμα Τριφυλίας',
   location: 'Κυπαρισσία',
   operator: "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός",
-  operatorDocument: "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού",
+  operatorDocument: '',
   secondOfficer: 'Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος',
-  secondOfficerDocument: 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου'
+  secondOfficerDocument: ''
 });
 const clean = (value) => String(value ?? '').trim();
 const cleanField = (field, value) => field === 'operator' ? String(value ?? '') : clean(value);
