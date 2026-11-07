@@ -280,6 +280,7 @@ const FIELD_OPTIONS = [
   { path: 'case.time', label: 'Υπόθεση · Ώρα σύνταξης' },
   { path: 'incident.date', label: 'Συμβάν · Ημερομηνία' },
   { path: 'incident.time', label: 'Συμβάν · Ώρα' },
+  { path: 'incident.location', label: 'Συμβάν · Τόπος' },
   { path: 'case.location', label: 'Υπόθεση · Τόπος / Πόλη σύνταξης' },
   { path: 'case.prosecutor', label: 'Υπόθεση · Εισαγγελία Πρωτοδικών' },
   { path: 'case.profile', label: 'Υπόθεση · Νομικό προφίλ' },
@@ -969,6 +970,10 @@ function signatureParagraphTable() {
 
 export function patchNarcoticsTemplateXml(xml, templateId) {
   if (templateId === 'noise-02') return xml.replace(/\{\{case\.location\}\}/gu, '{{incident.location}}');
+  if (templateId === 'narcotics-01') {
+    xml = xml.replace(/στην ευρύτερη περιοχή\s*\.{3,}/u, 'στην {{incident.location}}');
+    xml = xml.replace(/(Περί ώρα)\s*\.{3,}(\s+στην)\s*\.{3,}(,\s*εντοπίσαμε)/u, '$1 {{incident.time}}$2 {{incident.location}}$3');
+  }
   if (templateId === 'narcotics-02') {
     xml = xml.replace(/(Στην\s+\{\{case\.location\}\}\s+σήμερα\s+την\s+)\.{3,}(\s+του\s+μηνός\s+)\.{3,}(\s+του\s+έτους\s+)\.{3,}(\s+ημέρα\s+της\s+εβδομάδος\s+)\.{3,}/u, '$1{{case.date.day}}$2{{case.date.monthName}}$3{{case.date.year}}$4{{case.date.weekdayName}}');
     xml = xml.replace(/(Εισαγγελέα\s+Πρωτοδικών\s+)\.{3,}/u, '$1{{case.prosecutor}}');

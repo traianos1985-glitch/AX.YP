@@ -266,6 +266,16 @@ try {
   assert.ok(backupCase, 'Full backup must include the saved case');
   assert.equal(backupCase.caseRegister.persons[0].fullName, 'E2E TEST PERSON');
 
+  // Exercise the real restoreBackup route with a corrupted checksum and prove no data changes.
+  const restoreResult = await evaluate(`(() => {
+    const corrupted = { ...${JSON.stringify(backup)}, checksum: 'corrupted-checksum' };
+    const file = new File([JSON.stringify(corrupted)], 'corrupted-backup.json', { type: 'application/json' });
+    return window.HypothesesView.restoreBackup({ target: { files: [file], value: '' } });
+  })()`);
+  assert.equal(restoreResult, false, 'Corrupted backup must be rejected by the real restore route');
+  const afterRejectedRestore = await evaluate("JSON.parse(window.AXYP_STORAGE.getItem('axyp-hypotheses') || '[]').find((item) => item.title === 'E2E TEST CASE — LOCAL ONLY')?.title");
+  assert.equal(afterRejectedRestore, 'E2E TEST CASE — LOCAL ONLY', 'Rejected restore must not change existing data');
+
   assert.deepEqual(pageErrors, [], 'The browser must not report uncaught JavaScript exceptions');
   console.log('Browser case lifecycle E2E passed: category creation, guided entry, register persistence, reload/reopen and full backup.');
 } finally {

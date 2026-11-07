@@ -770,8 +770,9 @@ function uid() {
 
   function restoreBackup(event) {
     var file = event.target.files[0];
-    if (!file) return;
+    if (!file) return Promise.resolve(false);
     var reader = new FileReader();
+    return new Promise(function (resolve) {
     reader.onload = async function () {
       try {
         var parsed = JSON.parse(reader.result);
@@ -834,6 +835,7 @@ function uid() {
           }
         } catch (backupErr) {
           $('case-flash').textContent = 'Η επαναφορά ακυρώθηκε: δεν επιβεβαιώθηκε το προληπτικό αντίγραφο ασφαλείας. Δεν έγινε καμία αλλαγή. ' + (backupErr.message || backupErr);
+          resolve(false);
           return;
         }
 
@@ -887,6 +889,7 @@ function uid() {
           );
           if (!confirmReplace) {
             $('case-flash').textContent = 'Η επαναφορά ακυρώθηκε χωρίς αλλαγές.';
+            resolve(false);
             return;
           }
           entries = [['axyp-hypotheses', JSON.stringify(parsed.hypotheses)]];
@@ -916,16 +919,23 @@ function uid() {
           if (s.flush) await s.flush();
         }
         $('case-flash').textContent = 'Η επαναφορά ολοκληρώθηκε και η τοπική αποθήκευση επιβεβαιώθηκε. Ανανεώνεται η εφαρμογή.';
+        resolve(true);
         setTimeout(function () { location.reload(); }, 500);
       } catch (error) {
         $('case-flash').textContent = error && error.message === 'invalid schema'
           ? 'Το αρχείο δεν έχει έγκυρη μορφή αντιγράφου AX.YP.'
           : 'Η επαναφορά δεν ολοκληρώθηκε. Τα δεδομένα δεν επιβεβαιώθηκαν ως αποθηκευμένα: ' + (error.message || 'Άγνωστο σφάλμα.');
+        resolve(false);
       } finally {
         event.target.value = '';
       }
     };
+    reader.onerror = function () {
+      $('case-flash').textContent = 'Η επαναφορά απέτυχε: δεν ήταν δυνατή η ανάγνωση του αρχείου.';
+      resolve(false);
+    };
     reader.readAsText(file);
+    });
   }
 
   function importData(event) {

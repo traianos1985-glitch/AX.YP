@@ -103,7 +103,7 @@ assert.ok(docXml08.includes('Μιχαλακοπούλου 100'), 'Address must r
 console.log('✓ M2: Service directorate and address replaced cleanly with service profile values.');
 
 // ==========================================
-// M3: Dotted blanks in narcotics-02, 06, 08
+// M3: Dotted blanks in narcotics-01, 02, 06, 08, 10
 // ==========================================
 console.log('Testing M3: Dotted placeholders in narcotics templates...');
 const narcotics02 = templates.find(t => t.id === 'narcotics-02');
@@ -131,7 +131,20 @@ const docxBytes06 = buildDocx(narcotics06, {
 });
 const docXml06 = new TextDecoder().decode(unzipSync(docxBytes06)['word/document.xml']);
 assert.ok(docXml06.includes('14:00 ώρα και περατώθηκε την 14:30 ώρα'), 'narcotics-06 examination start/end times should replace dots');
-console.log('✓ M3: Dotted placeholders resolved where mapped case data is available.');
+const narcotics01 = templates.find(t => t.id === 'narcotics-01');
+const docXml01 = new TextDecoder().decode(unzipSync(buildDocx(narcotics01, {
+  ...mockCaseDates,
+  location: 'Αθήνα',
+  incident: { date: '2026-11-04', time: '23:30', location: 'Πειραιάς' },
+  incidentTime: '23:30'
+}))['word/document.xml']);
+assert.ok(docXml01.includes('στην Πειραιάς'), 'narcotics-01 incident location must replace the event dotted blank');
+assert.ok(!docXml01.includes('ευρύτερη περιοχή................................'), 'narcotics-01 known event-location dots must be resolved');
+
+const narcotics10 = templates.find(t => t.id === 'narcotics-10');
+const docXml10 = new TextDecoder().decode(unzipSync(buildDocx(narcotics10, { ...mockCaseDates, location: 'Αθήνα' }))['word/document.xml']);
+assert.ok(!/\.{3,}/u.test(docXml10), 'narcotics-10 must not retain unresolved dotted placeholders');
+console.log('✓ M3: Dotted placeholders resolved across affected narcotics templates, including 01 and 10.');
 
 // ==========================================
 // M4: XML text normalization & spacing
@@ -148,6 +161,8 @@ assert.ok(normalizedDecimal.includes('1,5'), 'Decimal comma must NOT have space 
 const spaceBeforePunctuation = '<w:t>κείμενο , με κενό .</w:t>';
 const normalizedSpaced = normalizeGreekDocxXml(spaceBeforePunctuation);
 assert.ok(normalizedSpaced.includes('κείμενο, με κενό.'), 'Space before punctuation must be removed');
+const intentionalSpaces = normalizeGreekDocxXml('<w:t>Υπογραφή:          Ο Αξιωματικός</w:t>');
+assert.ok(intentionalSpaces.includes('Υπογραφή:          Ο Αξιωματικός'), 'Intentional repeated spaces must be preserved');
 console.log('✓ M4: Punctuation normalization properly handles Greek text and numbers.');
 
 // ==========================================
