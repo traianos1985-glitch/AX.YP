@@ -732,9 +732,9 @@ function uid() {
       });
     }
     var items = read();
-    var data = values(existing);
     var id = $('case-id').value || uid();
     var existing = items.filter(function (item) { return item.id === id; })[0];
+    var data = values(existing);
     var saved = existing
       ? Object.assign({}, existing, data, { updatedAt: new Date().toISOString() })
       : Object.assign({ id: id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), snapshots: [] }, data);
