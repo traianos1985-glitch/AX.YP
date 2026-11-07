@@ -44,8 +44,9 @@ assert.ok(documentXml.includes('TEST CASE TITLE'));
 assert.ok(documentXml.includes('{{person.address}}'), 'Missing uploaded-form fields must remain visible for manual completion');
 assert.ok(getMissingTemplateFields(template, item).some((entry) => entry.field === 'person.address'));
 assert.ok(headerXml.includes('TEST-PROTOCOL-001'));
-assert.ok(!documentXml.includes('{{'));
-assert.ok(!headerXml.includes('{{'));
+assert.ok(!documentXml.includes('{{person.fullName}}'));
+assert.ok(!documentXml.includes('{{case.title}}'));
+assert.ok(!headerXml.includes('{{case.protocolNumber}}'));
 assert.equal(decode(generated['word/footer1.xml']).includes('Αυθεντικό υποσέλιδο'), true);
 assert.ok(!Object.keys(generated).some((path) => /^word\/footer\d+\.xml$/u.test(path) && !Object.hasOwn(originalParts, path)), 'The generator must not inject an AX.YP footer');
 
