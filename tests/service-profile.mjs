@@ -30,6 +30,7 @@ const restoredEntry = getServiceProfileRestoreEntry({ serviceProfile: JSON.strin
 assert.deepEqual(restoredEntry, [SERVICE_PROFILE_STORAGE_KEY, JSON.stringify(saved)]);
 assert.equal(getServiceProfileRestoreEntry({ schema: 2 }), null);
 assert.throws(() => getServiceProfileRestoreEntry({ serviceProfile: '{invalid' }), /έγκυρο JSON/u);
+assert.throws(() => getServiceProfileRestoreEntry({ serviceProfile: JSON.stringify({ name: { unexpected: true } }) }), /μη έγκυρη μορφή/u);
 
 
 globalThis.window = { AXYP_SERVICE_PROFILE: { get: () => saved } };
