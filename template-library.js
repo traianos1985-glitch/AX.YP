@@ -938,7 +938,8 @@ function render() {
         mappingRoot.appendChild(row);
       });
 
-      if (template.source === 'published-package') {
+      const isAdmin = !!(window.AXYP_ROLE && window.AXYP_ROLE.isAdmin());
+      if (template.source === 'published-package' || !isAdmin) {
         card.querySelector('.remove').hidden = true;
         card.querySelector('.save-mapping').hidden = true;
         card.querySelectorAll('.mapping-row select').forEach((select) => { select.disabled = true; });
