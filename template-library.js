@@ -1,5 +1,5 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
-import { detectDocxPersonalData, anonymizeDocxParts } from './docx-anonymization.js';
+import { detectDocxPersonalData, anonymizeDocxParts, createManualAnonymizationCandidates } from './docx-anonymization.js';
 
 let DEFAULT_NARCOTICS_TEMPLATES = [];
 let DEFAULT_COUNTERFEIT_TEMPLATES = [];
@@ -808,7 +808,7 @@ function render() {
   if (!root.children.length) root.textContent = 'Δεν έχει εισαχθεί ακόμη πραγματικό πρότυπο Word.';
 }
 
-async function reviewAnonymizationCandidates(fileName, candidates) {
+async function reviewAnonymizationCandidates(fileName, candidates, parts) {
   const dialog = document.createElement('dialog');
   dialog.setAttribute('aria-labelledby', 'docx-anonymization-title');
   dialog.style.maxWidth = 'min(760px, 94vw)';
@@ -852,6 +852,60 @@ async function reviewAnonymizationCandidates(fileName, candidates) {
     empty.textContent = 'Δεν εντοπίστηκαν αυτόματα αναγνωριστικά στοιχεία. Αυτό δεν σημαίνει ότι το έγγραφο είναι ανωνυμοποιημένο.';
     list.appendChild(empty);
   }
+
+  const manualHeading = document.createElement('h3');
+  manualHeading.textContent = 'Χειροκίνητες αντικαταστάσεις';
+  const manualHint = document.createElement('p');
+  manualHint.textContent = 'Πρόσθεσε ονόματα, διευθύνσεις ή άλλα ακριβή αποσπάσματα που δεν εντοπίστηκαν αυτόματα. Η αντικατάσταση εφαρμόζεται σε κάθε εμφάνιση μέσα στις παραγράφους Word.';
+  const manualRows = document.createElement('div');
+  manualRows.style.display = 'grid';
+  manualRows.style.gap = '0.5rem';
+  const placeholderOptions = [
+    ['person.fullName', 'Ονοματεπώνυμο'],
+    ['person.fatherName', 'Πατρώνυμο'],
+    ['person.motherName', 'Μητρώνυμο'],
+    ['person.idNumber', 'Αριθμός ταυτότητας'],
+    ['person.address', 'Διεύθυνση'],
+    ['person.taxId', 'Α.Φ.Μ.'],
+    ['person.phone', 'Τηλέφωνο'],
+    ['person.email', 'Email'],
+    ['vehicle.registration', 'Αριθμός κυκλοφορίας'],
+    ['case.protocolNumber', 'Αριθμός πρωτοκόλλου'],
+    ['case.location', 'Τόπος σύνταξης'],
+    ['incident.location', 'Τόπος συμβάντος']
+  ];
+  const addManualRow = () => {
+    const row = document.createElement('div');
+    row.style.display = 'grid';
+    row.style.gridTemplateColumns = 'minmax(0, 1fr) minmax(150px, 0.7fr) auto';
+    row.style.gap = '0.4rem';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Ακριβές κείμενο προς αντικατάσταση';
+    input.setAttribute('aria-label', 'Ακριβές κείμενο προς αντικατάσταση');
+    const select = document.createElement('select');
+    select.setAttribute('aria-label', 'Πεδίο αντικατάστασης');
+    placeholderOptions.forEach(([value, label]) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      select.appendChild(option);
+    });
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.textContent = 'Αφαίρεση';
+    remove.addEventListener('click', () => row.remove());
+    row.append(input, select, remove);
+    manualRows.appendChild(row);
+  };
+  const addManual = document.createElement('button');
+  addManual.type = 'button';
+  addManual.textContent = 'Προσθήκη χειροκίνητης αντικατάστασης';
+  addManual.addEventListener('click', addManualRow);
+  const manualError = document.createElement('p');
+  manualError.setAttribute('role', 'alert');
+  manualError.style.color = '#b00020';
+
   const reviewedLabel = document.createElement('label');
   reviewedLabel.style.display = 'flex';
   reviewedLabel.style.gap = '0.5rem';
@@ -874,9 +928,8 @@ async function reviewAnonymizationCandidates(fileName, candidates) {
   accept.disabled = true;
   reviewed.addEventListener('change', () => { accept.disabled = !reviewed.checked; });
   cancel.addEventListener('click', () => dialog.close('cancel'));
-  accept.addEventListener('click', () => dialog.close('accept'));
   actions.append(cancel, accept);
-  dialog.append(title, intro, warning, list, reviewedLabel, actions);
+  dialog.append(title, intro, warning, list, manualHeading, manualHint, manualRows, addManual, manualError, reviewedLabel, actions);
   document.body.appendChild(dialog);
   if (typeof dialog.showModal !== 'function') {
     dialog.remove();
@@ -884,11 +937,29 @@ async function reviewAnonymizationCandidates(fileName, candidates) {
     return candidates;
   }
   return new Promise((resolve) => {
+    accept.addEventListener('click', () => {
+      if (!reviewed.checked) return;
+      const entries = [...manualRows.children].map((row) => ({
+        value: row.querySelector('input').value.trim(),
+        placeholder: `{{${row.querySelector('select').value}}}`
+      })).filter((entry) => entry.value);
+      const manualCandidates = createManualAnonymizationCandidates(parts, entries);
+      const unmatched = entries.filter((entry) => !manualCandidates.some((candidate) =>
+        candidate.value === entry.value && candidate.placeholder === entry.placeholder
+      ));
+      if (unmatched.length) {
+        manualError.textContent = 'Δεν βρέθηκε στο κείμενο του Word: ' + unmatched.map((entry) => entry.value).join(', ');
+        return;
+      }
+      dialog.close('accept');
+      dialog.addEventListener('close', () => {
+        const selected = candidates.filter((_candidate, index) => controls[index].checked);
+        resolve([...selected, ...manualCandidates]);
+      }, { once: true });
+    });
     dialog.addEventListener('close', () => {
-      const accepted = dialog.returnValue === 'accept' && reviewed.checked;
-      const selected = accepted ? candidates.filter((_candidate, index) => controls[index].checked) : null;
+      if (dialog.returnValue !== 'accept') resolve(null);
       dialog.remove();
-      resolve(selected);
     }, { once: true });
     dialog.showModal();
   });
@@ -903,7 +974,7 @@ async function importTemplate(event) {
     const parts = unzipSync(bytes);
     if (!parts['word/document.xml']) throw new Error('Το αρχείο δεν περιέχει το κύριο σώμα Word.');
     const candidates = detectDocxPersonalData(parts);
-    const approved = await reviewAnonymizationCandidates(file.name, candidates);
+    const approved = await reviewAnonymizationCandidates(file.name, candidates, parts);
     if (!approved) return;
     const anonymizedParts = anonymizeDocxParts(parts, approved);
 
