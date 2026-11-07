@@ -51,11 +51,17 @@ assert.throws(() => getServiceProfileRestoreEntry({ serviceProfile: JSON.stringi
 
 
 globalThis.window = { AXYP_SERVICE_PROFILE: { get: () => saved } };
-const { valueFor } = await import('../template-library.js');
+const { valueFor, replaceLegacyFixedDateText } = await import('../template-library.js');
 assert.equal(valueFor('service.name', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
 assert.equal(valueFor('case.location', { title: 'CASE-ONLY-DATA' }), 'Δοκιμαστική πόλη');
 assert.match(valueFor('case.date', { title: 'CASE-ONLY-DATA' }), /^\d{2}\/\d{2}\/\d{4}$/u);
 assert.equal(valueFor('case.date.weekdayName', { date: '2026-11-07' }), 'Σάββατο');
+const legacyDateXml = replaceLegacyFixedDateText(
+  'Στην Κυπαρισσία σήμερα την 01 του μηνός Ιανουαρίου του έτους 2000 ημέρα της εβδομάδος Σάββατο',
+  { title: 'LEGACY-CASE-WITHOUT-DATE' }
+);
+assert.match(legacyDateXml, /Στην Δοκιμαστική πόλη σήμερα την \d{1,2} του μηνός [\p{L}]+ του έτους \d{4} ημέρα της εβδομάδος [\p{L}]+/u,
+  'Legacy fixed date text must use the current local date and installation drafting location when the case has no date/location');
 assert.equal(valueFor('officerA.fullName', { title: 'CASE-ONLY-DATA', officerA: { rank: 'Αρχιφύλακας', surname: 'ΑΛΛΟ', name: 'Πρόσωπο' } }), 'Υπαστυνόμου Β΄ ΔΟΚΙΜΗΣ Αλεξάνδρου', 'The first investigator uses the configured genitive document form');
 assert.equal(valueFor('officerA.nominativeFullName', { title: 'CASE-ONLY-DATA' }), 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος');
 assert.equal(valueFor('officerA.service', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
