@@ -1,4 +1,5 @@
 import { DOSSIER_CATEGORIES } from './dossier-categories.js';
+import { DOSSIER_FIELD_SCHEMA_VERSION, getDossierFieldDefinitions, getDossierFieldValue, setDossierFieldValue } from './dossier-fields.js';
 import { getServiceProfileBackupValue, getServiceProfileRestoreEntry, getServiceProfileOperatorIdentity } from './service-profile.js';
 import { getCaseRegisterData, loadCaseRegister, resetCaseRegister } from './case-register.js';
 
@@ -11,6 +12,74 @@ if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.
   var activeProfileFilter = null;
   var storage = window.AXYP_STORAGE || localStorage;
   var $ = function (id) { return document.getElementById(id); };
+
+  function clonePlainData(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  // Category fields are rendered from the central registry. Existing category
+  // forms remain untouched until their authentic templates are reviewed.
+  function renderCategoryFields(profile, data) {
+    var root = $('case-category-fields');
+    if (!root) return;
+    var definitions = getDossierFieldDefinitions(profile);
+    root.textContent = '';
+    root.hidden = definitions.length === 0;
+    if (!definitions.length) return;
+
+    var groups = new Map();
+    definitions.forEach(function (field) {
+      var groupName = field.group || 'Ειδικά στοιχεία';
+      if (!groups.has(groupName)) {
+        var fieldset = document.createElement('fieldset');
+        fieldset.className = 'offender-section case-wide';
+        var legend = document.createElement('legend');
+        legend.textContent = groupName;
+        fieldset.appendChild(legend);
+        var grid = document.createElement('div');
+        grid.className = 'offender-grid';
+        fieldset.appendChild(grid);
+        groups.set(groupName, grid);
+        root.appendChild(fieldset);
+      }
+      var label = document.createElement('label');
+      label.textContent = field.label + (field.required ? '' : ' (προαιρετικό)');
+      var control;
+      if (field.type === 'textarea') {
+        control = document.createElement('textarea');
+        control.rows = field.rows || 2;
+      } else {
+        control = document.createElement('input');
+        control.type = field.type || 'text';
+      }
+      control.autocomplete = 'off';
+      control.maxLength = field.maxLength || 200;
+      control.placeholder = field.placeholder || '';
+      control.required = field.required === true;
+      control.dataset.categoryFieldPath = field.path;
+      control.value = getDossierFieldValue(data, field.path);
+      label.appendChild(control);
+      groups.get(groupName).appendChild(label);
+      if (field.helpText) {
+        var help = document.createElement('p');
+        help.className = 'offender-intro case-wide';
+        help.textContent = field.helpText;
+        groups.get(groupName).appendChild(help);
+      }
+    });
+  }
+
+  function collectCategoryFieldData(preservedCase) {
+    var data = clonePlainData(preservedCase && preservedCase.categoryData);
+    var root = $('case-category-fields');
+    if (!root) return data;
+    Array.prototype.forEach.call(root.querySelectorAll('[data-category-field-path]'), function (control) {
+      var value = typeof control.value === 'string' ? control.value.trim() : '';
+      setDossierFieldValue(data, control.dataset.categoryFieldPath, value);
+    });
+    return data;
+  }
 
   function read() {
     try {
@@ -135,6 +204,8 @@ function uid() {
       date: $('case-date').value,
       protocolNumber: $('case-protocol-number').value.trim(),
       profile: $('case-profile').value,
+      categoryData: collectCategoryFieldData(preservedCase),
+      categoryDataSchemaVersion: DOSSIER_FIELD_SCHEMA_VERSION,
       people: $('case-people').value.trim(),
       location: ($('case-location') ? $('case-location').value.trim() : ''),
       time: ($('case-time') ? $('case-time').value : ''),
@@ -290,6 +361,7 @@ function uid() {
     var serviceProfile = window.AXYP_SERVICE_PROFILE && window.AXYP_SERVICE_PROFILE.get ? window.AXYP_SERVICE_PROFILE.get() : {};
     if ($('case-location')) $('case-location').value = serviceProfile.location || 'Κυπαρισσία';
     if (activeProfileFilter) $('case-profile').value = activeProfileFilter;
+    renderCategoryFields(activeProfileFilter || $('case-profile').value, {});
     ensureCommerceOffenderFields();
     if ($('commerce-offenders')) $('commerce-offenders').hidden = activeProfileFilter !== 'commerce';
     $('case-timeline-section').hidden = activeProfileFilter !== 'narcotics';
@@ -335,6 +407,7 @@ function uid() {
     $('case-date').value = item.date || '';
     $('case-protocol-number').value = item.protocolNumber || '';
     $('case-profile').value = item.profile || 'generic';
+    renderCategoryFields(item.profile || 'generic', item.categoryData || {});
     $('case-timeline-section').hidden = item.profile !== 'narcotics';
     $('case-counterfeit-section').hidden = item.profile !== 'counterfeit';
     $('case-counterfeit-witness-section').hidden = item.profile !== 'counterfeit';
