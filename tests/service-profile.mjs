@@ -59,9 +59,11 @@ assert.equal(valueFor('case.date.weekdayName', { date: '2026-11-07' }), 'Σάβ�
 assert.equal(valueFor('officerA.fullName', { title: 'CASE-ONLY-DATA', officerA: { rank: 'Αρχιφύλακας', surname: 'ΑΛΛΟ', name: 'Πρόσωπο' } }), 'Υπαστυνόμου Β΄ ΔΟΚΙΜΗΣ Αλεξάνδρου', 'The first investigator uses the configured genitive document form');
 assert.equal(valueFor('officerA.nominativeFullName', { title: 'CASE-ONLY-DATA' }), 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος');
 assert.equal(valueFor('officerA.service', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
+assert.equal(valueFor('officerA.residence', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
 assert.equal(valueFor('officerB.fullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακα ΔΟΚΙΜΗΣ Γεώργιου');
 assert.equal(valueFor('officerB.nominativeFullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακας ΔΟΚΙΜΗΣ Γεώργιος');
 assert.equal(valueFor('officerB.service', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
+assert.equal(valueFor('officerB.residence', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
 globalThis.window.AXYP_SERVICE_PROFILE.get = () => empty;
 assert.equal(valueFor('officerA.fullName', { title: 'DEFAULT-PROFILE' }), "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού");
 assert.equal(valueFor('officerB.fullName', { title: 'DEFAULT-PROFILE' }), 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου');
