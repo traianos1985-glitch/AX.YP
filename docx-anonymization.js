@@ -127,3 +127,29 @@ export function anonymizeDocxParts(parts, approvedCandidates) {
   }
   return output;
 }
+
+export function createManualAnonymizationCandidates(parts, entries) {
+  const candidates = [];
+  for (const entry of entries || []) {
+    const value = String(entry && entry.value || '').trim();
+    const placeholder = String(entry && entry.placeholder || '').trim();
+    if (!value || !/^\{\{[\p{L}\p{N}_.-]+\}\}$/u.test(placeholder)) continue;
+    for (const [partName, bytes] of Object.entries(parts || {})) {
+      if (!partName.startsWith('word/') || !partName.endsWith('.xml')) continue;
+      const xml = new TextDecoder().decode(bytes);
+      const paragraphs = [...xml.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/gu)];
+      paragraphs.forEach((paragraphMatch, paragraphIndex) => {
+        const plainText = textNodes(paragraphMatch[0]).map((node) => node.value).join('');
+        if (plainText.includes(value)) {
+          candidates.push({
+            id: [partName, paragraphIndex, 'manual', value, placeholder].join(':'),
+            partName, paragraphIndex, category: 'manual',
+            label: 'Χειροκίνητη αντικατάσταση',
+            value, placeholder, confidence: 'user'
+          });
+        }
+      });
+    }
+  }
+  return candidates;
+}
