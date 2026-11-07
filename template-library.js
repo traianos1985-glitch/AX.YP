@@ -288,7 +288,6 @@ const FIELD_OPTIONS = [
   { path: 'case.people', label: 'Υπόθεση · Εμπλεκόμενοι / Δράστες' },
   { path: 'case.evidence', label: 'Υπόθεση · Ευρήματα / Ποσότητες' },
   { path: 'case.notes', label: 'Υπόθεση · Σημειώσεις' },
-  { path: 'vehicle.registration', label: 'Όχημα · Αριθμός κυκλοφορίας' },
   { path: 'case.arrestingOfficer', label: 'Υπόθεση · Συλλαβών (Στοιχεία/Υπηρεσία)' },
   { path: 'officerA.fullName', label: 'Α΄ Ανακριτικός · Βαθμός & Ονοματεπώνυμο' },
   { path: 'officerA.rank', label: 'Α΄ Ανακριτικός · Βαθμός' },
