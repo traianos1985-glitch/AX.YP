@@ -13,8 +13,9 @@ export function readServiceProfile(storageInstance) {
 }
 
 export function getServiceProfileBackupValue(storageInstance) {
-  if (!storageInstance || typeof storageInstance.getItem !== 'function') return null;
-  return storageInstance.getItem(KEY);
+  // Store a normalized profile even when this installation has never saved one.
+  // A full restore must not accidentally retain another installation's profile.
+  return JSON.stringify(readServiceProfile(storageInstance));
 }
 
 export function getServiceProfileRestoreEntry(payload) {
