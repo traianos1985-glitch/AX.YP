@@ -32,6 +32,7 @@ function createIndexedDB(seed = {}, shouldFail = false) {
     objectStoreNames: { contains: () => true },
     transaction() {
       const tx = { error: null };
+      const pending = [];
       const store = {
         get(key) {
           const request = {};
@@ -41,8 +42,8 @@ function createIndexedDB(seed = {}, shouldFail = false) {
           }, 0);
           return request;
         },
-        put(value, key) { records.set(key, value); },
-        delete(key) { records.delete(key); },
+        put(value, key) { pending.push(['put', key, value]); },
+        delete(key) { pending.push(['delete', key]); },
         getAllKeys() {
           const request = {};
           setTimeout(() => {
@@ -58,7 +59,13 @@ function createIndexedDB(seed = {}, shouldFail = false) {
           failNextTransactions -= 1;
           tx.error = new Error('Injected transient transaction failure');
           if (tx.onerror) tx.onerror();
-        } else if (tx.oncomplete) tx.oncomplete();
+        } else {
+          pending.forEach(([operation, key, value]) => {
+            if (operation === 'delete') records.delete(key);
+            else records.set(key, value);
+          });
+          if (tx.oncomplete) tx.oncomplete();
+        }
       }, 10);
       return tx;
     },
@@ -83,11 +90,12 @@ function createIndexedDB(seed = {}, shouldFail = false) {
   };
 }
 
-function loadStorage(localStorage, indexedDB) {
+function loadStorage(localStorage, indexedDB, BroadcastChannelImpl) {
   const context = {
     window: { indexedDB },
     localStorage,
     indexedDB,
+    BroadcastChannel: BroadcastChannelImpl,
     navigator: { storage: { estimate: () => Promise.resolve({ quota: 9 * 1024 * 1024, usage: 0 }) } },
     console
   };
@@ -199,7 +207,7 @@ function loadStorage(localStorage, indexedDB) {
     ['axyp-favorites', '[]']
   ]);
   assert.equal(idb.records.get('axyp-hypotheses').value, '[{"id":"case-1"}]');
-  assert.equal(idb.records.has('axyp-theme'), false);
+  assert.equal(idb.records.get('axyp-theme').deleted, true);
   assert.equal(local.getItem('axyp-favorites'), '[]');
 }
 
@@ -248,6 +256,72 @@ assert.match(workspaceSource, /async function restore\(\)[\s\S]*?await window\.A
   assert.equal(status.degraded, false, 'Storage should recover after the failed key is retried successfully');
   assert.equal(idb.records.get('axyp-first').value, 'first-retry');
   assert.equal(idb.records.get('axyp-second').value, 'second-retry');
+}
+
+
+function createBroadcastChannelHub() {
+  const channels = new Map();
+  return class FakeBroadcastChannel {
+    constructor(name) {
+      this.name = name;
+      if (!channels.has(name)) channels.set(name, new Set());
+      channels.get(name).add(this);
+    }
+    postMessage(data) {
+      for (const peer of channels.get(this.name) || []) {
+        if (peer !== this) setTimeout(() => peer.onmessage?.({ data }), 0);
+      }
+    }
+    close() { channels.get(this.name)?.delete(this); }
+  };
+}
+
+// A failed IndexedDB delete must leave a durable tombstone so stale data cannot reappear after restart.
+{
+  const local = createLocalStorage({
+    'axyp-hypotheses': 'old-case-data',
+    'axyp-storage-meta:axyp-hypotheses': JSON.stringify({ revision: 100, deleted: false, source: 'old-tab' })
+  });
+  const idb = createIndexedDB({
+    'axyp-hypotheses': { __axypRecord: 1, value: 'old-case-data', deleted: false, revision: 100, source: 'old-tab' }
+  });
+  const storage = loadStorage(local, idb);
+  await storage.ready;
+  idb.failNextTransaction();
+  await storage.removeItemDurable('axyp-hypotheses');
+  assert.equal(local.getItem('axyp-hypotheses'), null);
+  assert.equal(JSON.parse(local.getItem('axyp-storage-meta:axyp-hypotheses')).deleted, true);
+  const reloaded = loadStorage(local, idb);
+  await reloaded.ready;
+  assert.equal(reloaded.getItem('axyp-hypotheses'), null, 'a deleted key must not be resurrected from stale IndexedDB data');
+  assert.equal(idb.records.get('axyp-hypotheses').deleted, true, 'hydration repairs the stale IndexedDB record with the tombstone');
+}
+
+// Two independent storage instances receive updates and surface same-key concurrent writes.
+{
+  const Channel = createBroadcastChannelHub();
+  const local = createLocalStorage();
+  const idb = createIndexedDB();
+  const tabA = loadStorage(local, idb, Channel);
+  const tabB = loadStorage(local, idb, Channel);
+  await Promise.all([tabA.ready, tabB.ready]);
+  let remoteEvent = null;
+  let conflictEvent = null;
+  tabB.onChange((event) => { if (event.remote && event.key === 'axyp-hypotheses') remoteEvent = event; });
+  tabB.onConflict((event) => { if (event.key === 'axyp-hypotheses') conflictEvent = event; });
+  await tabA.setItemDurable('axyp-hypotheses', 'from-tab-a');
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(tabB.getItem('axyp-hypotheses'), 'from-tab-a');
+  assert.equal(remoteEvent.value, 'from-tab-a');
+
+  tabB.setItem('axyp-hypotheses', 'unsaved-tab-b');
+  tabA.setItem('axyp-hypotheses', 'newer-tab-a');
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.ok(conflictEvent, 'simultaneous edits of the same key are surfaced as a conflict');
+  await assert.rejects(tabB.flush(), /ανεπίλυτες αλλαγές/);
+  await tabB.resolveConflict('axyp-hypotheses', 'remote');
+  assert.equal(tabB.getItem('axyp-hypotheses'), 'newer-tab-a');
+  assert.equal((await tabB.flush()).degraded, false);
 }
 
 console.log('Storage reliability tests passed.');
