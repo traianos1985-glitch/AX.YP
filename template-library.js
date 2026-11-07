@@ -77,8 +77,10 @@ const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } 
 export async function loadPublishedDossierPackages() {
   if (publishedPackagesPromise) return publishedPackagesPromise;
   publishedPackagesPromise = (async () => {
-    const response = await fetch(new URL('./dossier-packages/manifest.json', import.meta.url));
-    if (!response.ok) throw new Error('Published dossier package catalog is unavailable: HTTP ' + response.status);
+    let response;
+    try { response = await fetch(new URL('./dossier-packages/manifest.json', import.meta.url)); }
+    catch (_) { return []; }
+    if (!response.ok) return [];
     const catalog = await response.json();
     if (!catalog || catalog.schemaVersion !== 1 || !Array.isArray(catalog.packages)) {
       throw new Error('Invalid published dossier package catalog.');
@@ -174,7 +176,7 @@ export async function ensureDefaultTemplates(storageInstance = storage(), catego
 }
 
 export async function initializeDefaultTemplates(storageInstance = storage()) {
-  await loadPublishedDossierPackages();
+  if (typeof window !== 'undefined' && typeof fetch === 'function') await loadPublishedDossierPackages();
   // Περιμένουμε μόνο την ενυδάτωση της τοπικής αποθήκευσης.
   // Τα μεγάλα DOCX data chunks φορτώνονται όταν ανοιχτεί η αντίστοιχη κατηγορία.
   if (storageInstance && storageInstance.ready && typeof storageInstance.ready.then === 'function') {
