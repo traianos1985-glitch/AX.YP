@@ -41,7 +41,7 @@ async function runFetch({ request, cachedResponse, cachedIndex }) {
       });
     }),
     setTimeout(callback, delay) {
-      const expectedDelay = /\\/dossier-packages\\/[^/]+\\.axyp\\.zip$/u.test(new URL(request.url).pathname) ? 60000 : 3000;
+      const expectedDelay = /\/dossier-packages\/[^/]+\.axyp\.zip$/u.test(new URL(request.url).pathname) ? 60000 : 3000;
       assert.equal(delay, expectedDelay, 'ordinary assets retain the short timeout while published dossier packages get a longer download window');
       timeoutCallback = callback;
       return 1;
