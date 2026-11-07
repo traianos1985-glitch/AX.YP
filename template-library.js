@@ -1,4 +1,5 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
+import { detectDocxPersonalData, anonymizeDocxParts } from './docx-anonymization.js';
 
 let DEFAULT_NARCOTICS_TEMPLATES = [];
 let DEFAULT_COUNTERFEIT_TEMPLATES = [];
@@ -805,36 +806,130 @@ function render() {
   if (!root.children.length) root.textContent = 'Δεν έχει εισαχθεί ακόμη πραγματικό πρότυπο Word.';
 }
 
-function importTemplate(event) {
+async function reviewAnonymizationCandidates(fileName, candidates) {
+  const dialog = document.createElement('dialog');
+  dialog.setAttribute('aria-labelledby', 'docx-anonymization-title');
+  dialog.style.maxWidth = 'min(760px, 94vw)';
+  dialog.style.maxHeight = '85vh';
+  dialog.style.overflow = 'auto';
+  dialog.style.padding = '1rem';
+  dialog.style.borderRadius = '12px';
+  dialog.style.border = '1px solid #888';
+  const title = document.createElement('h2');
+  title.id = 'docx-anonymization-title';
+  title.textContent = 'Έλεγχος προσωπικών στοιχείων';
+  const intro = document.createElement('p');
+  intro.textContent = `Αρχείο: ${fileName}. Επίλεξε ποιες προτεινόμενες αντικαταστάσεις θα εφαρμοστούν. Το αρχικό αρχείο δεν τροποποιείται.`;
+  const warning = document.createElement('p');
+  warning.textContent = 'Η αυτόματη ανίχνευση δεν εγγυάται πλήρη ανωνυμοποίηση. Έλεγξε και χειροκίνητα όλο το έγγραφο, ιδίως ονόματα μέσα στο αφηγηματικό κείμενο, χειρόγραφες σημειώσεις, σφραγίδες και εικόνες.';
+  warning.setAttribute('role', 'note');
+  const list = document.createElement('div');
+  list.style.display = 'grid';
+  list.style.gap = '0.65rem';
+  const controls = [];
+  candidates.forEach((candidate, index) => {
+    const label = document.createElement('label');
+    label.style.display = 'grid';
+    label.style.gridTemplateColumns = 'auto minmax(0, 1fr)';
+    label.style.gap = '0.5rem';
+    label.style.padding = '0.55rem';
+    label.style.border = '1px solid #aaa';
+    label.style.borderRadius = '8px';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = true;
+    checkbox.value = String(index);
+    const description = document.createElement('span');
+    description.textContent = `${candidate.label}: «${candidate.value}» → ${candidate.placeholder} (${candidate.partName})`;
+    label.append(checkbox, description);
+    list.appendChild(label);
+    controls.push(checkbox);
+  });
+  if (!candidates.length) {
+    const empty = document.createElement('p');
+    empty.textContent = 'Δεν εντοπίστηκαν αυτόματα αναγνωριστικά στοιχεία. Αυτό δεν σημαίνει ότι το έγγραφο είναι ανωνυμοποιημένο.';
+    list.appendChild(empty);
+  }
+  const reviewedLabel = document.createElement('label');
+  reviewedLabel.style.display = 'flex';
+  reviewedLabel.style.gap = '0.5rem';
+  reviewedLabel.style.margin = '1rem 0';
+  const reviewed = document.createElement('input');
+  reviewed.type = 'checkbox';
+  const reviewedText = document.createElement('span');
+  reviewedText.textContent = 'Έλεγξα χειροκίνητα και τα υπόλοιπα μέρη του εγγράφου. Δεν βασίζομαι μόνο στην αυτόματη ανίχνευση.';
+  reviewedLabel.append(reviewed, reviewedText);
+  const actions = document.createElement('div');
+  actions.style.display = 'flex';
+  actions.style.justifyContent = 'flex-end';
+  actions.style.gap = '0.5rem';
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.textContent = 'Ακύρωση εισαγωγής';
+  const accept = document.createElement('button');
+  accept.type = 'button';
+  accept.textContent = 'Αποθήκευση ανωνυμοποιημένου προτύπου';
+  accept.disabled = true;
+  reviewed.addEventListener('change', () => { accept.disabled = !reviewed.checked; });
+  cancel.addEventListener('click', () => dialog.close('cancel'));
+  accept.addEventListener('click', () => dialog.close('accept'));
+  actions.append(cancel, accept);
+  dialog.append(title, intro, warning, list, reviewedLabel, actions);
+  document.body.appendChild(dialog);
+  if (typeof dialog.showModal !== 'function') {
+    dialog.remove();
+    if (!window.confirm('Δεν είναι διαθέσιμη η προεπισκόπηση. Η αυτόματη ανίχνευση δεν εγγυάται πλήρη ανωνυμοποίηση. Έλεγξες χειροκίνητα όλο το έγγραφο;')) return null;
+    return candidates;
+  }
+  return new Promise((resolve) => {
+    dialog.addEventListener('close', () => {
+      const accepted = dialog.returnValue === 'accept' && reviewed.checked;
+      const selected = accepted ? candidates.filter((_candidate, index) => controls[index].checked) : null;
+      dialog.remove();
+      resolve(selected);
+    }, { once: true });
+    dialog.showModal();
+  });
+}
+
+async function importTemplate(event) {
   if (!window.AXYP_ROLE || !window.AXYP_ROLE.isAdmin()) { event.target.value = ''; return; }
   const file = event.target.files[0];
   if (!file) return;
-  file.arrayBuffer().then((buffer) => {
-    const bytes = new Uint8Array(buffer);
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer());
     const parts = unzipSync(bytes);
+    if (!parts['word/document.xml']) throw new Error('Το αρχείο δεν περιέχει το κύριο σώμα Word.');
+    const candidates = detectDocxPersonalData(parts);
+    const approved = await reviewAnonymizationCandidates(file.name, candidates);
+    if (!approved) return;
+    const anonymizedParts = anonymizeDocxParts(parts, approved);
 
-    // Εντοπισμός placeholders σε όλο το έγγραφο, headers και footers
-    const allXml = Object.keys(parts)
-      .filter((k) => k.startsWith('word/') && k.endsWith('.xml'))
-      .map((k) => new TextDecoder().decode(parts[k] || new Uint8Array()))
+    // Only the reviewed derivative is added to the template library. The uploaded File is never modified.
+    const allXml = Object.keys(anonymizedParts)
+      .filter((name) => name.startsWith('word/') && name.endsWith('.xml'))
+      .map((name) => new TextDecoder().decode(anonymizedParts[name] || new Uint8Array()))
       .join('\n');
-
     const detected = extractFields(allXml);
-    const documentXml = new TextDecoder().decode(parts['word/document.xml'] || new Uint8Array());
+    const documentXml = new TextDecoder().decode(anonymizedParts['word/document.xml']);
     const templates = read();
     templates.push({
       id: `${Date.now()}`,
       name: file.name,
       fields: detected,
       documentXml,
-      files: Object.fromEntries(Object.entries(parts).map(([name, data]) => [name, Array.from(data)]))
+      anonymizationReviewedAt: new Date().toISOString(),
+      anonymizationCandidateCount: candidates.length,
+      anonymizationAppliedCount: approved.length,
+      files: Object.fromEntries(Object.entries(anonymizedParts).map(([name, data]) => [name, Array.from(data)]))
     });
     write(templates);
     render();
+  } catch (error) {
+    window.alert('Δεν ήταν δυνατή η ασφαλής εισαγωγή του αρχείου Word: ' + error.message);
+  } finally {
     event.target.value = '';
-  }).catch(() => {
-    window.alert('Δεν ήταν δυνατή η ανάγνωση του αρχείου Word.');
-  });
+  }
 }
 
 function replaceTextAcrossWordRuns(xml, pattern, replacement) {
