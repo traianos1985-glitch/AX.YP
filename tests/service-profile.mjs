@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS } from '../service-profile.js';
+import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS, SERVICE_PROFILE_STORAGE_KEY } from '../service-profile.js';
 
+assert.equal(SERVICE_PROFILE_STORAGE_KEY, 'axyp-service-profile-v1');
 const values = new Map();
 const storage = {
   getItem(key) { return values.has(key) ? values.get(key) : null; },
