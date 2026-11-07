@@ -1,5 +1,8 @@
 ## Unreleased — Storage, DOCX και Firefox hardening
 
+- Η αποθήκευση υπόθεσης περιμένει πλέον ρητά το durable `flush()` πριν εμφανίσει μήνυμα επιτυχίας. Σε αποτυχία, η φόρμα παραμένει διαθέσιμη και εμφανίζεται σφάλμα.
+
+
 - Προστέθηκε versioned schema migration για το IndexedDB/local storage και ρητή ανίχνευση/επίλυση συγκρούσεων μεταξύ tabs χωρίς αυτόματο merge δεδομένων.
 - Προστέθηκε semantic visible-text validation των συνθετικών DOCX μέσω LibreOffice.
 - Προστέθηκε local Firefox E2E command και CI trigger για branches `v0/**`.
