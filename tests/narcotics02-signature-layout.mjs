@@ -4,6 +4,17 @@ import { buildDocx } from '../template-library.js';
 import { unzipSync, strFromU8 } from '../vendor/fflate.js';
 
 const template = DEFAULT_NARCOTICS_TEMPLATES.find((entry) => entry.id === 'narcotics-02');
+
+// Investigator A is installation-owned; legacy case officerA values below must not override it.
+globalThis.window = {
+  AXYP_SERVICE_PROFILE: {
+    get: () => ({
+      name: 'TEST-SERVICE-A',
+      operator: 'TEST-Rank TEST-SURNAME-A TestNameA',
+      operatorDocument: 'TEST-OFFICER-A-GENITIVE'
+    })
+  }
+};
 assert.ok(template, 'narcotics-02 source template must exist');
 
 const syntheticCase = {
@@ -29,7 +40,7 @@ for (const value of [
   'TEST-ARRESTING-OFFICER',
   'TEST-PERSON-SURNAME TEST-PERSON-NAME',
   'TEST-RANK-B TEST-SURNAME-B TEST-NAME-B',
-  'TEST-RANK-A TEST-SURNAME-A TEST-NAME-A'
+  'TEST-Rank TEST-SURNAME-A TestNameA'
 ]) {
   assert.ok(signatureTable.includes(value), `Signature table must include ${value}`);
 }

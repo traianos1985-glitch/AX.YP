@@ -54,14 +54,22 @@ for (const id of ['counterfeit-01', 'counterfeit-02']) {
 const counterfeit01 = DEFAULT_COUNTERFEIT_TEMPLATES.find((entry) => entry.id === 'counterfeit-01')
 const counterfeit01Xml = new TextDecoder().decode(getTemplateParts(counterfeit01)['word/document.xml'])
 assert.ok(counterfeit01Xml.includes('{{counterfeit.serialNumber}}'), 'counterfeit-01 includes the serial number in the document text')
+globalThis.window = {
+  AXYP_SERVICE_PROFILE: {
+    get: () => ({ name: 'SERVICE A', operator: 'TEST A OFFICER ONE' })
+  }
+}
 const counterfeit01Rendered = replaceInXml(counterfeit01Xml, counterfeit01, {
   counterfeit: { serialNumber: 'TEST-SERIAL-123' },
   evidence: 'TEST DENOMINATION',
-  officerA: { rank: 'TEST A', surname: 'OFFICER', name: 'ONE', service: 'SERVICE A' },
+  // Investigator A identity and service are now sourced only from this
+  // installation profile; stale per-case investigator-A data must be ignored.
+  officerA: { rank: 'STALE CASE RANK', surname: 'STALE CASE OFFICER', name: 'STALE CASE NAME', service: 'STALE CASE SERVICE A' },
   officerB: { rank: 'TEST B', surname: 'OFFICER', name: 'TWO', service: 'SERVICE B' }
 })
 assert.ok(counterfeit01Rendered.includes('TEST-SERIAL-123'))
 assert.ok(counterfeit01Rendered.includes('SERVICE A'))
+assert.ok(!counterfeit01Rendered.includes('STALE CASE SERVICE A'))
 assert.ok(counterfeit01Rendered.includes('SERVICE B'))
 assert.ok(!counterfeit01Rendered.includes('{{counterfeit.serialNumber}}'))
 

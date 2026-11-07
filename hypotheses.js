@@ -1,5 +1,5 @@
 import { DOSSIER_CATEGORIES } from './dossier-categories.js';
-import { getServiceProfileBackupValue, getServiceProfileRestoreEntry } from './service-profile.js';
+import { getServiceProfileBackupValue, getServiceProfileRestoreEntry, getServiceProfileOperatorIdentity } from './service-profile.js';
 import { getCaseRegisterData, loadCaseRegister, resetCaseRegister } from './case-register.js';
 
 if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
@@ -151,12 +151,7 @@ function uid() {
         title: $('camping-prosecutor-title') ? $('camping-prosecutor-title').value.trim() : ''
       },
       arrestingOfficer: ($('case-arresting-officer') ? $('case-arresting-officer').value.trim() : ''),
-      officerA: {
-        rank: ($('officer-a-rank') ? $('officer-a-rank').value.trim() : ''),
-        surname: ($('officer-a-surname') ? $('officer-a-surname').value.trim() : ''),
-        name: ($('officer-a-name') ? $('officer-a-name').value.trim() : ''),
-        service: ($('officer-a-service') ? $('officer-a-service').value.trim() : '')
-      },
+      officerA: getServiceProfileOperatorIdentity(window.AXYP_SERVICE_PROFILE && window.AXYP_SERVICE_PROFILE.get ? window.AXYP_SERVICE_PROFILE.get() : {}),
       officerB: {
         rank: ($('officer-b-rank') ? $('officer-b-rank').value.trim() : ''),
         surname: ($('officer-b-surname') ? $('officer-b-surname').value.trim() : ''),
@@ -358,11 +353,6 @@ function uid() {
   if ($('case-incident-location')) $('case-incident-location').value = (item.incident && item.incident.location) || '';
     if ($('case-prosecutor')) $('case-prosecutor').value = item.prosecutor || '';
     if ($('case-arresting-officer')) $('case-arresting-officer').value = item.arrestingOfficer || '';
-    var officerA = item.officerA || {};
-    if ($('officer-a-rank')) $('officer-a-rank').value = officerA.rank || '';
-    if ($('officer-a-surname')) $('officer-a-surname').value = officerA.surname || '';
-    if ($('officer-a-name')) $('officer-a-name').value = officerA.name || '';
-    if ($('officer-a-service')) $('officer-a-service').value = officerA.service || '';
     var officerB = item.officerB || {};
     if ($('officer-b-rank')) $('officer-b-rank').value = officerB.rank || '';
     if ($('officer-b-surname')) $('officer-b-surname').value = officerB.surname || '';

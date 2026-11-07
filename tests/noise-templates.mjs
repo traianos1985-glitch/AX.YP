@@ -2,6 +2,15 @@ import assert from 'node:assert/strict';
 import { DEFAULT_NOISE_TEMPLATES } from '../noise-templates-data.js';
 import { unzipSync } from '../vendor/fflate.js';
 import { buildDocx, valueFor } from '../template-library.js';
+globalThis.window = {
+  AXYP_SERVICE_PROFILE: {
+    get: () => ({
+      name: 'TEST-INSTALLATION-SERVICE',
+      operator: 'Υπαστυνόμος Β΄ TESTSURNAME TestName',
+      operatorDocument: 'TEST-OFFICER-A-GENITIVE'
+    })
+  }
+};
 
 assert.equal(DEFAULT_NOISE_TEMPLATES.length, 4);
 assert.deepEqual(DEFAULT_NOISE_TEMPLATES.map((template) => template.id), ['noise-01', 'noise-02', 'noise-03', 'noise-04']);

@@ -1,3 +1,7 @@
+## Unreleased
+- Make the installation Service Profile the sole source of truth for the first investigating officer and report author; remove per-case first-investigator inputs while retaining editable second-investigator details per case.
+- Ignore legacy case-level first-investigator values during DOCX generation and cover profile precedence with regression tests.
+
 ## Unreleased — Αυθεντικά έντυπα δικογραφίας και ενιαία παραγωγή
 
 - Προστέθηκε στο τοπικό προφίλ εγκατάστασης το πεδίο «Χειριστής Εφαρμογής» και αρχική προεπιλογή ονομασίας «Αστυνομικό Τμήμα Τριφυλίας». Η τιμή χειριστή είναι διαθέσιμη ως προεπιλογή για το πεδίο `officerA.fullName`, χωρίς να αλλοιώνεται η καταχώριση του Β΄ Ανακριτικού Υπαλλήλου.

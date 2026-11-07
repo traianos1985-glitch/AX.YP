@@ -1,7 +1,7 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
 import { detectDocxPersonalData, anonymizeDocxParts, createManualAnonymizationCandidates } from './docx-anonymization.js';
 import { listTemplateMappingVersions, saveTemplateMappingVersion, restoreTemplateMappingVersion } from './template-mapping-history.js';
-import { toGreekGenitiveFullName } from './service-profile.js';
+import { toGreekGenitiveFullName, getServiceProfileOperatorIdentity } from './service-profile.js';
 
 let DEFAULT_NARCOTICS_TEMPLATES = [];
 let DEFAULT_COUNTERFEIT_TEMPLATES = [];
@@ -522,7 +522,7 @@ export function valueFor(path, item) {
   const depositor = counterfeit.depositor || {};
   const witnessFullName = [witness.surname, witness.name].filter(Boolean).join(' ');
   const depositorFullName = [depositor.surname, depositor.name].filter(Boolean).join(' ');
-  const officerA = item.officerA || {};
+  const officerA = getServiceProfileOperatorIdentity(typeof window !== 'undefined' && window.AXYP_SERVICE_PROFILE && typeof window.AXYP_SERVICE_PROFILE.get === 'function' ? window.AXYP_SERVICE_PROFILE.get() : {});
   const officerB = item.officerB || {};
   const officerAFull = [officerA.rank, officerA.surname, officerA.name].filter(Boolean).join(' ');
   const officerBFull = [officerB.rank, officerB.surname, officerB.name].filter(Boolean).join(' ');
@@ -578,13 +578,13 @@ export function valueFor(path, item) {
     'case.people': item.people,
     'case.evidence': item.evidence,
     'case.arrestingOfficer': item.arrestingOfficer,
-    'officerA.fullName': serviceProfile.operatorDocument || toGreekGenitiveFullName(serviceProfile.operator) || officerA.documentFullName || officerA.fullName || officerAFull || '',
-    'officerA.nominativeFullName': serviceProfile.operator || officerA.fullName || officerAFull || '',
+    'officerA.fullName': serviceProfile.operatorDocument || toGreekGenitiveFullName(serviceProfile.operator),
+    'officerA.nominativeFullName': serviceProfile.operator || '',
     'officerA.rank': officerA.rank,
     'officerA.surname': officerA.surname,
     'officerA.name': officerA.name,
-    'officerA.service': officerA.service || serviceProfile.name || '',
-    'officerA.residence': officerA.residence || serviceProfile.name || '',
+    'officerA.service': serviceProfile.name || '',
+    'officerA.residence': serviceProfile.name || '',
     'officerB.fullName': officerB.documentFullName || toGreekGenitiveFullName(officerBFull) || serviceProfile.secondOfficerDocument || toGreekGenitiveFullName(serviceProfile.secondOfficer) || '',
     'officerB.nominativeFullName': officerB.fullName || officerBFull || serviceProfile.secondOfficer || '',
     'officerB.rank': officerB.rank,
@@ -1352,7 +1352,7 @@ function signatureParagraphTable() {
   const paragraph = (value) => `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">${esc(value)}</w:t></w:r></w:p>`;
   const cell = (label, field) => `<w:tc><w:tcPr><w:tcW w:w="4680" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>${paragraph(label)}${paragraph('________________________')}${paragraph(`{{${field}}}`)}</w:tc>`;
   const nil = '<w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/>';
-  return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblLayout w:type="fixed"/><w:tblBorders>${nil}</w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="4680"/><w:gridCol w:w="4680"/></w:tblGrid><w:tr>${cell('Ο Συλλαβών','case.arrestingOfficer')}${cell('Ο Συλληφθείς','person.fullName')}</w:tr><w:tr>${cell('Ο Β΄ Ανακριτικός Υπάλληλος','officerB.fullName')}${cell('Ο Α΄ Ανακριτικός Υπάλληλος','officerA.fullName')}</w:tr></w:tbl>`;
+  return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblLayout w:type="fixed"/><w:tblBorders>${nil}</w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="4680"/><w:gridCol w:w="4680"/></w:tblGrid><w:tr>${cell('Ο Συλλαβών','case.arrestingOfficer')}${cell('Ο Συλληφθείς','person.fullName')}</w:tr><w:tr>${cell('Ο Β΄ Ανακριτικός Υπάλληλος','officerB.fullName')}${cell('Ο Α΄ Ανακριτικός Υπάλληλος','officerA.nominativeFullName')}</w:tr></w:tbl>`;
 }
 
 export function patchNarcoticsTemplateXml(xml, templateId) {

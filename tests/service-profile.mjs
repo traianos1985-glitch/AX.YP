@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS, SERVICE_PROFILE_STORAGE_KEY, getServiceProfileBackupValue, getServiceProfileRestoreEntry, toGreekGenitiveFullName } from '../service-profile.js';
+import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS, SERVICE_PROFILE_STORAGE_KEY, getServiceProfileBackupValue, getServiceProfileRestoreEntry, toGreekGenitiveFullName, getServiceProfileOperatorIdentity } from '../service-profile.js';
 
 assert.equal(SERVICE_PROFILE_STORAGE_KEY, 'axyp-service-profile-v1');
 assert.equal(toGreekGenitiveFullName("Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός"), "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού");
 assert.equal(toGreekGenitiveFullName('Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος'), 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου');
+assert.deepEqual(getServiceProfileOperatorIdentity({ operator: "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός", name: 'Αστυνομικό Τμήμα Τριφυλίας' }), { fullName: "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός", rank: "Υπαστυνόμος Β'", surname: 'ΓΙΟΥΡΟΥΚΗΣ', name: 'Τραϊανός', service: 'Αστυνομικό Τμήμα Τριφυλίας', residence: 'Αστυνομικό Τμήμα Τριφυλίας' });
 const values = new Map();
 const storage = {
   getItem(key) { return values.has(key) ? values.get(key) : null; },
@@ -66,6 +67,9 @@ assert.equal(valueFor('officerA.fullName', { title: 'CASE-ONLY-DATA', officerA: 
 assert.equal(valueFor('officerA.nominativeFullName', { title: 'CASE-ONLY-DATA' }), 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος');
 assert.equal(valueFor('officerA.service', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
 assert.equal(valueFor('officerA.residence', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
+assert.equal(valueFor('officerA.rank', { title: 'STALE-CASE-A', officerA: { rank: 'ΠΑΛΙΟΣ ΒΑΘΜΟΣ' } }), 'Υπαστυνόμος Β΄');
+assert.equal(valueFor('officerA.surname', { title: 'STALE-CASE-A', officerA: { surname: 'ΠΑΛΙΟ ΕΠΩΝΥΜΟ' } }), 'ΔΟΚΙΜΗΣ');
+assert.equal(valueFor('officerA.name', { title: 'STALE-CASE-A', officerA: { name: 'ΠΑΛΙΟ ΟΝΟΜΑ' } }), 'Αλέξανδρος');
 assert.equal(valueFor('officerB.fullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακα ΔΟΚΙΜΗΣ Γεώργιου');
 assert.equal(valueFor('officerB.nominativeFullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακας ΔΟΚΙΜΗΣ Γεώργιος');
 assert.equal(valueFor('officerB.service', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
