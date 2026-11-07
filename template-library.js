@@ -1323,15 +1323,18 @@ function replaceLegacyLocalServiceReferences(xml) {
     .replace(/Α\.Τ\.\s+Τριφυλίας/gu, 'Υπηρεσία μας');
 }
 
-function replaceLegacyFixedDateText(xml, item) {
-  const day = valueFor('case.date.day', item);
-  const month = valueFor('case.date.monthName', item);
-  const year = valueFor('case.date.year', item);
-  const weekday = valueFor('case.date.weekdayName', item);
-  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(item.date || ''));
+export function replaceLegacyFixedDateText(xml, item) {
+  // Older saved cases may have no date/location. Use the same local installation
+  // defaults as placeholder mappings so legacy fixed text cannot remain stale.
+  const effectiveItem = { ...item, date: item.date || getLocalISODate() };
+  const day = valueFor('case.date.day', effectiveItem);
+  const month = valueFor('case.date.monthName', effectiveItem);
+  const year = valueFor('case.date.year', effectiveItem);
+  const weekday = valueFor('case.date.weekdayName', effectiveItem);
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(effectiveItem.date || ''));
   if (!dateMatch || !day || !month || !year || !weekday) return xml;
 
-  const location = esc(item.location || 'έδρα της Υπηρεσίας');
+  const location = esc(valueFor('case.location', effectiveItem) || 'έδρα της Υπηρεσίας');
   const numericDate = `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}`;
   return xml
     .replace(
