@@ -571,7 +571,6 @@ function uid() {
 
       // Keep the saved case in the local register; only clear the working form after ZIP creation and download initiation.
       reset();
-      $('case-date').value = '';
       $('case-flash').textContent = 'Το ZIP δημιουργήθηκε και η λήψη ξεκίνησε. Η υπόθεση διατηρήθηκε στο τοπικό μητρώο και η φόρμα καθαρίστηκε για την επόμενη ίδια δικογραφία.';
       render();
     } catch (error) {
