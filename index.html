@@ -254,7 +254,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
 <section id="templates-panel" class="panel templates-panel" hidden>
   <div class="section-heading"><div><p class="eyebrow">Πρότυπα εκθέσεων</p><h2>Κατάλογος και αντιστοίχιση πεδίων</h2><p class="muted">Τα πρότυπα παραμένουν συνδεδεμένα με την αρχική πηγή. Η αντιστοίχιση αποθηκεύεται τοπικά και θα τροφοδοτεί την παραγωγή Word.</p></div><a class="source-link" href="https://proanakrisi.gr/" target="_blank" rel="noreferrer">Άνοιγμα πηγής</a></div>
     <section class="panel" id="service-profile-panel" aria-labelledby="service-profile-title">
-    <div class="section-heading"><div><p class="eyebrow">Ρυθμίσεις εγκατάστασης</p><h2 id="service-profile-title">Προφίλ Υπηρεσίας</h2><p class="muted">Συμπλήρωσε μία φορά τα στοιχεία της Υπηρεσίας αυτής της εγκατάστασης. Αποθηκεύονται τοπικά στη συσκευή και χρησιμοποιούνται στα αντίστοιχα πρότυπα Word.</p></div></div>
+    <div class="section-heading"><div><p class="eyebrow">Ρυθμίσεις εγκατάστασης</p><h2 id="service-profile-title">Προφίλ Υπηρεσίας</h2><p class="muted">Συμπλήρωσε μία φορά τα στοιχεία της εγκατάστασης. Οι ονομαστικές μορφές είναι για καταχώριση· η εφαρμογή υπολογίζει αρχικά τη γενική από την ονομαστική και μπορείς να διορθώσεις χειροκίνητα τυχόν ιδιόμορφη κλίση στο αντίστοιχο πεδίο. Όλα αποθηκεύονται τοπικά στη συσκευή.</p></div></div>
     <form id="service-profile-form"><div class="profile-grid">
       <label class="profile-field">Ονομασία Υπηρεσίας<input name="name" type="text" autocomplete="organization" maxlength="160"></label>
       <label class="profile-field">Διεύθυνση Αστυνομίας (Προϊστάμενη Αρχή)<input name="directorate" type="text" maxlength="160"></label>
@@ -263,7 +263,11 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
       <label class="profile-field">Email<input name="email" type="email" autocomplete="email" maxlength="160"></label>
       <label class="profile-field">Αρμόδια Εισαγγελία<input name="prosecutor" type="text" maxlength="200"></label>
       <label class="profile-field">Αρμόδια Χημική Υπηρεσία<input name="chemicalService" type="text" maxlength="200"></label>
-      <label class="profile-field">Χειριστής Εφαρμογής<input name="operator" type="text" maxlength="200" autocomplete="name" placeholder="π.χ. Υπαστυνόμος Β΄ ΕΠΩΝΥΜΟ Όνομα"></label>
+      <label class="profile-field">Τόπος σύνταξης<input name="location" type="text" maxlength="120" placeholder="π.χ. Κυπαρισσία"></label>
+      <label class="profile-field">Χειριστής Εφαρμογής · ονομαστική<input name="operator" type="text" maxlength="200" autocomplete="name" placeholder="π.χ. Υπαστυνόμος Β' ΕΠΩΝΥΜΟ Όνομα"></label>
+      <label class="profile-field">Χειριστής · μορφή εκθέσεων (γενική, προαιρετική διόρθωση)<input name="operatorDocument" type="text" maxlength="200" placeholder="Αυτόματη κλίση · συμπλήρωσε μόνο για διόρθωση"></label>
+      <label class="profile-field">Β΄ Ανακριτικός Υπάλληλος · ονομαστική<input name="secondOfficer" type="text" maxlength="200" placeholder="π.χ. Αρχιφύλακας ΕΠΩΝΥΜΟ Όνομα"></label>
+      <label class="profile-field">Β΄ Ανακριτικός · μορφή εκθέσεων (γενική, προαιρετική διόρθωση)<input name="secondOfficerDocument" type="text" maxlength="200" placeholder="Αυτόματη κλίση · συμπλήρωσε μόνο για διόρθωση"></label>
       <div class="profile-actions"><button class="mini-button" type="submit">Αποθήκευση προφίλ</button><span id="service-profile-status" class="flash" role="status" aria-live="polite"></span></div>
     </div></form>
   </section>

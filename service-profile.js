@@ -1,16 +1,47 @@
 export const SERVICE_PROFILE_STORAGE_KEY = 'axyp-service-profile-v1';
 const KEY = SERVICE_PROFILE_STORAGE_KEY;
-export const SERVICE_PROFILE_FIELDS = Object.freeze(['name', 'directorate', 'address', 'phone', 'email', 'prosecutor', 'chemicalService', 'operator']);
-export const DEFAULT_SERVICE_PROFILE = Object.freeze({ name: 'Αστυνομικό Τμήμα Τριφυλίας' });
+export const SERVICE_PROFILE_FIELDS = Object.freeze(['name', 'directorate', 'address', 'phone', 'email', 'prosecutor', 'chemicalService', 'location', 'operator', 'operatorDocument', 'secondOfficer', 'secondOfficerDocument']);
+export const DEFAULT_SERVICE_PROFILE = Object.freeze({
+  name: 'Αστυνομικό Τμήμα Τριφυλίας',
+  location: 'Κυπαρισσία',
+  operator: "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός",
+  operatorDocument: '',
+  secondOfficer: 'Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος',
+  secondOfficerDocument: ''
+});
 const clean = (value) => String(value ?? '').trim();
 const cleanField = (field, value) => field === 'operator' ? String(value ?? '') : clean(value);
+
+function genitiveToken(token) {
+  if (!token || !/[\p{L}]/u.test(token)) return token;
+  const upper = token === token.toLocaleUpperCase('el-GR');
+  const rules = upper
+    ? [[/ΟΣ$/u, 'ΟΥ'], [/ΗΣ$/u, 'Η'], [/ΑΣ$/u, 'Α']]
+    : [[/ιος$/u, 'ιου'], [/ός$/u, 'ού'], [/ος$/u, 'ου'], [/ής$/u, 'ή'], [/ης$/u, 'η'], [/άς$/u, 'ά'], [/ας$/u, 'α']];
+  for (const [pattern, ending] of rules) {
+    if (pattern.test(token)) return token.replace(pattern, ending);
+  }
+  return token;
+}
+
+export function toGreekGenitiveFullName(value) {
+  return clean(value).split(/\s+/u).filter(Boolean).map(genitiveToken).join(' ');
+}
 
 export function readServiceProfile(storageInstance) {
   const empty = () => Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean(DEFAULT_SERVICE_PROFILE[field])]));
   if (!storageInstance || typeof storageInstance.getItem !== 'function') return empty();
   try {
     const saved = JSON.parse(storageInstance.getItem(KEY) || '{}');
-    return Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, cleanField(field, saved[field] ?? DEFAULT_SERVICE_PROFILE[field])]));
+    const isLegacyProfile = ['location', 'operatorDocument', 'secondOfficer', 'secondOfficerDocument'].some((field) => !Object.prototype.hasOwnProperty.call(saved, field));
+    return Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => {
+      let value = saved[field] ?? DEFAULT_SERVICE_PROFILE[field];
+      if (isLegacyProfile && field === 'operator' && !clean(value)) value = DEFAULT_SERVICE_PROFILE.operator;
+      if (isLegacyProfile && field === 'operatorDocument' && !clean(saved.operator)) value = DEFAULT_SERVICE_PROFILE.operatorDocument;
+      if (isLegacyProfile && field === 'operatorDocument' && clean(saved.operator)) value = '';
+      if (isLegacyProfile && ['secondOfficer', 'secondOfficerDocument'].includes(field) && !clean(value)) value = DEFAULT_SERVICE_PROFILE[field];
+      return [field, cleanField(field, value)];
+    }));
   } catch (_) { return empty(); }
 }
 
@@ -36,7 +67,15 @@ export function getServiceProfileRestoreEntry(payload) {
       throw new Error('Το πεδίο ' + field + ' στο προφίλ υπηρεσίας έχει μη έγκυρη μορφή.');
     }
   }
-  const profile = Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, cleanField(field, saved[field] ?? DEFAULT_SERVICE_PROFILE[field])]));
+  const isLegacyProfile = ['location', 'operatorDocument', 'secondOfficer', 'secondOfficerDocument'].some((field) => !Object.prototype.hasOwnProperty.call(saved, field));
+  const profile = Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => {
+    let value = saved[field] ?? DEFAULT_SERVICE_PROFILE[field];
+    if (isLegacyProfile && field === 'operator' && !clean(value)) value = DEFAULT_SERVICE_PROFILE.operator;
+    if (isLegacyProfile && field === 'operatorDocument' && !clean(saved.operator)) value = DEFAULT_SERVICE_PROFILE.operatorDocument;
+    if (isLegacyProfile && field === 'operatorDocument' && clean(saved.operator)) value = '';
+    if (isLegacyProfile && ['secondOfficer', 'secondOfficerDocument'].includes(field) && !clean(value)) value = DEFAULT_SERVICE_PROFILE[field];
+    return [field, cleanField(field, value)];
+  }));
   return [KEY, JSON.stringify(profile)];
 }
 

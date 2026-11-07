@@ -290,7 +290,10 @@ function uid() {
     $('case-form').reset();
     resetCaseRegister();
     $('case-id').value = '';
-    $('case-date').value = new Date().toISOString().slice(0, 10);
+    var now = new Date();
+    $('case-date').value = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+    var serviceProfile = window.AXYP_SERVICE_PROFILE && window.AXYP_SERVICE_PROFILE.get ? window.AXYP_SERVICE_PROFILE.get() : {};
+    if ($('case-location')) $('case-location').value = serviceProfile.location || 'Κυπαρισσία';
     if (activeProfileFilter) $('case-profile').value = activeProfileFilter;
     ensureCommerceOffenderFields();
     if ($('commerce-offenders')) $('commerce-offenders').hidden = activeProfileFilter !== 'commerce';
