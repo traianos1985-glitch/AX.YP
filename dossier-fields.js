@@ -106,6 +106,9 @@ export function setDossierFieldValue(data, path, value) {
     }
     target = target[part];
   });
-  target[parts[parts.length - 1]] = String(value ?? '');
+  const storedValue = value && typeof value === 'object'
+    ? JSON.parse(JSON.stringify(value))
+    : String(value ?? '');
+  target[parts[parts.length - 1]] = storedValue;
   return data;
 }

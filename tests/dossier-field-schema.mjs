@@ -41,6 +41,7 @@ const dormantEntities = {};
 assert.equal(appendRepeatableEntry(dormantEntities, 'offenders', { role: 'offender', fullName: 'Synthetic Person A' }), 1);
 assert.equal(appendRepeatableEntry(dormantEntities, 'offenders', { role: 'offender', fullName: 'Synthetic Person B' }), 2);
 assert.equal(dormantEntities.entities.offenders.length, 2);
+assert.deepEqual(dormantEntities.entities.offenders.map((entry) => entry.fullName), ['Synthetic Person A', 'Synthetic Person B']);
 assert.equal(appendRepeatableEntry(dormantEntities, 'vehicles', { registration: 'TEST-001' }), 1);
 assert.equal(dormantEntities.entities.vehicles[0].registration, 'TEST-001');
 assert.throws(() => appendRepeatableEntry(dormantEntities, 'offenders', 'invalid'), /Η εγγραφή/);
