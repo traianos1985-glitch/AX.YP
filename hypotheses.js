@@ -1021,8 +1021,7 @@ function uid() {
     remoteButton.type = 'button';
     remoteButton.textContent = 'Κράτησε την άλλη καρτέλα';
     [localButton, remoteButton].forEach(function (button) {
-      button.style.marginInlineStart = '0.5rem';
-      button.style.padding = '0.35rem 0.55rem';
+      button.className = 'mini-button';
     });
     localButton.addEventListener('click', function () {
       window.AXYP_STORAGE.resolveConflict(KEY, 'local').then(function () {
