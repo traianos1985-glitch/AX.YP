@@ -708,6 +708,38 @@ function render() {
     const panel = document.createElement('div');
     panel.className = 'template-category-content';
     details.appendChild(panel);
+    if (group.items.length) {
+      const batchButton = document.createElement('button');
+      batchButton.type = 'button';
+      batchButton.className = 'mini-button';
+      batchButton.textContent = 'Συμπλήρωση όλων των εντύπων της κατηγορίας (ZIP)';
+      batchButton.addEventListener('click', () => {
+        const selectedCase = getCase();
+        if (!selectedCase || !selectedCase.id) {
+          window.alert('Επίλεξε πρώτα τη συγκεκριμένη υπόθεση που αφορά η δικογραφία.');
+          return;
+        }
+        const missing = group.items.flatMap((template) => getMissingTemplateFields(template, selectedCase)
+          .map((entry) => `${template.name}: {{${entry.field}}} — ${entry.reason}`));
+        if (missing.length && !window.confirm('Ορισμένα πεδία χρειάζονται συμπλήρωση ή αντιστοίχιση:\n\n' + missing.join('\n') + '\n\nΝα συνεχιστεί η παραγωγή; Τα κενά πεδία θα παραμείνουν εμφανή για έλεγχο.')) return;
+        try {
+          const archive = buildCategoryArchive(group.items, selectedCase);
+          const blob = new Blob([archive], { type: 'application/zip' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          const caseName = String(selectedCase.title || 'dικογραφία').replace(/[\\/:*?"<>|]+/gu, '-');
+          link.href = url;
+          link.download = `${caseName}-${categoryKey}-έντυπα.zip`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (error) {
+          window.alert('Δεν δημιουργήθηκε ο φάκελος εντύπων: ' + error.message);
+        }
+      });
+      panel.appendChild(batchButton);
+    }
     root.appendChild(details);
     details.addEventListener('toggle', async () => {
       if (!details.open) {
@@ -1317,6 +1349,20 @@ export function buildDocx(template, item) {
 
   if (!userUploaded) ensureTemplateVersionFooter(files, template);
   return zipSync(files);
+}
+
+export function buildCategoryArchive(templates, item) {
+  if (!Array.isArray(templates) || !templates.length) throw new Error('Δεν υπάρχουν έντυπα στην επιλεγμένη κατηγορία.');
+  if (!item || !item.id) throw new Error('Επίλεξε πρώτα συγκεκριμένη υπόθεση.');
+  const archive = {};
+  templates.forEach((template, index) => {
+    const baseName = String(template.name || `entypo-${index + 1}.docx`)
+      .replace(/[\\/:*?"<>|]+/gu, '-')
+      .replace(/\.docx$/iu, '');
+    const suffix = String(template.id || index + 1).replace(/[^\p{L}\p{N}-]+/gu, '-').slice(0, 32);
+    archive[`${String(index + 1).padStart(2, '0')}-${baseName}-${suffix}.docx`] = buildDocx(template, item);
+  });
+  return zipSync(archive);
 }
 
 export async function generate(template) {
