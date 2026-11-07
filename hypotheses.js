@@ -539,6 +539,9 @@ function uid() {
     try {
       await import('./template-library.js');
       await window.TemplateLibrary.ready;
+      try { await window.TemplateLibrary.ensureDefaultTemplates(storage, activeProfileFilter); } catch (_) {
+        // Creator-uploaded categories do not require built-in seed data.
+      }
       var categoryTemplates = window.TemplateLibrary.getCategoryTemplates(activeProfileFilter);
       var selectedTemplates = window.TemplateLibrary.templatesForCategoryGeneration(categoryTemplates);
       if (!selectedTemplates.length) {
