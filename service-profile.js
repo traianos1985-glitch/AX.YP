@@ -3,13 +3,14 @@ const KEY = SERVICE_PROFILE_STORAGE_KEY;
 export const SERVICE_PROFILE_FIELDS = Object.freeze(['name', 'directorate', 'address', 'phone', 'email', 'prosecutor', 'chemicalService', 'operator']);
 export const DEFAULT_SERVICE_PROFILE = Object.freeze({ name: 'Αστυνομικό Τμήμα Τριφυλίας' });
 const clean = (value) => String(value ?? '').trim();
+const cleanField = (field, value) => field === 'operator' ? String(value ?? '') : clean(value);
 
 export function readServiceProfile(storageInstance) {
   const empty = () => Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean(DEFAULT_SERVICE_PROFILE[field])]));
   if (!storageInstance || typeof storageInstance.getItem !== 'function') return empty();
   try {
     const saved = JSON.parse(storageInstance.getItem(KEY) || '{}');
-    return Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean(saved[field] ?? DEFAULT_SERVICE_PROFILE[field])]));
+    return Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, cleanField(field, saved[field] ?? DEFAULT_SERVICE_PROFILE[field])]));
   } catch (_) { return empty(); }
 }
 
@@ -41,7 +42,7 @@ export function getServiceProfileRestoreEntry(payload) {
 
 export function writeServiceProfile(storageInstance, values) {
   if (!storageInstance || typeof storageInstance.setItem !== 'function') throw new Error('Η τοπική αποθήκευση δεν είναι διαθέσιμη.');
-  const profile = Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean((values && values[field]) ?? DEFAULT_SERVICE_PROFILE[field])]));
+  const profile = Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, cleanField(field, (values && values[field]) ?? DEFAULT_SERVICE_PROFILE[field])]));
   storageInstance.setItem(KEY, JSON.stringify(profile));
   return profile;
 }
