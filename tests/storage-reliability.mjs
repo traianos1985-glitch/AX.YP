@@ -27,6 +27,7 @@ function createLocalStorage(initial = {}, shouldThrow = false) {
 
 function createIndexedDB(seed = {}, shouldFail = false) {
   const records = new Map(Object.entries(seed));
+  let failNextTransactions = 0;
   const db = {
     objectStoreNames: { contains: () => true },
     transaction() {
@@ -52,13 +53,20 @@ function createIndexedDB(seed = {}, shouldFail = false) {
         }
       };
       tx.objectStore = () => store;
-      setTimeout(() => { if (tx.oncomplete) tx.oncomplete(); }, 10);
+      setTimeout(() => {
+        if (failNextTransactions > 0) {
+          failNextTransactions -= 1;
+          tx.error = new Error('Injected transient transaction failure');
+          if (tx.onerror) tx.onerror();
+        } else if (tx.oncomplete) tx.oncomplete();
+      }, 10);
       return tx;
     },
     close() {}
   };
   return {
     records,
+    failNextTransaction() { failNextTransactions += 1; },
     open() {
       const request = {};
       setTimeout(() => {
@@ -187,5 +195,31 @@ for (const path of ['hypotheses.js', 'case-bundles.js', 'templates.js', 'app.js'
 }
 const workspaceSource = await readFile(new URL('../case-folder-storage.js', import.meta.url), 'utf8');
 assert.match(workspaceSource, /async function restore\(\)[\s\S]*?await window\.AXYP_STORAGE\.ready/);
+
+// Degraded state clears only after every failed key has been successfully retried.
+{
+  const local = createLocalStorage({}, true);
+  const idb = createIndexedDB();
+  const storage = loadStorage(local, idb);
+  await storage.ready;
+
+  idb.failNextTransaction();
+  idb.failNextTransaction();
+  storage.setItem('axyp-first', 'first-attempt');
+  storage.setItem('axyp-second', 'second-attempt');
+  await new Promise((resolve) => setTimeout(resolve, 25));
+  assert.equal(storage.getStatus().degraded, true);
+
+  storage.setItem('axyp-first', 'first-retry');
+  await new Promise((resolve) => setTimeout(resolve, 25));
+  assert.equal(storage.getStatus().degraded, true, 'A successful retry for one key must not hide another key failure');
+  await assert.rejects(storage.flush(), /Η αποθήκευση δεν επιβεβαιώθηκε/);
+
+  storage.setItem('axyp-second', 'second-retry');
+  const status = await storage.flush();
+  assert.equal(status.degraded, false, 'Storage should recover after the failed key is retried successfully');
+  assert.equal(idb.records.get('axyp-first'), 'first-retry');
+  assert.equal(idb.records.get('axyp-second'), 'second-retry');
+}
 
 console.log('Storage reliability tests passed.');
