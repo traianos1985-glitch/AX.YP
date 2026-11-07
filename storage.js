@@ -275,7 +275,11 @@
     notifyChange(message.key, message.value, revision, true);
   }
   if (channel) channel.onmessage = function (event) { receiveRemoteChange(event.data); };
-  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') window.addEventListener('storage', function (event) { receiveRemoteChange({ key: event.key, value: event.newValue, revision: Date.now(), source: 'storage-event' }); });
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') window.addEventListener('storage', function (event) {
+    if (!event.key || event.key.indexOf(META_PREFIX) === 0) return;
+    var meta = readLocalMeta(event.key);
+    receiveRemoteChange({ key: event.key, value: event.newValue, revision: meta ? meta.revision : Date.now(), source: 'storage-event' });
+  });
 
   function getItem(key) {
     if (Object.prototype.hasOwnProperty.call(cache, key)) return cache[key];
@@ -345,9 +349,9 @@
     var revision = nextRevision();
     cache[key] = stringValue;
     localRevisions[key] = revision;
+    dirtyKeys[key] = true;
     broadcastChange(key, stringValue, revision);
     notifyChange(key, stringValue, revision, false);
-    dirtyKeys[key] = true;
     var localOk = false;
     try {
       localStorage.setItem(key, stringValue);
@@ -378,9 +382,9 @@
     var revision = nextRevision();
     delete cache[key];
     localRevisions[key] = revision;
+    dirtyKeys[key] = true;
     broadcastChange(key, null, revision);
     notifyChange(key, null, revision, false);
-    dirtyKeys[key] = true;
     var localOk = false;
     try {
       localStorage.removeItem(key);
