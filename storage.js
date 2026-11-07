@@ -160,11 +160,17 @@
   });
 
   function getStatus() {
+    var hasError = pendingFailures.length > 0 || !!lastError;
     return {
       indexedDBAvailable: indexedDBAvailable,
-      degraded: !!lastError,
-      error: lastError ? String(lastError.message || lastError) : null
+      degraded: hasError,
+      error: hasError ? (pendingFailures[0] ? String(pendingFailures[0].message || pendingFailures[0]) : String(lastError.message || lastError)) : null
     };
+  }
+
+  function clearError() {
+    lastError = null;
+    pendingFailures.splice(0);
   }
 
   function getItem(key) {
@@ -195,7 +201,9 @@
       var store = tx.objectStore(STORE_NAME);
       if (remove) store.delete(key);
       else store.put(value, key);
-      return transactionDone(tx);
+      return transactionDone(tx).then(function () {
+        lastError = null;
+      });
     });
   }
 
@@ -413,6 +421,7 @@
     flush: flush,
     checkQuota: checkQuota,
     getStatus: getStatus,
+    clearError: clearError,
     ready: ready
   };
 })();

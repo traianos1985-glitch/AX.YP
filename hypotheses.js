@@ -753,6 +753,28 @@ function uid() {
 
         var incomingBundles = parsed.bundles === null || parsed.bundles === undefined ? null : parseArray(parsed.bundles, 'bundles');
         var incomingTemplates = parsed.templates === null || parsed.templates === undefined ? null : parseArray(parsed.templates, 'templates');
+
+        // Αυτόματο τοπικό αντίγραφο ασφαλείας πριν από την επαναφορά
+        try {
+          var sPre = window.AXYP_STORAGE || localStorage;
+          var preBackup = {
+            schema: 2,
+            exportedAt: new Date().toISOString(),
+            hypotheses: read(),
+            favorites: sPre.getItem('axyp-favorites'),
+            profile: sPre.getItem('axyp-form-profile'),
+            theme: sPre.getItem('axyp-theme'),
+            privacy: sPre.getItem('axyp-privacy'),
+            bundles: sPre.getItem('axyp-case-bundles'),
+            templates: sPre.getItem('axyp-docx-templates'),
+            templateMappings: sPre.getItem('axyp-template-mappings')
+          };
+          sPre.setItem('axyp-pre-restore-backup', JSON.stringify(preBackup));
+          if (sPre.flush) await sPre.flush();
+        } catch (backupErr) {
+          console.warn('Αποτυχία δημιουργίας αυτόματου προ-αντιγράφου ασφαλείας:', backupErr);
+        }
+
         var shouldMerge = window.confirm(
           'Επαναφορά αντιγράφου:\n\n' +
           '• Πάτησε [OK] για ΣΥΓΧΩΝΕΥΣΗ (διατήρηση των υπαρχουσών υποθέσεων και προσθήκη/ενημέρωση των εισαγόμενων).\n' +
@@ -765,8 +787,20 @@ function uid() {
           var merged = read().slice();
           parsed.hypotheses.forEach(function (incoming) {
             var index = merged.findIndex(function (item) { return item.id === incoming.id; });
-            if (index >= 0) merged[index] = Object.assign({}, merged[index], incoming);
-            else merged.push(incoming);
+            if (index >= 0) {
+              var existing = merged[index];
+              var incomingTime = incoming && incoming.updatedAt ? Date.parse(incoming.updatedAt) : NaN;
+              var existingTime = existing && existing.updatedAt ? Date.parse(existing.updatedAt) : NaN;
+              if (Number.isFinite(incomingTime) && Number.isFinite(existingTime)) {
+                if (incomingTime > existingTime) {
+                  merged[index] = Object.assign({}, existing, incoming);
+                }
+              } else {
+                merged[index] = Object.assign({}, existing, incoming);
+              }
+            } else {
+              merged.push(incoming);
+            }
           });
           entries.push(['axyp-hypotheses', JSON.stringify(merged)]);
 
@@ -867,7 +901,9 @@ function uid() {
     getSelectedId: function () { return selectedId; },
     openCategory: openCategory,
     showDashboard: showDashboard,
-    getActiveProfileFilter: function () { return activeProfileFilter; }
+    getActiveProfileFilter: function () { return activeProfileFilter; },
+    restoreBackup: restoreBackup,
+    importData: importData
   };
 
   $('dossier-back').onclick = showDashboard;
