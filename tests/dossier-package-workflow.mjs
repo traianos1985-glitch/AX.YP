@@ -21,9 +21,9 @@ assert.match(hypotheses, /buildCategoryArchive\(selectedTemplates, saved\)/);
 assert.match(hypotheses, /reset\(\);\s*\$\('case-date'\)\.value = ''/);
 assert.match(library, /source === 'published-package'/);
 assert.match(library, /loadPublishedDossierPackages/);
-assert.match(library, /new URL\\('dossier-packages\\/manifest\\.json', document\\.baseURI\\)/);
+assert.match(library, /new URL\('dossier-packages\/manifest\.json', document\.baseURI\)/);
 assert.match(vite, /dossier-packages/);
-assert.match(serviceWorker, /dossier-packages\\/manifest\\.json/);
+assert.match(serviceWorker, /dossier-packages\/manifest\.json/);
 
 const local = { id: 'local-1', category: 'generic', source: 'user-uploaded', name: 'local.docx' };
 const published = { id: 'published-1', category: 'generic', source: 'published-package', name: 'published.docx' };
