@@ -480,9 +480,12 @@
             if (!pendingFailures.length) lastError = null;
           }
           normalized.forEach(function (entry) {
-            dirtyKeys[entry[0]] = true;
             if (entry[1] === null) delete cache[entry[0]];
             else cache[entry[0]] = entry[1];
+            localRevisions[entry[0]] = entry[2];
+            delete dirtyKeys[entry[0]];
+            broadcastChange(entry[0], entry[1], entry[2]);
+            notifyChange(entry[0], entry[1], entry[2], false);
           });
           return getStatus();
         }
