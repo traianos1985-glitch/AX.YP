@@ -727,7 +727,7 @@ function render() {
           const blob = new Blob([archive], { type: 'application/zip' });
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
-          const caseName = String(selectedCase.title || 'dικογραφία').replace(/[\\/:*?"<>|]+/gu, '-');
+          const caseName = String(selectedCase.title || 'δικογραφία').replace(/[\\/:*?"<>|]+/gu, '-');
           link.href = url;
           link.download = `${caseName}-${categoryKey}-έντυπα.zip`;
           document.body.appendChild(link);
