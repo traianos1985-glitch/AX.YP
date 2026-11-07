@@ -5,6 +5,8 @@ if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.
 (function () {
   var KEY = 'axyp-hypotheses';
   var selectedId = null;
+  var selectedCaseUpdatedAt = null;
+  var remoteCaseUpdatePending = false;
   var activeProfileFilter = null;
   var storage = window.AXYP_STORAGE || localStorage;
   var $ = function (id) { return document.getElementById(id); };
@@ -21,12 +23,6 @@ if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.
   function write(value) {
     var s = window.AXYP_STORAGE || localStorage;
     s.setItem(KEY, JSON.stringify(value));
-    if (typeof BroadcastChannel !== 'undefined') {
-      try {
-        var bc = new BroadcastChannel('axyp-hypotheses-sync');
-        bc.postMessage({ type: 'hypotheses-updated' });
-      } catch (_) {}
-    }
   }
 
     function addMinutes(timeStr, mins) {
@@ -314,6 +310,8 @@ function uid() {
     if ($('health-examination-start')) $('health-examination-start').value = '';
     if ($('health-examination-end')) $('health-examination-end').value = '';
     selectedId = null;
+    selectedCaseUpdatedAt = null;
+    remoteCaseUpdatePending = false;
     renderDetail();
   }
 
@@ -322,6 +320,8 @@ function uid() {
     selectedId = id;
     var item = read().filter(function (entry) { return entry.id === id; })[0];
     if (!item) return;
+    selectedCaseUpdatedAt = item.updatedAt || null;
+    remoteCaseUpdatePending = false;
     $('case-id').value = item.id;
     $('case-form').hidden = false;
     $('case-title').value = item.title || '';
@@ -636,6 +636,10 @@ function uid() {
 
   async function save(event) {
     event.preventDefault();
+    if (remoteCaseUpdatePending) {
+      $('case-flash').textContent = 'Η υπόθεση ενημερώθηκε σε άλλη καρτέλα. Για να αποφύγεις την αντικατάσταση νεότερων στοιχείων, επίλεξέ την ξανά από τη λίστα και έλεγξε τα ενημερωμένα δεδομένα πριν αποθηκεύσεις.';
+      return;
+    }
     if (window.AXYP_STORAGE && window.AXYP_STORAGE.checkQuota) {
       window.AXYP_STORAGE.checkQuota().then(function (res) {
         if (res.low) $('case-flash').textContent = 'Προσοχή: Ο διαθέσιμος αποθηκευτικός χώρος είναι χαμηλός (' + res.freeMb + ' MB).';
@@ -668,6 +672,8 @@ function uid() {
         await window.AXYP_STORAGE.flush();
       }
       selectedId = id;
+      selectedCaseUpdatedAt = saved.updatedAt || null;
+      remoteCaseUpdatePending = false;
       $('case-flash').textContent = workspaceError
         ? 'Η υπόθεση αποθηκεύτηκε στον browser, αλλά δεν ενημερώθηκε ο προσωπικός φάκελος εργασίας: ' + workspaceError.message
         : window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()
@@ -680,6 +686,10 @@ function uid() {
   }
 
   async function snapshot() {
+    if (remoteCaseUpdatePending) {
+      $('case-flash').textContent = 'Η υπόθεση ενημερώθηκε σε άλλη καρτέλα. Επίλεξέ την ξανά από τη λίστα πριν δημιουργήσεις νέο snapshot.';
+      return;
+    }
     var items = read();
     var item = items.filter(function (entry) { return entry.id === selectedId; })[0];
     if (!item) return;
@@ -1003,26 +1013,64 @@ function uid() {
         if (selectedId && !activeItem) {
           // The selected case was removed in another tab
           selectedId = null;
+          selectedCaseUpdatedAt = null;
+          remoteCaseUpdatePending = false;
           reset();
+        } else if (selectedId && activeItem && activeItem.updatedAt && activeItem.updatedAt !== selectedCaseUpdatedAt) {
+          remoteCaseUpdatePending = true;
+          var flash = $('case-flash');
+          if (flash) flash.textContent = 'Η επιλεγμένη υπόθεση ενημερώθηκε σε άλλη καρτέλα. Η φόρμα δεν θα αποθηκεύσει παλιά στοιχεία πάνω από τη νεότερη έκδοση. Επίλεξε ξανά την υπόθεση από τη λίστα για να φορτώσεις τις αλλαγές.';
         }
         render();
       }
     } catch (_) {}
   }
 
+  function renderStorageConflict(conflict) {
+    var flash = $('case-flash');
+    if (!flash || !conflict) return;
+    flash.textContent = 'Εντοπίστηκε ταυτόχρονη αλλαγή της ίδιας υπόθεσης σε άλλη καρτέλα. Επίλεξε ποια έκδοση θα διατηρηθεί. ';
+    var actions = document.createElement('span');
+    actions.className = 'storage-conflict-actions';
+    var keepLocal = document.createElement('button');
+    keepLocal.type = 'button';
+    keepLocal.textContent = 'Κράτησε αυτή την καρτέλα';
+    var useRemote = document.createElement('button');
+    useRemote.type = 'button';
+    useRemote.textContent = 'Χρησιμοποίησε την άλλη καρτέλα';
+    [keepLocal, useRemote].forEach(function (button) { button.style.marginInlineStart = '0.5rem'; });
+    keepLocal.addEventListener('click', function () { resolveStorageConflict('local'); });
+    useRemote.addEventListener('click', function () { resolveStorageConflict('remote'); });
+    actions.appendChild(keepLocal);
+    actions.appendChild(useRemote);
+    flash.appendChild(actions);
+  }
+
+  async function resolveStorageConflict(choice) {
+    var flash = $('case-flash');
+    try {
+      await window.AXYP_STORAGE.resolveConflict(KEY, choice);
+      if (flash) flash.textContent = choice === 'remote'
+        ? 'Διατηρήθηκε η έκδοση της άλλης καρτέλας και επιβεβαιώθηκε η αποθήκευση.'
+        : 'Διατηρήθηκε η έκδοση αυτής της καρτέλας και επιβεβαιώθηκε η αποθήκευση.';
+      handleExternalHypothesesUpdate();
+    } catch (error) {
+      if (flash) flash.textContent = 'Δεν επιλύθηκε η σύγκρουση: ' + (error.message || error) + '. Τα δεδομένα παραμένουν προστατευμένα.';
+    }
+  }
+
   if (typeof window !== 'undefined') {
-    window.addEventListener('storage', function (e) {
-      if (e.key === KEY) handleExternalHypothesesUpdate();
-    });
-    if (typeof BroadcastChannel !== 'undefined') {
-      try {
-        var bc = new BroadcastChannel('axyp-hypotheses-sync');
-        bc.onmessage = function (e) {
-          if (e.data && e.data.type === 'hypotheses-updated') {
-            handleExternalHypothesesUpdate();
-          }
-        };
-      } catch (_) {}
+    if (window.AXYP_STORAGE && typeof window.AXYP_STORAGE.onChange === 'function') {
+      window.AXYP_STORAGE.onChange(function (event) {
+        if (event && event.key === KEY && event.remote) handleExternalHypothesesUpdate();
+      });
+      window.AXYP_STORAGE.onConflict(function (conflict) {
+        if (conflict && conflict.key === KEY) renderStorageConflict(conflict);
+      });
+    } else {
+      window.addEventListener('storage', function (e) {
+        if (e.key === KEY) handleExternalHypothesesUpdate();
+      });
     }
   }
 
