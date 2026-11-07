@@ -17,7 +17,15 @@ export function readServiceProfile(storageInstance) {
   if (!storageInstance || typeof storageInstance.getItem !== 'function') return empty();
   try {
     const saved = JSON.parse(storageInstance.getItem(KEY) || '{}');
-    return Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, cleanField(field, saved[field] ?? DEFAULT_SERVICE_PROFILE[field])]));
+    const isLegacyProfile = ['location', 'operatorDocument', 'secondOfficer', 'secondOfficerDocument'].some((field) => !Object.prototype.hasOwnProperty.call(saved, field));
+    return Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => {
+      let value = saved[field] ?? DEFAULT_SERVICE_PROFILE[field];
+      if (isLegacyProfile && field === 'operator' && !clean(value)) value = DEFAULT_SERVICE_PROFILE.operator;
+      if (isLegacyProfile && field === 'operatorDocument' && !clean(saved.operator)) value = DEFAULT_SERVICE_PROFILE.operatorDocument;
+      if (isLegacyProfile && field === 'operatorDocument' && clean(saved.operator)) value = '';
+      if (isLegacyProfile && ['secondOfficer', 'secondOfficerDocument'].includes(field) && !clean(value)) value = DEFAULT_SERVICE_PROFILE[field];
+      return [field, cleanField(field, value)];
+    }));
   } catch (_) { return empty(); }
 }
 
