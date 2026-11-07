@@ -1,6 +1,9 @@
 import { buildDocx, ensureDefaultTemplates, loadBuiltinTemplateData } from '../template-library.js';
 import { unzipSync } from '../vendor/fflate.js';
 import { spawnSync } from 'node:child_process';
+import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 console.log('--- Testing DOCX XML Validity, Entity Escaping & XML Parsing (H4) ---');
 
@@ -33,14 +36,27 @@ if (xmllintCheck.status !== 0) {
   throw new Error('H4 requires xmllint; install libxml2-utils before running DOCX XML validation.');
 }
 const hasXmllint = true;
-console.log('xmllint detected: full strict XML parser validation enabled.');
+const sofficeCheck = spawnSync('which', ['soffice']);
+if (sofficeCheck.status !== 0) {
+  throw new Error('H4 requires LibreOffice (soffice); install libreoffice before running DOCX validation.');
+}
+console.log('xmllint and LibreOffice detected: strict parser and PDF conversion enabled.');
 
 let totalXmlPartsChecked = 0;
+const conversionDir = await mkdtemp(join(tmpdir(), 'axyp-docx-validation-'));
 
 for (const t of templates) {
   const docxBytes = buildDocx(t, mockCase);
   const unzipped = unzipSync(docxBytes);
   const docXml = new TextDecoder().decode(unzipped['word/document.xml']);
+  const docxPath = join(conversionDir, `${t.id}.docx`);
+  await writeFile(docxPath, docxBytes);
+  const pdfResult = spawnSync('soffice', ['--headless', '--convert-to', 'pdf', '--outdir', conversionDir, docxPath], { encoding: 'utf8' });
+  if (pdfResult.status !== 0) {
+    throw new Error(`LibreOffice conversion failed for ${t.id}: ${pdfResult.stderr || pdfResult.stdout}`);
+  }
+  const pdfPath = join(conversionDir, `${t.id}.pdf`);
+  try { await readFile(pdfPath); } catch (error) { throw new Error(`LibreOffice did not produce a PDF for ${t.id}: ${error.message}`); }
 
   // Check C1: No duplicate xmlns:r on root tag
   const rootMatch = docXml.match(/<w:document\b[^>]*>/);
@@ -73,6 +89,19 @@ for (const t of templates) {
       }
     }
   }
+
+  const visibleTextResult = spawnSync('xmllint', ['--xpath', '//*[local-name()="t"]/text()', '-'], { input: Buffer.from(docXml), encoding: 'utf8' });
+  if (visibleTextResult.status !== 0) {
+    throw new Error(`Could not extract parsed visible text for ${t.id}: ${visibleTextResult.stderr}`);
+  }
+  const visibleText = visibleTextResult.stdout || '';
+  if (/\{\{[^}]+\}\}/u.test(visibleText)) {
+    throw new Error(`Unresolved placeholder remains in visible text for ${t.id}`);
+  }
+  if (/\d{4}-\d{2}-\d{2}/u.test(visibleText)) {
+    throw new Error(`ISO date remains in visible text for ${t.id}: ${visibleText}`);
+  }
 }
 
-console.log(`✓ All 39 templates passed XML root attributes and entity escaping regression tests (${totalXmlPartsChecked} XML/RELS parts validated${hasXmllint ? ' with xmllint' : ''}).`);
+await rm(conversionDir, { recursive: true, force: true });
+console.log(`✓ All 39 templates passed parsed XML, visible-text, placeholder, date, PDF conversion and escaping checks (${totalXmlPartsChecked} XML/RELS parts validated with xmllint).`);
