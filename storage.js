@@ -148,7 +148,13 @@
   // Οι κρίσιμες ροές μπορούν να καλέσουν flush()/setItemDurable() για επιβεβαίωση.
   KNOWN_KEYS.forEach(function (key) {
     var value = readLocalStorage(key);
+    var meta = readLocalMeta(key);
     if (value !== null) cache[key] = value;
+    if (meta) {
+      localRevisions[key] = meta.revision;
+      revisionClock = Math.max(revisionClock, meta.revision);
+      if (meta.deleted) delete cache[key];
+    }
   });
 
   function migrateSchema(db) {
