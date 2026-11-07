@@ -244,6 +244,8 @@ assert.equal(JSON.parse(local.get('axyp-hypotheses'))[0].caseRegister.persons.le
 // Guard the UI integration points that connect this exercised register flow to case save/reopen/backup.
 const { readFile } = await import('node:fs/promises');
 const appSource = await readFile(new URL('../hypotheses.js', import.meta.url), 'utf8');
+assert.match(appSource, /var data = values\(existing\)/, 'Editing a saved case must preserve its original first-investigator snapshot');
+assert.match(appSource, /data: values\(item\)/, 'A case history snapshot must preserve the original first-investigator identity');
 assert.match(appSource, /caseRegister: getCaseRegisterData\(\)/);
 assert.match(appSource, /loadCaseRegister\(item\.caseRegister \|\| \{\}\)/);
 assert.match(appSource, /resetCaseRegister\(\)/);

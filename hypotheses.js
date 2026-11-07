@@ -126,7 +126,7 @@ function uid() {
     };
   }
 
-  function values() {
+  function values(preservedCase) {
     ensureCommerceOffenderFields();
     return {
       title: $('case-title').value.trim(),
@@ -151,7 +151,7 @@ function uid() {
         title: $('camping-prosecutor-title') ? $('camping-prosecutor-title').value.trim() : ''
       },
       arrestingOfficer: ($('case-arresting-officer') ? $('case-arresting-officer').value.trim() : ''),
-      officerA: getServiceProfileOperatorIdentity(window.AXYP_SERVICE_PROFILE && window.AXYP_SERVICE_PROFILE.get ? window.AXYP_SERVICE_PROFILE.get() : {}),
+      officerA: preservedCase ? preservedCase.officerA : getServiceProfileOperatorIdentity(window.AXYP_SERVICE_PROFILE && window.AXYP_SERVICE_PROFILE.get ? window.AXYP_SERVICE_PROFILE.get() : {}),
       officerB: {
         rank: ($('officer-b-rank') ? $('officer-b-rank').value.trim() : ''),
         surname: ($('officer-b-surname') ? $('officer-b-surname').value.trim() : ''),
@@ -732,9 +732,9 @@ function uid() {
       });
     }
     var items = read();
-    var data = values();
     var id = $('case-id').value || uid();
     var existing = items.filter(function (item) { return item.id === id; })[0];
+    var data = values(existing);
     var saved = existing
       ? Object.assign({}, existing, data, { updatedAt: new Date().toISOString() })
       : Object.assign({ id: id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), snapshots: [] }, data);
@@ -785,7 +785,7 @@ function uid() {
     item.snapshots.push({
       label: item.title + ' · έκδοση ' + (item.snapshots.length + 1),
       createdAt: new Date().toISOString(),
-      data: values()
+      data: values(item)
     });
     item.updatedAt = new Date().toISOString();
     try {

@@ -43,7 +43,9 @@ export function getServiceProfileOperatorIdentity(profile = {}) {
       tokens[surnameEnd + 1] === tokens[surnameEnd + 1].toLocaleUpperCase('el-GR')) surnameEnd += 1;
   }
   return {
-    fullName, rank,
+    fullName,
+    documentFullName: clean(profile.operatorDocument) || toGreekGenitiveFullName(fullName),
+    rank,
     surname: surnameStart >= 0 ? tokens.slice(surnameStart, surnameEnd + 1).join(' ') : '',
     name: surnameStart >= 0 ? tokens.slice(surnameEnd + 1).join(' ') : '',
     service: clean(profile.name), residence: clean(profile.name)

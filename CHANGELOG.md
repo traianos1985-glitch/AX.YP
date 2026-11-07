@@ -1,3 +1,4 @@
+- Preserve the first investigator/author identity as a per-case snapshot: new cases capture the current installation operator, edits and history snapshots retain the original author, and DOCX mappings read the saved case identity instead of silently switching to a newly configured operator. Legacy cases without a snapshot retain a documented fallback.
 - Added a detailed agent playbook for multi-batch authentic dossier intake, document inventory, fixed-versus-variable content, Service Profile and investigator mappings, per-case required second investigator, historical author preservation, and final package quality gates. Documentation only; no application behavior or templates changed.
 
 ## Unreleased

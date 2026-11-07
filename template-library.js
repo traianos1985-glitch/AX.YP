@@ -522,9 +522,17 @@ export function valueFor(path, item) {
   const depositor = counterfeit.depositor || {};
   const witnessFullName = [witness.surname, witness.name].filter(Boolean).join(' ');
   const depositorFullName = [depositor.surname, depositor.name].filter(Boolean).join(' ');
-  const officerA = getServiceProfileOperatorIdentity(typeof window !== 'undefined' && window.AXYP_SERVICE_PROFILE && typeof window.AXYP_SERVICE_PROFILE.get === 'function' ? window.AXYP_SERVICE_PROFILE.get() : {});
+  const serviceProfile = typeof window !== 'undefined' && window.AXYP_SERVICE_PROFILE && typeof window.AXYP_SERVICE_PROFILE.get === 'function'
+    ? window.AXYP_SERVICE_PROFILE.get()
+    : {};
+  const currentOfficerA = getServiceProfileOperatorIdentity(serviceProfile);
+  // A saved case carries the author identity captured when that case was created.
+  // Fall back to the installation profile only for legacy cases without a snapshot.
+  const officerA = item.officerA && typeof item.officerA === 'object' && Object.keys(item.officerA).length
+    ? item.officerA
+    : currentOfficerA;
   const officerB = item.officerB || {};
-  const officerAFull = [officerA.rank, officerA.surname, officerA.name].filter(Boolean).join(' ');
+  const officerAFull = officerA.fullName || [officerA.rank, officerA.surname, officerA.name].filter(Boolean).join(' ');
   const officerBFull = [officerB.rank, officerB.surname, officerB.name].filter(Boolean).join(' ');
   const timeline = item.timeline || {};
   const computed = item.profile === 'narcotics' ? computeTimeline(item.time || '') : {};
@@ -546,9 +554,6 @@ export function valueFor(path, item) {
       dateParts[type] = part ? part.value : '';
     }
   }
-  const serviceProfile = typeof window !== 'undefined' && window.AXYP_SERVICE_PROFILE && typeof window.AXYP_SERVICE_PROFILE.get === 'function'
-    ? window.AXYP_SERVICE_PROFILE.get()
-    : {};
   const map = {
     'service.name': serviceProfile.name,
     'service.directorate': serviceProfile.directorate || '',
@@ -578,13 +583,13 @@ export function valueFor(path, item) {
     'case.people': item.people,
     'case.evidence': item.evidence,
     'case.arrestingOfficer': item.arrestingOfficer,
-    'officerA.fullName': serviceProfile.operatorDocument || toGreekGenitiveFullName(serviceProfile.operator),
-    'officerA.nominativeFullName': serviceProfile.operator || '',
+    'officerA.fullName': officerA.documentFullName || officerA.operatorDocument || toGreekGenitiveFullName(officerAFull),
+    'officerA.nominativeFullName': officerA.fullName || officerA.nominativeFullName || officerAFull,
     'officerA.rank': officerA.rank,
     'officerA.surname': officerA.surname,
     'officerA.name': officerA.name,
-    'officerA.service': serviceProfile.name || '',
-    'officerA.residence': serviceProfile.name || '',
+    'officerA.service': officerA.service || serviceProfile.name || '',
+    'officerA.residence': officerA.residence || serviceProfile.name || '',
     'officerB.fullName': officerB.documentFullName || toGreekGenitiveFullName(officerBFull) || serviceProfile.secondOfficerDocument || toGreekGenitiveFullName(serviceProfile.secondOfficer) || '',
     'officerB.nominativeFullName': officerB.fullName || officerBFull || serviceProfile.secondOfficer || '',
     'officerB.rank': officerB.rank,
