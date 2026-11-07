@@ -40,11 +40,11 @@ function replaceParagraphText(paragraph, search, replacement) {
   const values = nodes.map((node) => node.value);
   for (const match of matches.reverse()) {
     const first = positions.findIndex((position) => match.start < position.end && match.end > position.start);
+    if (first < 0) continue;
     let last = first;
     for (let index = first; index < positions.length; index++) {
       if (match.start < positions[index].end && match.end > positions[index].start) last = index;
     }
-    if (first < 0) continue;
     const firstOffset = match.start - positions[first].start;
     const lastOffset = match.end - positions[last].start;
     if (first === last) {
