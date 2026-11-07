@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
-import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS, SERVICE_PROFILE_STORAGE_KEY, getServiceProfileBackupValue, getServiceProfileRestoreEntry } from '../service-profile.js';
+import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS, SERVICE_PROFILE_STORAGE_KEY, getServiceProfileBackupValue, getServiceProfileRestoreEntry, toGreekGenitiveFullName } from '../service-profile.js';
 
 assert.equal(SERVICE_PROFILE_STORAGE_KEY, 'axyp-service-profile-v1');
+assert.equal(toGreekGenitiveFullName("Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός"), "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού");
+assert.equal(toGreekGenitiveFullName('Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος'), 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου');
 const values = new Map();
 const storage = {
   getItem(key) { return values.has(key) ? values.get(key) : null; },
@@ -76,6 +78,7 @@ const legacyCustomStorage = {
 };
 assert.equal(readServiceProfile(legacyCustomStorage).operator, 'Αστυνόμος ΔΟΚΙΜΗΣ Νίκος');
 assert.equal(readServiceProfile(legacyCustomStorage).operatorDocument, '', 'A legacy custom operator must not inherit another officer’s genitive form');
+assert.equal(toGreekGenitiveFullName(readServiceProfile(legacyCustomStorage).operator), 'Αστυνόμου ΔΟΚΙΜΗ Νίκου');
 
 const malformed = { getItem: () => '{invalid', setItem() {} };
 assert.equal(readServiceProfile(malformed).name, 'Αστυνομικό Τμήμα Τριφυλίας', 'Malformed stored data must fall back to the installation default service name');
