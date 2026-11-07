@@ -18,6 +18,9 @@ const CATEGORY_LOADERS = {
   camping: () => import('./camping-templates-data.js'),
   commerce: () => import('./paremporio-templates.js')
 };
+let PUBLISHED_DOSSIER_TEMPLATES = [];
+let publishedPackagesPromise = null;
+
 const CATEGORY_SEED_KEYS = {
   narcotics: 'axyp-narcotics-templates-seeded-v1',
   counterfeit: 'axyp-counterfeit-templates-seeded-v1',
@@ -70,6 +73,57 @@ const KEY = 'axyp-docx-templates';
 const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
 const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } catch (_) { return []; } };
+
+export async function loadPublishedDossierPackages() {
+  if (publishedPackagesPromise) return publishedPackagesPromise;
+  publishedPackagesPromise = (async () => {
+    const response = await fetch(new URL('./dossier-packages/manifest.json', import.meta.url));
+    if (!response.ok) throw new Error('Published dossier package catalog is unavailable: HTTP ' + response.status);
+    const catalog = await response.json();
+    if (!catalog || catalog.schemaVersion !== 1 || !Array.isArray(catalog.packages)) {
+      throw new Error('Invalid published dossier package catalog.');
+    }
+    const loaded = [];
+    for (const entry of catalog.packages) {
+      if (!entry || typeof entry.file !== 'string' || !/^[\\p{L}\\p{N}._-]+\\.axyp\\.zip$/u.test(entry.file)) {
+        throw new Error('Invalid dossier package filename in catalog.');
+      }
+      const packageResponse = await fetch(new URL('./dossier-packages/' + entry.file, import.meta.url));
+      if (!packageResponse.ok) throw new Error('Could not load dossier package: ' + entry.file);
+      const packageParts = unzipSync(new Uint8Array(await packageResponse.arrayBuffer()));
+      if (!packageParts['manifest.json']) throw new Error('Dossier package manifest is missing: ' + entry.file);
+      const manifest = JSON.parse(new TextDecoder().decode(packageParts['manifest.json']));
+      if (manifest.schemaVersion !== 1 || !Array.isArray(manifest.documents) || typeof manifest.category !== 'string') {
+        throw new Error('Invalid dossier package: ' + entry.file);
+      }
+      for (const document of manifest.documents) {
+        if (!document || typeof document.path !== 'string' || !document.path.startsWith('documents/') || !packageParts[document.path]) {
+          throw new Error('Invalid document entry in dossier package: ' + entry.file);
+        }
+        const parts = unzipSync(packageParts[document.path]);
+        if (!parts['word/document.xml']) throw new Error('Published DOCX is missing its main document: ' + document.name);
+        loaded.push({
+          id: String(document.id || entry.id + '-' + loaded.length),
+          name: String(document.name || 'Έντυπο Word'),
+          category: manifest.category,
+          categoryLabel: 'Επίσημο πακέτο εφαρμογής',
+          source: 'published-package',
+          fidelityMode: 'placeholder-only',
+          fields: Array.isArray(document.fields) ? document.fields : [],
+          mappings: document.mappings && typeof document.mappings === 'object' ? document.mappings : {},
+          mappingConfirmedAt: manifest.publishedAt || manifest.createdAt || 'published',
+          files: Object.fromEntries(Object.entries(parts).map(([name, bytes]) => [name, Array.from(bytes)]))
+        });
+      }
+    }
+    PUBLISHED_DOSSIER_TEMPLATES = loaded;
+    return loaded;
+  })().catch((error) => {
+    publishedPackagesPromise = null;
+    throw error;
+  });
+  return publishedPackagesPromise;
+}
 const write = (value) => storage().setItem(KEY, JSON.stringify(value));
 const unesc = (value) => String(value ?? '')
   .replace(/&apos;/g, "'")
@@ -120,6 +174,7 @@ export async function ensureDefaultTemplates(storageInstance = storage(), catego
 }
 
 export async function initializeDefaultTemplates(storageInstance = storage()) {
+  await loadPublishedDossierPackages();
   // Περιμένουμε μόνο την ενυδάτωση της τοπικής αποθήκευσης.
   // Τα μεγάλα DOCX data chunks φορτώνονται όταν ανοιχτεί η αντίστοιχη κατηγορία.
   if (storageInstance && storageInstance.ready && typeof storageInstance.ready.then === 'function') {
@@ -672,7 +727,7 @@ function render() {
   if (!root) return;
   root.textContent = '';
   const currentCase = getCase();
-  const allTemplates = read();
+  const allTemplates = [...PUBLISHED_DOSSIER_TEMPLATES, ...read()];
 
   const isCounterfeit = (t) => t.category === 'counterfeit';
   const isEnvironment = (t) => t.category === 'environment';
@@ -1332,7 +1387,7 @@ function ensureTemplateVersionFooter(files, template) {
 export function buildDocx(template, item) {
   if (!template || !item) throw new Error('Template and case data are required');
   const files = getTemplateParts(template);
-  const userUploaded = template.source === 'user-uploaded' || (!template.category && !!template.files);
+  const userUploaded = template.source === 'user-uploaded' || template.source === 'published-package' || (!template.category && !!template.files);
 
   Object.keys(files).forEach((filename) => {
     if (!filename.startsWith('word/') || !filename.endsWith('.xml')) return;
@@ -1362,7 +1417,7 @@ export function buildDocx(template, item) {
 export function templatesForCategoryGeneration(templates) {
   const list = Array.isArray(templates) ? templates : [];
   const uploaded = list.filter((template) =>
-    template && (template.source === 'user-uploaded' || (!template.category && !!template.files))
+    template && (template.source === 'user-uploaded' || template.source === 'published-package' || (!template.category && !!template.files))
   );
   // Never mix the user's authentic forms with approximate built-in examples.
   return uploaded.length ? uploaded : list;
@@ -1434,6 +1489,6 @@ if (typeof document !== 'undefined') {
       throw error;
     });
   if (typeof window !== 'undefined') {
-    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts, getMissingTemplateFields, buildCategoryArchive, templatesForCategoryGeneration, getCategoryTemplates: (category) => read().filter((template) => template && template.category === category), ready };
+    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts, getMissingTemplateFields, buildCategoryArchive, templatesForCategoryGeneration, getCategoryTemplates: (category) => [...PUBLISHED_DOSSIER_TEMPLATES, ...read()].filter((template) => template && template.category === category), ready };
   }
 }
