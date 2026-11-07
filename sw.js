@@ -65,7 +65,7 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET" || requestUrl.origin !== self.location.origin) return;
 
   // Published DOCX packages may be substantially larger than ordinary app-shell assets.
-  const timeoutMs = /\\/dossier-packages\\/[^/]+\\.axyp\\.zip$/u.test(requestUrl.pathname) ? 60000 : NETWORK_TIMEOUT_MS;
+  const timeoutMs = /\/dossier-packages\/[^/]+\.axyp\.zip$/u.test(requestUrl.pathname) ? 60000 : NETWORK_TIMEOUT_MS;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
