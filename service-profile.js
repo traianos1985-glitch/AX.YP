@@ -29,6 +29,11 @@ export function getServiceProfileRestoreEntry(payload) {
   if (!saved || typeof saved !== 'object' || Array.isArray(saved)) {
     throw new Error('Το προφίλ υπηρεσίας στο αντίγραφο ασφαλείας έχει μη έγκυρη μορφή.');
   }
+  for (const field of SERVICE_PROFILE_FIELDS) {
+    if (saved[field] !== undefined && saved[field] !== null && typeof saved[field] !== 'string') {
+      throw new Error('Το πεδίο ' + field + ' στο προφίλ υπηρεσίας έχει μη έγκυρη μορφή.');
+    }
+  }
   const profile = Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean(saved[field])]));
   return [KEY, JSON.stringify(profile)];
 }
