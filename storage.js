@@ -4,6 +4,13 @@
 
   var DB_NAME = 'axyp-local-db';
   var STORE_NAME = 'kv';
+  var STORAGE_SCHEMA_VERSION = 2;
+  var SCHEMA_KEY = 'axyp-storage-schema';
+  var TAB_ID = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+  var channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('axyp-storage') : null;
+  var conflicts = Object.create(null);
+  var conflictListeners = [];
+  var localRevisions = Object.create(null);
   var dbPromise = null;
   var cache = Object.create(null);
   var dirtyKeys = Object.create(null);
@@ -41,7 +48,7 @@
       dbPromise = new Promise(function (resolve) {
         if (!indexedDBAvailable) return resolve(null);
         try {
-          var req = indexedDB.open(DB_NAME, 1);
+          var req = indexedDB.open(DB_NAME, STORAGE_SCHEMA_VERSION);
           req.onupgradeneeded = function (event) {
             var db = event.target.result;
             if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
@@ -107,9 +114,27 @@
     if (value !== null) cache[key] = value;
   });
 
+  function migrateSchema(db) {
+    if (!db) return Promise.resolve();
+    return new Promise(function (resolve, reject) {
+      var tx;
+      try {
+        tx = db.transaction(STORE_NAME, 'readwrite');
+        var store = tx.objectStore(STORE_NAME);
+        var request = store.get(SCHEMA_KEY);
+        request.onsuccess = function () {
+          var current = request.result && Number(request.result.version || request.result) || 0;
+          if (current >= STORAGE_SCHEMA_VERSION) return;
+          store.put({ version: STORAGE_SCHEMA_VERSION, migratedAt: new Date().toISOString() }, SCHEMA_KEY);
+        };
+        transactionDone(tx).then(resolve).catch(reject);
+      } catch (error) { reject(error); }
+    });
+  }
+
   var ready = openDB().then(function (db) {
     if (!db) return getStatus();
-    return new Promise(function (resolve) {
+    return migrateSchema(db).then(function () { return new Promise(function (resolve) {
       var pendingMigration = [];
       var tx;
       try {
@@ -153,7 +178,7 @@
         lastError = error;
         resolve(getStatus());
       }
-    });
+    }); });
   }).catch(function (error) {
     lastError = error;
     return getStatus();
@@ -174,14 +199,52 @@
     pendingFailures.splice(0);
   }
 
+  function notifyConflict(conflict) {
+    conflictListeners.slice().forEach(function (listener) { try { listener(conflict); } catch (_) {} });
+    try { window.dispatchEvent(new CustomEvent('axyp:storage-conflict', { detail: conflict })); } catch (_) {}
+  }
+
+  function receiveRemoteChange(message) {
+    if (!message || message.source === TAB_ID || !message.key || message.key.indexOf('axyp-') !== 0) return;
+    var revision = Number(message.revision || 0);
+    if (revision <= (localRevisions[message.key] || 0)) return;
+    localRevisions[message.key] = revision;
+    if (dirtyKeys[message.key] || pendingWrites.length) {
+      conflicts[message.key] = { key: message.key, localValue: cache[message.key] ?? null, remoteValue: message.value ?? null, revision: revision, detectedAt: new Date().toISOString() };
+      notifyConflict(conflicts[message.key]);
+      return;
+    }
+    if (message.value === null) delete cache[message.key];
+    else cache[message.key] = message.value;
+  }
+  if (channel) channel.onmessage = function (event) { receiveRemoteChange(event.data); };
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') window.addEventListener('storage', function (event) { receiveRemoteChange({ key: event.key, value: event.newValue, revision: Date.now(), source: 'storage-event' }); });
+
   function getItem(key) {
     if (Object.prototype.hasOwnProperty.call(cache, key)) return cache[key];
     return readLocalStorage(key);
   }
 
+  function broadcastChange(key, value) {
+    var revision = Date.now();
+    localRevisions[key] = revision;
+    if (channel) channel.postMessage({ source: TAB_ID, key: key, value: value, revision: revision });
+  }
+
+  function getConflicts() { return Object.values(conflicts); }
+  function resolveConflict(key, choice) {
+    var conflict = conflicts[key];
+    if (!conflict) return Promise.resolve(getStatus());
+    delete conflicts[key];
+    if (choice === 'remote') return setItemDurable(key, conflict.remoteValue);
+    return setItemDurable(key, conflict.localValue);
+  }
+  function onConflict(listener) { if (typeof listener === 'function') conflictListeners.push(listener); return function () { conflictListeners = conflictListeners.filter(function (entry) { return entry !== listener; }); }; }
+
   function trackWrite(operation, key) {
     var tracked = Promise.resolve(operation).then(function () {
       pendingFailures = pendingFailures.filter(function (failure) { return failure.key !== key; });
+      delete dirtyKeys[key];
       if (!pendingFailures.length) lastError = null;
       return { ok: true };
     }).catch(function (error) {
@@ -215,6 +278,7 @@
   function setItem(key, value) {
     var stringValue = String(value);
     cache[key] = stringValue;
+    broadcastChange(key, stringValue);
     dirtyKeys[key] = true;
     var localOk = false;
     try {
@@ -238,6 +302,7 @@
 
   function removeItem(key) {
     delete cache[key];
+    broadcastChange(key, null);
     dirtyKeys[key] = true;
     var localOk = false;
     try {
@@ -436,6 +501,10 @@
     flush: flush,
     checkQuota: checkQuota,
     getStatus: getStatus,
+    getSchemaVersion: function () { return STORAGE_SCHEMA_VERSION; },
+    getConflicts: getConflicts,
+    resolveConflict: resolveConflict,
+    onConflict: onConflict,
     clearError: clearError,
     ready: ready
   };

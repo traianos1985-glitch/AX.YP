@@ -1,3 +1,9 @@
+## Unreleased — Storage, DOCX και Firefox hardening
+
+- Προστέθηκε versioned schema migration για το IndexedDB/local storage και ρητή ανίχνευση/επίλυση συγκρούσεων μεταξύ tabs χωρίς αυτόματο merge δεδομένων.
+- Προστέθηκε semantic visible-text validation των συνθετικών DOCX μέσω LibreOffice.
+- Προστέθηκε local Firefox E2E command και CI trigger για branches `v0/**`.
+
 ## Unreleased — Διορθώσεις Low Severity (Low 1, Low 2, Low 3)
 
 - **Low 1 (Αυτόματος καθαρισμός κατάστασης degraded στο storage.js)**: Η σημαία `degraded` του `storage.js` πλέον ανακάμπτει αυτόματα μέσα στην ίδια τη συνεδρία όταν επιτυγχάνουν μεταγενέστερες εγγραφές ή η μέθοδος `flush()`. Επιπλέον, σφάλμα υπέρβασης ορίου (quota exceeded) στο `localStorage` για μεγάλα σύνολα δεδομένων (>5 MB) δεν θέτει μόνιμα το storage σε κατάσταση υποβάθμισης εφόσον το IndexedDB είναι διαθέσιμο και αποθηκεύει επιτυχώς τα δεδομένα.
