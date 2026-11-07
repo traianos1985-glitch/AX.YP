@@ -10,8 +10,12 @@ const storage = {
 const empty = readServiceProfile(storage);
 assert.deepEqual(Object.keys(empty), [...SERVICE_PROFILE_FIELDS]);
 assert.equal(empty.name, 'Αστυνομικό Τμήμα Τριφυλίας');
-assert.equal(empty.operator, '');
-assert.ok(Object.values(empty).filter((_, index) => index !== SERVICE_PROFILE_FIELDS.indexOf('name')).every((value) => value === ''));
+assert.equal(empty.location, 'Κυπαρισσία');
+assert.equal(empty.operator, "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός");
+assert.equal(empty.operatorDocument, "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού");
+assert.equal(empty.secondOfficer, 'Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος');
+assert.equal(empty.secondOfficerDocument, 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου');
+assert.ok(Object.entries(empty).filter(([field]) => !['name', 'location', 'operator', 'operatorDocument', 'secondOfficer', 'secondOfficerDocument'].includes(field)).every(([, value]) => value === ''));
 assert.equal(getServiceProfileBackupValue(storage), JSON.stringify(empty), 'An empty profile must also be backed up to prevent stale cross-installation values');
 
 const saved = writeServiceProfile(storage, {
@@ -21,7 +25,11 @@ const saved = writeServiceProfile(storage, {
   email: 'test@example.invalid',
   prosecutor: 'Εισαγγελία Πρωτοδικών Δοκιμής',
   chemicalService: 'Χημική Υπηρεσία Δοκιμής',
+  location: 'Δοκιμαστική πόλη',
   operator: 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος',
+  operatorDocument: 'Υπαστυνόμου Β΄ ΔΟΚΙΜΗΣ Αλεξάνδρου',
+  secondOfficer: 'Αρχιφύλακας ΔΟΚΙΜΗΣ Γεώργιος',
+  secondOfficerDocument: 'Αρχιφύλακα ΔΟΚΙΜΗΣ Γεώργιου',
   ignored: 'must not be persisted'
 });
 assert.equal(saved.name, 'Αστυνομικό Τμήμα Δοκιμής');
@@ -43,7 +51,15 @@ assert.throws(() => getServiceProfileRestoreEntry({ serviceProfile: JSON.stringi
 globalThis.window = { AXYP_SERVICE_PROFILE: { get: () => saved } };
 const { valueFor } = await import('../template-library.js');
 assert.equal(valueFor('service.name', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
-assert.equal(valueFor('officerA.fullName', { title: 'CASE-ONLY-DATA', officerA: { rank: 'Αρχιφύλακας', surname: 'ΑΛΛΟ', name: 'Πρόσωπο' } }), 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος', 'The installation operator is the default first investigating officer');
+assert.equal(valueFor('case.location', { title: 'CASE-ONLY-DATA' }), 'Δοκιμαστική πόλη');
+assert.match(valueFor('case.date', { title: 'CASE-ONLY-DATA' }), /^\d{2}\/\d{2}\/\d{4}$/u);
+assert.equal(valueFor('case.date.weekdayName', { date: '2026-11-07' }), 'Σάββατο');
+assert.equal(valueFor('officerA.fullName', { title: 'CASE-ONLY-DATA', officerA: { rank: 'Αρχιφύλακας', surname: 'ΑΛΛΟ', name: 'Πρόσωπο' } }), 'Υπαστυνόμου Β΄ ΔΟΚΙΜΗΣ Αλεξάνδρου', 'The first investigator uses the configured genitive document form');
+assert.equal(valueFor('officerA.nominativeFullName', { title: 'CASE-ONLY-DATA' }), 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος');
+assert.equal(valueFor('officerA.service', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
+assert.equal(valueFor('officerB.fullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακα ΔΟΚΙΜΗΣ Γεώργιου');
+assert.equal(valueFor('officerB.nominativeFullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακας ΔΟΚΙΜΗΣ Γεώργιος');
+assert.equal(valueFor('officerB.service', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
 assert.equal(valueFor('service.chemicalService', { title: 'CASE-ONLY-DATA' }), 'Χημική Υπηρεσία Δοκιμής');
 assert.equal(valueFor('service.prosecutor', { title: 'CASE-ONLY-DATA' }), 'Εισαγγελία Πρωτοδικών Δοκιμής');
 assert.ok(!JSON.stringify(saved).includes('Τριφυλ'));
