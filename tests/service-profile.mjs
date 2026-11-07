@@ -27,6 +27,9 @@ const saved = writeServiceProfile(storage, {
 assert.equal(saved.name, 'Αστυνομικό Τμήμα Δοκιμής');
 assert.equal(saved.chemicalService, 'Χημική Υπηρεσία Δοκιμής');
 assert.equal(saved.operator, 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος');
+const exactOperator = writeServiceProfile(storage, { operator: '  Υ/Β΄ ΓΙΟΥΡΟΥΚΗΣ Τραϊανός  ' });
+assert.equal(exactOperator.operator, '  Υ/Β΄ ΓΙΟΥΡΟΥΚΗΣ Τραϊανός  ', 'Operator display text must be preserved verbatim');
+writeServiceProfile(storage, saved);
 assert.ok(!Object.hasOwn(saved, 'ignored'));
 assert.deepEqual(readServiceProfile(storage), saved);
 assert.equal(getServiceProfileBackupValue(storage), JSON.stringify(saved));
