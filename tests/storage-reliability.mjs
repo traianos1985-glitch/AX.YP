@@ -32,6 +32,7 @@ function createIndexedDB(seed = {}, shouldFail = false) {
     objectStoreNames: { contains: () => true },
     transaction() {
       const tx = { error: null };
+      const operations = [];
       const store = {
         get(key) {
           const request = {};
@@ -41,12 +42,14 @@ function createIndexedDB(seed = {}, shouldFail = false) {
           }, 0);
           return request;
         },
-        put(value, key) { records.set(key, value); },
-        delete(key) { records.delete(key); },
+        put(value, key) { operations.push(['put', key, value]); },
+        delete(key) { operations.push(['delete', key]); },
         getAllKeys() {
           const request = {};
           setTimeout(() => {
-            request.result = Array.from(records.keys());
+            const keys = new Set(records.keys());
+            operations.forEach(([type, key]) => type === 'delete' ? keys.delete(key) : keys.add(key));
+            request.result = Array.from(keys);
             if (request.onsuccess) request.onsuccess();
           }, 0);
           return request;
@@ -58,7 +61,10 @@ function createIndexedDB(seed = {}, shouldFail = false) {
           failNextTransactions -= 1;
           tx.error = new Error('Injected transient transaction failure');
           if (tx.onerror) tx.onerror();
-        } else if (tx.oncomplete) tx.oncomplete();
+        } else {
+          operations.forEach(([type, key, value]) => type === 'delete' ? records.delete(key) : records.set(key, value));
+          if (tx.oncomplete) tx.oncomplete();
+        }
       }, 10);
       return tx;
     },
@@ -95,13 +101,41 @@ function loadStorage(localStorage, indexedDB) {
   return context.window.AXYP_STORAGE;
 }
 
-// IndexedDB hydration wins over the localStorage compatibility copy.
+// Legacy records without ordering metadata preserve the local compatibility copy.
 {
   const local = createLocalStorage({ 'axyp-hypotheses': 'local-copy' });
   const idb = createIndexedDB({ 'axyp-hypotheses': 'indexed-copy' });
   const storage = loadStorage(local, idb);
   await storage.ready;
-  assert.equal(storage.getItem('axyp-hypotheses'), 'indexed-copy');
+  assert.equal(storage.getItem('axyp-hypotheses'), 'local-copy');
+}
+
+// A newer versioned IndexedDB record wins over an older localStorage copy.
+{
+  const local = createLocalStorage({
+    'axyp-hypotheses': 'local-copy',
+    'axyp-storage-meta:axyp-hypotheses': JSON.stringify({ revision: 100, updatedAt: '2025-01-01T00:00:00.000Z' })
+  });
+  const idb = createIndexedDB({
+    'axyp-hypotheses': { __axypRecord: 1, value: 'indexed-newer', revision: 200, updatedAt: '2026-01-01T00:00:00.000Z' }
+  });
+  const storage = loadStorage(local, idb);
+  await storage.ready;
+  assert.equal(storage.getItem('axyp-hypotheses'), 'indexed-newer');
+}
+
+// A newer persisted localStorage value must win over an older IndexedDB value after reload.
+{
+  const local = createLocalStorage({
+    'axyp-hypotheses': 'local-newer',
+    'axyp-storage-meta:axyp-hypotheses': JSON.stringify({ revision: 200, updatedAt: '2026-01-01T00:00:00.000Z' })
+  });
+  const idb = createIndexedDB({
+    'axyp-hypotheses': { __axypRecord: 1, value: 'indexed-older', revision: 100, updatedAt: '2025-01-01T00:00:00.000Z' }
+  });
+  const storage = loadStorage(local, idb);
+  await storage.ready;
+  assert.equal(storage.getItem('axyp-hypotheses'), 'local-newer');
 }
 
 // A write made before hydration must not be overwritten by an older IndexedDB value.
@@ -112,7 +146,25 @@ function loadStorage(localStorage, indexedDB) {
   storage.setItem('axyp-hypotheses', 'new-value');
   await storage.flush();
   assert.equal(storage.getItem('axyp-hypotheses'), 'new-value');
-  assert.equal(idb.records.get('axyp-hypotheses'), 'new-value');
+  assert.equal(idb.records.get('axyp-hypotheses').value, 'new-value');
+}
+
+// A failed IndexedDB delete must leave a durable tombstone so stale data cannot return after restart.
+{
+  const local = createLocalStorage({ 'axyp-hypotheses': 'sensitive-old-case' });
+  const idb = createIndexedDB({ 'axyp-hypotheses': 'sensitive-old-case' });
+  const firstSession = loadStorage(local, idb);
+  await firstSession.ready;
+  idb.failNextTransaction();
+  await firstSession.removeItemDurable('axyp-hypotheses');
+  assert.equal(local.getItem('axyp-hypotheses'), null);
+  assert.equal(JSON.parse(local.getItem('axyp-storage-meta:axyp-hypotheses')).deleted, true);
+  assert.equal(idb.records.get('axyp-hypotheses').value, 'sensitive-old-case', 'Injected transaction failure must preserve the stale IDB record');
+  assert.equal(idb.records.get('axyp-hypotheses').deleted, false, 'The pre-existing IndexedDB record must remain live until hydration repairs it');
+  const restartedSession = loadStorage(local, idb);
+  await restartedSession.ready;
+  assert.equal(restartedSession.getItem('axyp-hypotheses'), null, 'A durable tombstone must win over stale IndexedDB data after restart');
+  assert.equal(idb.records.get('axyp-hypotheses').deleted, true, 'Hydration should repair the stale IndexedDB value with a tombstone');
 }
 
 // localStorage remains a valid fallback if IndexedDB fails.
@@ -170,8 +222,8 @@ function loadStorage(localStorage, indexedDB) {
     ['axyp-theme', null],
     ['axyp-favorites', '[]']
   ]);
-  assert.equal(idb.records.get('axyp-hypotheses'), '[{"id":"case-1"}]');
-  assert.equal(idb.records.has('axyp-theme'), false);
+  assert.equal(idb.records.get('axyp-hypotheses').value, '[{"id":"case-1"}]');
+  assert.equal(idb.records.get('axyp-theme').deleted, true, 'Restored deletions remain represented by a durable tombstone');
   assert.equal(local.getItem('axyp-favorites'), '[]');
 }
 
@@ -218,8 +270,8 @@ assert.match(workspaceSource, /async function restore\(\)[\s\S]*?await window\.A
   storage.setItem('axyp-second', 'second-retry');
   const status = await storage.flush();
   assert.equal(status.degraded, false, 'Storage should recover after the failed key is retried successfully');
-  assert.equal(idb.records.get('axyp-first'), 'first-retry');
-  assert.equal(idb.records.get('axyp-second'), 'second-retry');
+  assert.equal(idb.records.get('axyp-first').value, 'first-retry');
+  assert.equal(idb.records.get('axyp-second').value, 'second-retry');
 }
 
 console.log('Storage reliability tests passed.');
