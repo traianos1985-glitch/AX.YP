@@ -500,9 +500,6 @@ function uid() {
     try {
       await import('./template-library.js');
       await window.TemplateLibrary.ready;
-      try { await window.TemplateLibrary.ensureDefaultTemplates(storage, activeProfileFilter); } catch (_) {
-        // Categories without built-in examples may still contain creator-uploaded official documents.
-      }
       var templates = window.TemplateLibrary.getCategoryTemplates(activeProfileFilter);
       var selected = templates.filter(function (template) { return template.source === 'user-uploaded' || template.source === 'published-package'; });
       root.textContent = '';
@@ -541,9 +538,6 @@ function uid() {
     try {
       await import('./template-library.js');
       await window.TemplateLibrary.ready;
-      try { await window.TemplateLibrary.ensureDefaultTemplates(storage, activeProfileFilter); } catch (_) {
-        // Creator-uploaded categories do not require built-in seed data.
-      }
       var categoryTemplates = window.TemplateLibrary.getCategoryTemplates(activeProfileFilter);
       var selectedTemplates = categoryTemplates.filter(function (template) { return template.source === 'user-uploaded' || template.source === 'published-package'; });
       if (!selectedTemplates.length) {
