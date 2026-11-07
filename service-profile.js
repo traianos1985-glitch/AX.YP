@@ -36,7 +36,7 @@ export function getServiceProfileRestoreEntry(payload) {
       throw new Error('Το πεδίο ' + field + ' στο προφίλ υπηρεσίας έχει μη έγκυρη μορφή.');
     }
   }
-  const profile = Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean(saved[field] ?? DEFAULT_SERVICE_PROFILE[field])]));
+  const profile = Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, cleanField(field, saved[field] ?? DEFAULT_SERVICE_PROFILE[field])]));
   return [KEY, JSON.stringify(profile)];
 }
 
