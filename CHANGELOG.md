@@ -1,7 +1,11 @@
 ## Unreleased — Storage, DOCX και Firefox hardening
 
-- Προστέθηκε revision metadata ανά key στη hydration του IndexedDB/localStorage, ώστε παλαιότερη εγγραφή IndexedDB να μην αντικαθιστά νεότερη τιμή μετά από restart.
-- Προστέθηκαν regression tests για ordering, restart/hydration, backward compatibility και recovery.
+- Οι διαγραφές αποθηκεύονται ως versioned tombstones σε localStorage και IndexedDB, ώστε αποτυχημένη εγγραφή διαγραφής σε ένα backend να μην επαναφέρει παλιά δεδομένα κατά την επόμενη εκκίνηση.
+- Προστέθηκε change-listener contract για τις καρτέλες, ανίχνευση συγκρούσεων ανά κλειδί και ρητή επιλογή διατήρησης τοπικής ή απομακρυσμένης έκδοσης.
+- Προστέθηκαν regression tests για tombstone recovery μετά από restart και επικοινωνία δύο ανεξάρτητων storage instances.
+
+- Η αποθήκευση υπόθεσης περιμένει πλέον ρητά το durable `flush()` πριν εμφανίσει μήνυμα επιτυχίας. Σε αποτυχία, η φόρμα παραμένει διαθέσιμη και εμφανίζεται σφάλμα.
+
 
 - Προστέθηκε versioned schema migration για το IndexedDB/local storage και ρητή ανίχνευση/επίλυση συγκρούσεων μεταξύ tabs χωρίς αυτόματο merge δεδομένων.
 - Προστέθηκε semantic visible-text validation των συνθετικών DOCX μέσω LibreOffice.
