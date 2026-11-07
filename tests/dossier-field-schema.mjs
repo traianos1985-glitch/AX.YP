@@ -49,6 +49,7 @@ const packageJson = JSON.parse(await readFile(new URL('../package.json', import.
 assert.match(html, /id="case-category-fields"/);
 assert.match(hypotheses, /renderCategoryFields\(item\.profile \|\| 'generic', item\.categoryData \|\| \{\}\)/);
 assert.match(hypotheses, /categoryDataSchemaVersion: DOSSIER_FIELD_SCHEMA_VERSION/);
+assert.match(hypotheses, /'interpreter', 'categoryData'\]/, 'Backup validation must accept the versioned category data object');
 assert.match(hypotheses, /collectCategoryFieldData\(preservedCase\)/);
 assert.match(templates, /kok\.vehicle\.registration/);
 assert.match(serviceWorker, /\.\/dossier-fields\.js/);

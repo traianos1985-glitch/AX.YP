@@ -957,7 +957,7 @@ function uid() {
           if (typeof item.id !== 'string' || !item.id.trim()) return false;
           if (item.title !== undefined && typeof item.title !== 'string') return false;
           if (item.snapshots !== undefined && !Array.isArray(item.snapshots)) return false;
-          var objectFields = ['offender', 'offenderA', 'offenderB', 'officerA', 'officerB', 'counterfeit', 'vehicle', 'noise', 'camping', 'timeline', 'interpreter'];
+          var objectFields = ['offender', 'offenderA', 'offenderB', 'officerA', 'officerB', 'counterfeit', 'vehicle', 'noise', 'camping', 'timeline', 'interpreter', 'categoryData'];
           for (var i = 0; i < objectFields.length; i++) {
             var f = objectFields[i];
             if (item[f] !== undefined && item[f] !== null && (typeof item[f] !== 'object' || Array.isArray(item[f]))) {
