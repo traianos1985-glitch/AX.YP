@@ -85,5 +85,7 @@ assert.equal(readServiceProfile(malformed).secondOfficer, 'Αρχιφύλακα�
 const whitespaceOperator = '  Υ/Β΄ ΓΙΟΥΡΟΥΚΗΣ Τραϊανός  ';
 const restoredWhitespace = getServiceProfileRestoreEntry({ serviceProfile: JSON.stringify({ operator: whitespaceOperator }) });
 assert.equal(JSON.parse(restoredWhitespace[1]).operator, whitespaceOperator, 'Backup restore must preserve the operator value verbatim');
+const legacyRestored = JSON.parse(getServiceProfileRestoreEntry({ serviceProfile: JSON.stringify({ operator: 'Αστυνόμος ΔΟΚΙΜΗΣ Νίκος' }) })[1]);
+assert.equal(legacyRestored.operatorDocument, '', 'Restoring a legacy custom operator must not assign the default officer genitive form');
 assert.throws(() => writeServiceProfile(null, {}), /τοπική αποθήκευση/);
 console.log('Per-installation service profile tests passed.');
