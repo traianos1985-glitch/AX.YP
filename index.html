@@ -267,7 +267,24 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding-top:16px;color:v
     </div></form>
   </section>
 
-  <div class="template-import"><label>Εισαγωγή πραγματικού προτύπου Word (.docx)<input id="template-file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label><p class="muted">Χρησιμοποίησε placeholders όπως <code>{{case.title}}</code>, <code>{{person.name}}</code> ή <code>{{evidence.quantity}}</code> μέσα στο πρότυπο.</p></div><p class="template-provisional-note" role="note">Τα πρότυπα παρεμπορίου επισημαίνονται ως προσωρινά βοηθήματα σύνταξης και όχι ως επίσημα υπηρεσιακά έντυπα. Πριν από χρήση απαιτείται αντιπαραβολή με το ισχύον πραγματικό έντυπο και έλεγχος της διαδικασίας.</p><div id="template-library" class="template-library"></div><div id="template-catalog" class="template-catalog"></div>
+  <div class="template-import">
+  <label>Κατηγορία δικογραφίας για τα έντυπα
+    <select id="template-category">
+      <option value="custom">Προσαρμοσμένα / λοιπά έντυπα</option>
+      <option value="narcotics">Ναρκωτικά</option>
+      <option value="counterfeit">Πλαστά νομίσματα</option>
+      <option value="environment">Ρύπανση περιβάλλοντος</option>
+      <option value="health">Υγειονομικός κανονισμός</option>
+      <option value="noise">Ηχορύπανση Κ.Υ.Ε.</option>
+      <option value="camping">Παράνομο camping</option>
+      <option value="commerce">Παρεμπόριο</option>
+    </select>
+  </label>
+  <label>Ανέβασμα αυθεντικού εντύπου Word (.docx)
+    <input id="template-file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+  </label>
+  <p class="muted">Ανέβασε τα αυθεντικά έντυπα της κατηγορίας. Η εφαρμογή διατηρεί τη μορφοποίηση και συμπληρώνει μόνο τα placeholders που εγκρίνεις στον έλεγχο ανωνυμοποίησης και αντιστοίχισης.</p>
+</div><p class="template-provisional-note" role="note">Τα πρότυπα παρεμπορίου επισημαίνονται ως προσωρινά βοηθήματα σύνταξης και όχι ως επίσημα υπηρεσιακά έντυπα. Πριν από χρήση απαιτείται αντιπαραβολή με το ισχύον πραγματικό έντυπο και έλεγχος της διαδικασίας.</p><div id="template-library" class="template-library"></div><div id="template-catalog" class="template-catalog"></div>
 </section>
 
 <section id="docs-panel" hidden>
