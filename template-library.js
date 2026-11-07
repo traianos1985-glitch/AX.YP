@@ -504,7 +504,6 @@ export function valueFor(path, item) {
   'case.location': item.location,
     'case.prosecutor': item.prosecutor,
     'case.notes': item.notes,
-    'vehicle.registration': (item.vehicle && item.vehicle.registration) || (item.camping && item.camping.vehicleRegistration) || '',
     'case.profile': item.profile,
     'case.people': item.people,
     'case.evidence': item.evidence,
