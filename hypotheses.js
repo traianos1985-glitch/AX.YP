@@ -1,4 +1,5 @@
 import { DOSSIER_CATEGORIES } from './dossier-categories.js';
+import { SERVICE_PROFILE_STORAGE_KEY } from './service-profile.js';
 import { getCaseRegisterData, loadCaseRegister, resetCaseRegister } from './case-register.js';
 
 if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
@@ -771,7 +772,8 @@ function uid() {
       privacy: s.getItem('axyp-privacy'),
       bundles: s.getItem('axyp-case-bundles'),
       templates: s.getItem('axyp-docx-templates'),
-      templateMappings: s.getItem('axyp-template-mappings')
+      templateMappings: s.getItem('axyp-template-mappings'),
+      serviceProfile: s.getItem(SERVICE_PROFILE_STORAGE_KEY)
     };
     var checksum = await backupChecksum(payload);
     if (checksum) payload.checksum = checksum;
@@ -839,7 +841,8 @@ function uid() {
             privacy: sPre.getItem('axyp-privacy'),
             bundles: sPre.getItem('axyp-case-bundles'),
             templates: sPre.getItem('axyp-docx-templates'),
-            templateMappings: sPre.getItem('axyp-template-mappings')
+            templateMappings: sPre.getItem('axyp-template-mappings'),
+            serviceProfile: sPre.getItem(SERVICE_PROFILE_STORAGE_KEY)
           };
           var preBackupSerialized = JSON.stringify(preBackup);
           sPre.setItem('axyp-pre-restore-backup', preBackupSerialized);
@@ -914,7 +917,8 @@ function uid() {
             ['axyp-privacy', parsed.privacy],
             ['axyp-case-bundles', parsed.bundles],
             ['axyp-docx-templates', parsed.templates],
-            ['axyp-template-mappings', parsed.templateMappings]
+            ['axyp-template-mappings', parsed.templateMappings],
+            [SERVICE_PROFILE_STORAGE_KEY, parsed.serviceProfile]
           ];
           optionalKeys.forEach(function (pair) {
             if (pair[1] !== undefined && pair[1] !== null) {
