@@ -12,6 +12,22 @@ export const DEFAULT_SERVICE_PROFILE = Object.freeze({
 const clean = (value) => String(value ?? '').trim();
 const cleanField = (field, value) => field === 'operator' ? String(value ?? '') : clean(value);
 
+function genitiveToken(token) {
+  if (!token || !/[\p{L}]/u.test(token)) return token;
+  const upper = token === token.toLocaleUpperCase('el-GR');
+  const rules = upper
+    ? [[/ΟΣ$/u, 'ΟΥ'], [/ΗΣ$/u, 'Η'], [/ΑΣ$/u, 'Α']]
+    : [[/ιος$/u, 'ιου'], [/ός$/u, 'ού'], [/ος$/u, 'ου'], [/ής$/u, 'ή'], [/ης$/u, 'η'], [/άς$/u, 'ά'], [/ας$/u, 'α']];
+  for (const [pattern, ending] of rules) {
+    if (pattern.test(token)) return token.replace(pattern, ending);
+  }
+  return token;
+}
+
+export function toGreekGenitiveFullName(value) {
+  return clean(value).split(/\s+/u).filter(Boolean).map(genitiveToken).join(' ');
+}
+
 export function readServiceProfile(storageInstance) {
   const empty = () => Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean(DEFAULT_SERVICE_PROFILE[field])]));
   if (!storageInstance || typeof storageInstance.getItem !== 'function') return empty();
