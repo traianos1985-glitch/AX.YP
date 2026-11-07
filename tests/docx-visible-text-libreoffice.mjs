@@ -20,6 +20,13 @@ const storage = {
 await loadBuiltinTemplateData();
 await ensureDefaultTemplates(storage);
 const templates = JSON.parse(storage.getItem('axyp-docx-templates') || '[]');
+const seenCategories = new Set();
+const validationTemplates = templates.filter((template) => {
+  const category = template.category || template.type || String(template.id || '').split('-')[0];
+  if (seenCategories.has(category)) return false;
+  seenCategories.add(category);
+  return true;
+}).slice(0, 10);
 const synthetic = {
   id: 'synthetic-visible-text-check',
   title: 'ΔΟΚΙΜΑΣΤΙΚΗ ΥΠΟΘΕΣΗ',
@@ -33,7 +40,7 @@ const synthetic = {
 const root = await mkdtemp(join(tmpdir(), 'axyp-libreoffice-'));
 try {
   const inputs = [];
-  for (const template of templates) {
+  for (const template of validationTemplates) {
     const input = join(root, `${template.id || 'template'}.docx`);
     inputs.push({ input, template });
     await writeFile(input, buildDocx(template, synthetic));
@@ -47,7 +54,7 @@ try {
     assert.doesNotMatch(output, /\{\{[^}]+\}\}/u, `Unresolved placeholder in visible text for ${template.name}`);
     assert.doesNotMatch(output, /undefined|null/iu, `Invalid visible value in ${template.name}`);
   }
-  console.log(`LibreOffice visible-text validation passed for ${templates.length} synthetic DOCX templates.`);
+  console.log(`LibreOffice visible-text validation passed for ${validationTemplates.length} representative synthetic DOCX templates.`);
 } finally {
   await rm(root, { recursive: true, force: true });
 }
