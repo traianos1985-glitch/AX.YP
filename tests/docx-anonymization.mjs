@@ -34,4 +34,12 @@ const splitCandidate = detectDocxPersonalData(splitParts).find((candidate) => ca
 assert.ok(splitCandidate, 'Should detect a labelled full name split across Word runs');
 const splitOutput = new TextDecoder().decode(anonymizeDocxParts(splitParts, [splitCandidate])['word/document.xml']);
 assert.ok(splitOutput.includes('{{person.fullName}}'), 'Replacement must work across Word runs');
+
+const repeatedXml = '<w:document xmlns:w="urn:w"><w:p><w:r><w:t>Α.Φ.Μ.: 123456789</w:t></w:r></w:p><w:p><w:r><w:t>Απλός αριθμός αναφοράς 123456789</w:t></w:r></w:p></w:document>';
+const repeatedParts = { 'word/document.xml': new TextEncoder().encode(repeatedXml) };
+const repeatedCandidate = detectDocxPersonalData(repeatedParts);
+const repeatedOutput = new TextDecoder().decode(anonymizeDocxParts(repeatedParts, repeatedCandidate)['word/document.xml']);
+assert.ok(repeatedOutput.includes('{{person.taxId}}'));
+assert.ok(repeatedOutput.includes('Απλός αριθμός αναφοράς 123456789'), 'Only the reviewed paragraph may be changed');
+
 console.log('DOCX anonymization tests passed.');
