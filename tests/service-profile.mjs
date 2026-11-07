@@ -50,6 +50,10 @@ assert.ok(!JSON.stringify(saved).includes('Τριφυλ'));
 assert.ok(!JSON.stringify(saved).includes('Κυπαρισσ'));
 
 const malformed = { getItem: () => '{invalid', setItem() {} };
-assert.ok(Object.values(readServiceProfile(malformed)).every((value) => value === ''));
+assert.equal(readServiceProfile(malformed).name, 'Αστυνομικό Τμήμα Τριφυλίας', 'Malformed stored data must fall back to the installation default service name');
+assert.ok(Object.entries(readServiceProfile(malformed)).filter(([field]) => field !== 'name').every(([, value]) => value === ''), 'Malformed stored data must clear all non-default fields');
+const whitespaceOperator = '  Υ/Β΄ ΓΙΟΥΡΟΥΚΗΣ Τραϊανός  ';
+const restoredWhitespace = getServiceProfileRestoreEntry({ serviceProfile: JSON.stringify({ operator: whitespaceOperator }) });
+assert.equal(JSON.parse(restoredWhitespace[1]).operator, whitespaceOperator, 'Backup restore must preserve the operator value verbatim');
 assert.throws(() => writeServiceProfile(null, {}), /τοπική αποθήκευση/);
 console.log('Per-installation service profile tests passed.');
