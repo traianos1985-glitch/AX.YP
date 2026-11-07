@@ -222,7 +222,7 @@ function loadStorage(localStorage, indexedDB) {
     ['axyp-favorites', '[]']
   ]);
   assert.equal(idb.records.get('axyp-hypotheses').value, '[{"id":"case-1"}]');
-  assert.equal(idb.records.has('axyp-theme'), false);
+  assert.equal(idb.records.get('axyp-theme').deleted, true, 'Restored deletions remain represented by a durable tombstone');
   assert.equal(local.getItem('axyp-favorites'), '[]');
 }
 
