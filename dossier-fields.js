@@ -32,6 +32,51 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
   generic: Object.freeze([])
 });
 
+// Dormant repeatable-entity support. No controls are rendered while enabled=false.
+// These collections remain separate from legacy single-offender and single-vehicle
+// fields until real multi-person DOCX examples define their semantics.
+export const DOSSIER_REPEATABLE_GROUPS = Object.freeze({
+  offenders: Object.freeze({
+    path: 'entities.offenders',
+    label: 'Δράστες / εμπλεκόμενα πρόσωπα',
+    role: 'offender',
+    cardinality: 'many',
+    enabled: false,
+    minItems: 1,
+    maxItems: null
+  }),
+  vehicles: Object.freeze({
+    path: 'entities.vehicles',
+    label: 'Οχήματα',
+    role: 'vehicle',
+    cardinality: 'many',
+    enabled: false,
+    minItems: 0,
+    maxItems: null
+  })
+});
+
+export function getRepeatableGroupDefinition(groupId) {
+  const definition = DOSSIER_REPEATABLE_GROUPS[groupId];
+  return definition ? { ...definition } : null;
+}
+
+export function appendRepeatableEntry(data, groupId, entry) {
+  const definition = DOSSIER_REPEATABLE_GROUPS[groupId];
+  if (!definition) throw new TypeError('Άγνωστη ομάδα επαναλαμβανόμενων στοιχείων.');
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+    throw new TypeError('Η εγγραφή πρέπει να είναι αντικείμενο.');
+  }
+  const current = getDossierFieldValue(data, definition.path);
+  if (current !== '' && !Array.isArray(current)) {
+    throw new TypeError('Η αποθηκευμένη ομάδα δεν είναι έγκυρη λίστα.');
+  }
+  const entries = Array.isArray(current) ? current.slice() : [];
+  entries.push(JSON.parse(JSON.stringify(entry)));
+  setDossierFieldValue(data, definition.path, entries);
+  return entries.length;
+}
+
 export function getDossierFieldDefinitions(category) {
   return (DOSSIER_CATEGORY_FIELDS[category] || []).map((field) => ({ ...field }));
 }

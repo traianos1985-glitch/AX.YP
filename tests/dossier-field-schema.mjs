@@ -4,6 +4,9 @@ import { DOSSIER_CATEGORIES } from '../dossier-categories.js';
 import {
   DOSSIER_CATEGORY_FIELDS,
   DOSSIER_FIELD_SCHEMA_VERSION,
+  DOSSIER_REPEATABLE_GROUPS,
+  appendRepeatableEntry,
+  getRepeatableGroupDefinition,
   getDossierFieldDefinitions,
   getDossierFieldValue,
   setDossierFieldValue
@@ -26,6 +29,23 @@ for (const category of DOSSIER_CATEGORIES) {
   }
 }
 
+// Repeatable groups are structurally supported but remain inactive in the UI.
+for (const groupId of ['offenders', 'vehicles']) {
+  const definition = getRepeatableGroupDefinition(groupId);
+  assert.ok(definition, groupId + ' must have a dormant repeatable definition');
+  assert.equal(definition.cardinality, 'many');
+  assert.equal(definition.enabled, false, 'Multi-entity UI must remain disabled until real DOCX review');
+  assert.equal(DOSSIER_REPEATABLE_GROUPS[groupId].enabled, false);
+}
+const dormantEntities = {};
+assert.equal(appendRepeatableEntry(dormantEntities, 'offenders', { role: 'offender', fullName: 'Synthetic Person A' }), 1);
+assert.equal(appendRepeatableEntry(dormantEntities, 'offenders', { role: 'offender', fullName: 'Synthetic Person B' }), 2);
+assert.equal(dormantEntities.entities.offenders.length, 2);
+assert.equal(appendRepeatableEntry(dormantEntities, 'vehicles', { registration: 'TEST-001' }), 1);
+assert.equal(dormantEntities.entities.vehicles[0].registration, 'TEST-001');
+assert.throws(() => appendRepeatableEntry(dormantEntities, 'offenders', 'invalid'), /Η εγγραφή/);
+assert.throws(() => appendRepeatableEntry(dormantEntities, 'unknown', {}), /Άγνωστη/);
+
 const kokFields = getDossierFieldDefinitions('kok');
 assert.equal(kokFields.length, 1, 'KOK currently exposes only the verified single-vehicle registration field');
 const registration = kokFields[0];
@@ -47,6 +67,7 @@ const serviceWorker = await readFile(new URL('../sw.js', import.meta.url), 'utf8
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 
 assert.match(html, /id="case-category-fields"/);
+assert.doesNotMatch(html, /Προσθήκη (?:δεύτερου )?δράστη|Προσθήκη (?:δεύτερου )?οχήματος/i, 'No multi-entity controls should be visible yet');
 assert.match(hypotheses, /renderCategoryFields\(item\.profile \|\| 'generic', item\.categoryData \|\| \{\}\)/);
 assert.match(hypotheses, /categoryDataSchemaVersion: DOSSIER_FIELD_SCHEMA_VERSION/);
 assert.match(hypotheses, /'interpreter', 'categoryData'\]/, 'Backup validation must accept the versioned category data object');
