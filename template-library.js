@@ -1,6 +1,7 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
 import { detectDocxPersonalData, anonymizeDocxParts, createManualAnonymizationCandidates } from './docx-anonymization.js';
 import { listTemplateMappingVersions, saveTemplateMappingVersion, restoreTemplateMappingVersion } from './template-mapping-history.js';
+import { toGreekGenitiveFullName } from './service-profile.js';
 
 let DEFAULT_NARCOTICS_TEMPLATES = [];
 let DEFAULT_COUNTERFEIT_TEMPLATES = [];
@@ -575,13 +576,13 @@ export function valueFor(path, item) {
     'case.people': item.people,
     'case.evidence': item.evidence,
     'case.arrestingOfficer': item.arrestingOfficer,
-    'officerA.fullName': serviceProfile.operatorDocument ?? officerA.documentFullName ?? officerA.fullName ?? officerAFull ?? '',
+    'officerA.fullName': serviceProfile.operatorDocument || toGreekGenitiveFullName(serviceProfile.operator) || officerA.documentFullName || officerA.fullName || officerAFull || '',
     'officerA.nominativeFullName': serviceProfile.operator || officerA.fullName || officerAFull || '',
     'officerA.rank': officerA.rank,
     'officerA.surname': officerA.surname,
     'officerA.name': officerA.name,
     'officerA.service': officerA.service || serviceProfile.name || '',
-    'officerB.fullName': officerB.documentFullName || (officerBFull ? officerBFull : (serviceProfile.secondOfficerDocument ?? '')),
+    'officerB.fullName': officerB.documentFullName || toGreekGenitiveFullName(officerBFull) || serviceProfile.secondOfficerDocument || toGreekGenitiveFullName(serviceProfile.secondOfficer) || '',
     'officerB.nominativeFullName': officerB.fullName || officerBFull || serviceProfile.secondOfficer || '',
     'officerB.rank': officerB.rank,
     'officerB.surname': officerB.surname,
