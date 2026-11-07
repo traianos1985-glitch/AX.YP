@@ -41,7 +41,7 @@ export function getServiceProfileRestoreEntry(payload) {
 
 export function writeServiceProfile(storageInstance, values) {
   if (!storageInstance || typeof storageInstance.setItem !== 'function') throw new Error('Η τοπική αποθήκευση δεν είναι διαθέσιμη.');
-  const profile = Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean(values && values[field] ?? DEFAULT_SERVICE_PROFILE[field])]));
+  const profile = Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean((values && values[field]) ?? DEFAULT_SERVICE_PROFILE[field])]));
   storageInstance.setItem(KEY, JSON.stringify(profile));
   return profile;
 }
