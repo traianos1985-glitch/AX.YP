@@ -28,6 +28,28 @@ export function toGreekGenitiveFullName(value) {
   return clean(value).split(/\s+/u).filter(Boolean).map(genitiveToken).join(' ');
 }
 
+export function getServiceProfileOperatorIdentity(profile = {}) {
+  const fullName = clean(profile.operator);
+  const tokens = fullName.split(/\s+/u).filter(Boolean);
+  const surnameStart = tokens.findIndex((token) =>
+    [...token].filter((character) => /\p{L}/u.test(character)).length >= 3 &&
+    token === token.toLocaleUpperCase('el-GR')
+  );
+  const rank = surnameStart > 0 ? tokens.slice(0, surnameStart).join(' ') : '';
+  let surnameEnd = surnameStart;
+  if (surnameStart >= 0) {
+    while (surnameEnd + 1 < tokens.length &&
+      [...tokens[surnameEnd + 1]].some((character) => /\p{L}/u.test(character)) &&
+      tokens[surnameEnd + 1] === tokens[surnameEnd + 1].toLocaleUpperCase('el-GR')) surnameEnd += 1;
+  }
+  return {
+    fullName, rank,
+    surname: surnameStart >= 0 ? tokens.slice(surnameStart, surnameEnd + 1).join(' ') : '',
+    name: surnameStart >= 0 ? tokens.slice(surnameEnd + 1).join(' ') : '',
+    service: clean(profile.name), residence: clean(profile.name)
+  };
+}
+
 export function readServiceProfile(storageInstance) {
   const empty = () => Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean(DEFAULT_SERVICE_PROFILE[field])]));
   if (!storageInstance || typeof storageInstance.getItem !== 'function') return empty();
