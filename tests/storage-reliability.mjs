@@ -159,7 +159,8 @@ function loadStorage(localStorage, indexedDB) {
   await firstSession.removeItemDurable('axyp-hypotheses');
   assert.equal(local.getItem('axyp-hypotheses'), null);
   assert.equal(JSON.parse(local.getItem('axyp-storage-meta:axyp-hypotheses')).deleted, true);
-  assert.equal(idb.records.get('axyp-hypotheses'), 'sensitive-old-case', 'Injected transaction failure must preserve the stale IDB record');
+  assert.equal(idb.records.get('axyp-hypotheses').value, 'sensitive-old-case', 'Injected transaction failure must preserve the stale IDB record');
+  assert.equal(idb.records.get('axyp-hypotheses').deleted, false, 'The pre-existing IndexedDB record must remain live until hydration repairs it');
   const restartedSession = loadStorage(local, idb);
   await restartedSession.ready;
   assert.equal(restartedSession.getItem('axyp-hypotheses'), null, 'A durable tombstone must win over stale IndexedDB data after restart');
