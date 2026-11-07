@@ -124,7 +124,7 @@
     return revisionClock;
   }
 
-  function makeRecord(value, revision) {
+  function makeRecord(value, revision, deleted) {
     return { __axypRecord: 1, value: deleted ? null : value, deleted: deleted === true, revision: revision, updatedAt: new Date().toISOString() };
   }
 
@@ -365,11 +365,16 @@
   }
 
   function setItemDurable(key, value) {
-    setItem(key, value);
+    if (setItem(key, value) === false) return Promise.reject(lastError || makeError('Η εγγραφή απορρίφθηκε λόγω σύγκρουσης.'));
     return flush();
   }
 
   function removeItem(key) {
+    if (conflicts[key]) {
+      lastError = makeError('Η διαγραφή απορρίφθηκε: υπάρχει ανεπίλυτη αλλαγή σε άλλη καρτέλα.');
+      notifyConflict(conflicts[key]);
+      return false;
+    }
     var revision = nextRevision();
     delete cache[key];
     localRevisions[key] = revision;
@@ -386,14 +391,14 @@
         lastError = error;
       }
     }
-    trackWrite(writeToDB(key, null, true).catch(function (error) {
+    trackWrite(writeToDB(key, null, true, revision).catch(function (error) {
       if (localOk) return;
       throw makeError('Δεν διαγράφηκαν τα δεδομένα ούτε από το IndexedDB ούτε από το localStorage.', error);
     }), key);
   }
 
   function removeItemDurable(key) {
-    removeItem(key);
+    if (removeItem(key) === false) return Promise.reject(lastError || makeError('Η διαγραφή απορρίφθηκε λόγω σύγκρουσης.'));
     return flush();
   }
 
