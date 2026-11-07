@@ -649,18 +649,32 @@ function uid() {
       ? Object.assign({}, existing, data, { updatedAt: new Date().toISOString() })
       : Object.assign({ id: id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), snapshots: [] }, data);
     try {
+      var workspaceError = null;
       if (window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()) {
-        saved = await window.AXYP_WORKSPACE.saveCase(saved);
+        try {
+          saved = await Promise.race([
+            window.AXYP_WORKSPACE.saveCase(saved),
+            new Promise(function (_, reject) { setTimeout(function () { reject(new Error('Η εγγραφή στον προσωπικό φάκελο έληξε λόγω timeout.')); }, 5000); })
+          ]);
+        } catch (error) {
+          workspaceError = error;
+        }
       }
       var index = items.findIndex(function (item) { return item.id === id; });
       if (index >= 0) items[index] = saved;
       else items.unshift(saved);
       write(items);
-      if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) await window.AXYP_STORAGE.flush();
+      if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) {
+        window.AXYP_STORAGE.flush().catch(function (error) {
+          console.warn('[v0] Background storage flush failed:', error);
+        });
+      }
       selectedId = id;
-      $('case-flash').textContent = window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()
-        ? 'Η υπόθεση αποθηκεύτηκε στον προσωπικό φάκελο εργασίας και στον τοπικό κατάλογο.'
-        : 'Η υπόθεση αποθηκεύτηκε μόνο στον browser. Επίλεξε προσωπικό φάκελο εργασίας για να δημιουργηθεί και αυτοτελής φάκελος στον υπολογιστή.';
+      $('case-flash').textContent = workspaceError
+        ? 'Η υπόθεση αποθηκεύτηκε στον browser, αλλά δεν ενημερώθηκε ο προσωπικός φάκελος εργασίας: ' + workspaceError.message
+        : window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()
+          ? 'Η υπόθεση αποθηκεύτηκε στον προσωπικό φάκελο εργασίας και στον τοπικό κατάλογο.'
+          : 'Η υπόθεση αποθηκεύτηκε μόνο στον browser. Επίλεξε προσωπικό φάκελο εργασίας για να δημιουργηθεί και αυτοτελής φάκελος στον υπολογιστή.';
       render();
     } catch (error) {
       $('case-flash').textContent = 'Δεν επιβεβαιώθηκε η αποθήκευση της υπόθεσης: ' + error.message + ' Τα στοιχεία της φόρμας παραμένουν διαθέσιμα· έλεγξε την αποθήκευση και ξαναπροσπάθησε.';
@@ -709,6 +723,13 @@ function uid() {
     }
   }
 
+  async function backupChecksum(payload) {
+    if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) return null;
+    var bytes = new TextEncoder().encode(JSON.stringify(payload));
+    var digest = await window.crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest)).map(function (byte) { return byte.toString(16).padStart(2, '0'); }).join('');
+  }
+
   function downloadJson(name, value) {
     var link = document.createElement('a');
     var blob = new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' });
@@ -726,7 +747,7 @@ function uid() {
     if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
     if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) await window.AXYP_STORAGE.flush();
     var s = window.AXYP_STORAGE || localStorage;
-    downloadJson('axyp-plires-antigrafo.json', {
+    var payload = {
       schema: 2,
       exportedAt: new Date().toISOString(),
       hypotheses: read(),
@@ -737,7 +758,10 @@ function uid() {
       bundles: s.getItem('axyp-case-bundles'),
       templates: s.getItem('axyp-docx-templates'),
       templateMappings: s.getItem('axyp-template-mappings')
-    });
+    };
+    var checksum = await backupChecksum(payload);
+    if (checksum) payload.checksum = checksum;
+    downloadJson('axyp-plires-antigrafo.json', payload);
     $('case-flash').textContent = 'Το πλήρες αντίγραφο δημιουργήθηκε τοπικά μετά από επιβεβαίωση αποθήκευσης.';
     } catch (error) {
       $('case-flash').textContent = 'Δεν δημιουργήθηκε αντίγραφο: δεν επιβεβαιώθηκε η αποθήκευση των τελευταίων αλλαγών. ' + error.message;
@@ -751,6 +775,12 @@ function uid() {
     reader.onload = async function () {
       try {
         var parsed = JSON.parse(reader.result);
+        if (parsed && parsed.checksum) {
+          var unsigned = Object.assign({}, parsed);
+          delete unsigned.checksum;
+          var expectedChecksum = await backupChecksum(unsigned);
+          if (!expectedChecksum || expectedChecksum !== parsed.checksum) throw new Error('Το checksum του αντιγράφου δεν ταιριάζει.');
+        }
         function isValidHypothesis(item) {
           if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
           if (typeof item.id !== 'string' || !item.id.trim()) return false;

@@ -644,5 +644,6 @@ if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.
     }
   }
 
-  start();
+    start();
+    window.__AXYP_APP_READY = true;
 })();
