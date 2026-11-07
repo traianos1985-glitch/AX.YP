@@ -1,7 +1,7 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
 import { detectDocxPersonalData, anonymizeDocxParts, createManualAnonymizationCandidates } from './docx-anonymization.js';
 import { listTemplateMappingVersions, saveTemplateMappingVersion, restoreTemplateMappingVersion } from './template-mapping-history.js';
-import { toGreekGenitiveFullName } from './service-profile.js';
+import { toGreekGenitiveFullName, getServiceProfileOperatorIdentity } from './service-profile.js';
 
 let DEFAULT_NARCOTICS_TEMPLATES = [];
 let DEFAULT_COUNTERFEIT_TEMPLATES = [];
@@ -522,7 +522,7 @@ export function valueFor(path, item) {
   const depositor = counterfeit.depositor || {};
   const witnessFullName = [witness.surname, witness.name].filter(Boolean).join(' ');
   const depositorFullName = [depositor.surname, depositor.name].filter(Boolean).join(' ');
-  const officerA = item.officerA || {};
+  const officerA = getServiceProfileOperatorIdentity(typeof window !== 'undefined' && window.AXYP_SERVICE_PROFILE && typeof window.AXYP_SERVICE_PROFILE.get === 'function' ? window.AXYP_SERVICE_PROFILE.get() : {});
   const officerB = item.officerB || {};
   const officerAFull = [officerA.rank, officerA.surname, officerA.name].filter(Boolean).join(' ');
   const officerBFull = [officerB.rank, officerB.surname, officerB.name].filter(Boolean).join(' ');
@@ -578,13 +578,13 @@ export function valueFor(path, item) {
     'case.people': item.people,
     'case.evidence': item.evidence,
     'case.arrestingOfficer': item.arrestingOfficer,
-    'officerA.fullName': serviceProfile.operatorDocument || toGreekGenitiveFullName(serviceProfile.operator) || officerA.documentFullName || officerA.fullName || officerAFull || '',
-    'officerA.nominativeFullName': serviceProfile.operator || officerA.fullName || officerAFull || '',
+    'officerA.fullName': serviceProfile.operatorDocument || toGreekGenitiveFullName(serviceProfile.operator),
+    'officerA.nominativeFullName': serviceProfile.operator || '',
     'officerA.rank': officerA.rank,
     'officerA.surname': officerA.surname,
     'officerA.name': officerA.name,
-    'officerA.service': officerA.service || serviceProfile.name || '',
-    'officerA.residence': officerA.residence || serviceProfile.name || '',
+    'officerA.service': serviceProfile.name || '',
+    'officerA.residence': serviceProfile.name || '',
     'officerB.fullName': officerB.documentFullName || toGreekGenitiveFullName(officerBFull) || serviceProfile.secondOfficerDocument || toGreekGenitiveFullName(serviceProfile.secondOfficer) || '',
     'officerB.nominativeFullName': officerB.fullName || officerBFull || serviceProfile.secondOfficer || '',
     'officerB.rank': officerB.rank,
