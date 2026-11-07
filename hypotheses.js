@@ -475,7 +475,8 @@ function uid() {
     var items = read(), templates = readTemplates();
     DOSSIER_CATEGORIES.forEach(function (category) {
       var caseCount = items.filter(function (item) { return (item.profile || 'generic') === category.id; }).length;
-      var templateCount = templates.filter(function (item) { return item.category === category.id || item.profile === category.id; }).length;
+      var categoryTemplates = window.TemplateLibrary && window.TemplateLibrary.getCategoryTemplates ? window.TemplateLibrary.getCategoryTemplates(category.id) : templates.filter(function (item) { return item.category === category.id || item.profile === category.id; });
+      var templateCount = window.TemplateLibrary && window.TemplateLibrary.templatesForCategoryGeneration ? window.TemplateLibrary.templatesForCategoryGeneration(categoryTemplates).length : categoryTemplates.length;
       var card = document.createElement('article'); card.className = 'dossier-category';
       var top = document.createElement('div'); top.className = 'dossier-category-top';
       var mark = document.createElement('span'); mark.className = 'dossier-category-mark'; mark.textContent = category.mark;
@@ -484,7 +485,7 @@ function uid() {
       var stats = document.createElement('div'); stats.className = 'dossier-category-stats';
       var count = document.createElement('span'); count.className = 'dossier-stat'; count.textContent = caseCount + (caseCount === 1 ? ' υπόθεση' : ' υποθέσεις');
       var docs = document.createElement('span'); docs.className = 'dossier-stat'; docs.textContent = templateCount + (templateCount === 1 ? ' πρότυπο Word' : ' πρότυπα Word'); stats.append(count, docs);
-      var note = document.createElement('p'); note.className = 'dossier-category-note'; note.textContent = templateCount ? 'Διαθέσιμα πρότυπα για αυτή την κατηγορία.' : 'Τα επίσημα έγγραφα και πρότυπα θα προστεθούν όταν τα ανεβάσεις.';
+      var note = document.createElement('p'); note.className = 'dossier-category-note'; note.textContent = templateCount ? 'Διαθέσιμα έντυπα για αυτή την κατηγορία.' : 'Δεν έχει δημοσιευθεί ακόμη πακέτο εντύπων για αυτή την κατηγορία.';
       var actions = document.createElement('div'); actions.className = 'dossier-category-actions';
       var open = document.createElement('button'); open.type = 'button'; open.textContent = 'Προβολή'; open.onclick = function () { openCategory(category.id, false); };
       var create = document.createElement('button'); create.type = 'button'; create.className = 'primary'; create.textContent = '+ Νέα υπόθεση'; create.onclick = function () { openCategory(category.id, true); };
@@ -515,7 +516,7 @@ function uid() {
         var name = document.createElement('strong');
         name.textContent = template.name || 'Έντυπο Word';
         var source = document.createElement('small');
-        source.textContent = template.source === 'user-uploaded' ? 'Αυθεντικό έντυπο δημιουργού' : 'Ενσωματωμένο βοηθητικό πρότυπο';
+        source.textContent = template.source === 'published-package' ? 'Επίσημο πακέτο εφαρμογής' : template.source === 'user-uploaded' ? 'Τοπικό ανέβασμα δημιουργού · μη δημοσιευμένο' : 'Ενσωματωμένο βοηθητικό πρότυπο';
         item.append(name, source);
         list.appendChild(item);
       });
