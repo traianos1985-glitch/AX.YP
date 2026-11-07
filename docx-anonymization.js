@@ -99,19 +99,24 @@ export function anonymizeDocxParts(parts, approvedCandidates) {
   const output = Object.fromEntries(Object.entries(parts || {}).map(([name, bytes]) => [name, new Uint8Array(bytes)]));
   const grouped = new Map();
   for (const candidate of approvedCandidates || []) {
-    if (!candidate || !candidate.partName || !candidate.value || !candidate.placeholder) continue;
+    if (!candidate || !candidate.partName || !Number.isInteger(candidate.paragraphIndex) || !candidate.value || !candidate.placeholder) continue;
     if (!grouped.has(candidate.partName)) grouped.set(candidate.partName, new Map());
-    const byValue = grouped.get(candidate.partName);
+    const paragraphs = grouped.get(candidate.partName);
+    if (!paragraphs.has(candidate.paragraphIndex)) paragraphs.set(candidate.paragraphIndex, new Map());
+    const byValue = paragraphs.get(candidate.paragraphIndex);
     // Conflicting classifications for the same text are deliberately not guessed.
     if (byValue.has(candidate.value) && byValue.get(candidate.value) !== candidate.placeholder) {
       throw new Error('Conflicting anonymization placeholders for the same text');
     }
     byValue.set(candidate.value, candidate.placeholder);
   }
-  for (const [partName, replacements] of grouped) {
+  for (const [partName, paragraphReplacements] of grouped) {
     if (!output[partName]) continue;
+    let paragraphIndex = 0;
     let xml = new TextDecoder().decode(output[partName]);
-    xml = xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/gu, (paragraph) => {
+    xml = xml.replace(/<w:p\\b[^>]*>[\\s\\S]*?<\\/w:p>/gu, (paragraph) => {
+      const replacements = paragraphReplacements.get(paragraphIndex++);
+      if (!replacements) return paragraph;
       let updated = paragraph;
       for (const [value, placeholder] of replacements) {
         updated = replaceParagraphText(updated, value, placeholder);
