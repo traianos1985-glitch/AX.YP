@@ -564,7 +564,7 @@ export function valueFor(path, item) {
     'case.people': item.people,
     'case.evidence': item.evidence,
     'case.arrestingOfficer': item.arrestingOfficer,
-    'officerA.fullName': officerAFull,
+    'officerA.fullName': officerA.fullName || officerAFull || serviceProfile.operator || '',
     'officerA.rank': officerA.rank,
     'officerA.surname': officerA.surname,
     'officerA.name': officerA.name,
