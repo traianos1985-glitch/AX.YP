@@ -1,5 +1,8 @@
 ## Unreleased — Storage, DOCX και Firefox hardening
 
+- Προστέθηκε revision metadata ανά key στη hydration του IndexedDB/localStorage, ώστε παλαιότερη εγγραφή IndexedDB να μην αντικαθιστά νεότερη τιμή μετά από restart.
+- Προστέθηκαν regression tests για ordering, restart/hydration, backward compatibility και recovery.
+
 - Προστέθηκε versioned schema migration για το IndexedDB/local storage και ρητή ανίχνευση/επίλυση συγκρούσεων μεταξύ tabs χωρίς αυτόματο merge δεδομένων.
 - Προστέθηκε semantic visible-text validation των συνθετικών DOCX μέσω LibreOffice.
 - Προστέθηκε local Firefox E2E command και CI trigger για branches `v0/**`.
