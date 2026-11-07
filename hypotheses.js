@@ -1010,7 +1010,45 @@ function uid() {
     } catch (_) {}
   }
 
+  function showHypothesesConflict(conflict) {
+    var flash = $('case-flash');
+    if (!flash || !conflict) return;
+    flash.textContent = 'Η ίδια δικογραφία τροποποιήθηκε και σε άλλη καρτέλα. Επίλεξε ποια έκδοση θα διατηρηθεί: ';
+    var localButton = document.createElement('button');
+    localButton.type = 'button';
+    localButton.textContent = 'Κράτησε αυτή την καρτέλα';
+    var remoteButton = document.createElement('button');
+    remoteButton.type = 'button';
+    remoteButton.textContent = 'Κράτησε την άλλη καρτέλα';
+    [localButton, remoteButton].forEach(function (button) {
+      button.style.marginInlineStart = '0.5rem';
+      button.style.padding = '0.35rem 0.55rem';
+    });
+    localButton.addEventListener('click', function () {
+      window.AXYP_STORAGE.resolveConflict(KEY, 'local').then(function () {
+        flash.textContent = 'Διατηρήθηκε η έκδοση αυτής της καρτέλας.';
+        handleExternalHypothesesUpdate();
+      }).catch(function (error) { flash.textContent = 'Δεν επιλύθηκε η σύγκρουση: ' + error.message; });
+    });
+    remoteButton.addEventListener('click', function () {
+      window.AXYP_STORAGE.resolveConflict(KEY, 'remote').then(function () {
+        flash.textContent = 'Διατηρήθηκε η έκδοση της άλλης καρτέλας.';
+        handleExternalHypothesesUpdate();
+      }).catch(function (error) { flash.textContent = 'Δεν επιλύθηκε η σύγκρουση: ' + error.message; });
+    });
+    flash.appendChild(localButton);
+    flash.appendChild(remoteButton);
+  }
+
   if (typeof window !== 'undefined') {
+    if (window.AXYP_STORAGE && typeof window.AXYP_STORAGE.onChange === 'function') {
+      window.AXYP_STORAGE.onChange(function (event) {
+        if (event && event.key === KEY && event.remote) handleExternalHypothesesUpdate();
+      });
+      window.AXYP_STORAGE.onConflict(function (conflict) {
+        if (conflict && conflict.key === KEY) showHypothesesConflict(conflict);
+      });
+    }
     window.addEventListener('storage', function (e) {
       if (e.key === KEY) handleExternalHypothesesUpdate();
     });
