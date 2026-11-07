@@ -1,4 +1,5 @@
-const KEY = 'axyp-service-profile-v1';
+export const SERVICE_PROFILE_STORAGE_KEY = 'axyp-service-profile-v1';
+const KEY = SERVICE_PROFILE_STORAGE_KEY;
 export const SERVICE_PROFILE_FIELDS = Object.freeze(['name', 'directorate', 'address', 'phone', 'email', 'prosecutor', 'chemicalService']);
 const clean = (value) => String(value ?? '').trim();
 
