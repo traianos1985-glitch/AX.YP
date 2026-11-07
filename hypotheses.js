@@ -5,6 +5,8 @@ if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.
 (function () {
   var KEY = 'axyp-hypotheses';
   var selectedId = null;
+  var selectedCaseUpdatedAt = null;
+  var remoteCaseUpdatePending = false;
   var activeProfileFilter = null;
   var storage = window.AXYP_STORAGE || localStorage;
   var $ = function (id) { return document.getElementById(id); };
@@ -314,6 +316,8 @@ function uid() {
     if ($('health-examination-start')) $('health-examination-start').value = '';
     if ($('health-examination-end')) $('health-examination-end').value = '';
     selectedId = null;
+    selectedCaseUpdatedAt = null;
+    remoteCaseUpdatePending = false;
     renderDetail();
   }
 
@@ -322,6 +326,8 @@ function uid() {
     selectedId = id;
     var item = read().filter(function (entry) { return entry.id === id; })[0];
     if (!item) return;
+    selectedCaseUpdatedAt = item.updatedAt || null;
+    remoteCaseUpdatePending = false;
     $('case-id').value = item.id;
     $('case-form').hidden = false;
     $('case-title').value = item.title || '';
@@ -636,6 +642,10 @@ function uid() {
 
   async function save(event) {
     event.preventDefault();
+    if (remoteCaseUpdatePending) {
+      $('case-flash').textContent = 'Η υπόθεση ενημερώθηκε σε άλλη καρτέλα. Για να αποφύγεις την αντικατάσταση νεότερων στοιχείων, επίλεξέ την ξανά από τη λίστα και έλεγξε τα ενημερωμένα δεδομένα πριν αποθηκεύσεις.';
+      return;
+    }
     if (window.AXYP_STORAGE && window.AXYP_STORAGE.checkQuota) {
       window.AXYP_STORAGE.checkQuota().then(function (res) {
         if (res.low) $('case-flash').textContent = 'Προσοχή: Ο διαθέσιμος αποθηκευτικός χώρος είναι χαμηλός (' + res.freeMb + ' MB).';
@@ -668,6 +678,8 @@ function uid() {
         await window.AXYP_STORAGE.flush();
       }
       selectedId = id;
+      selectedCaseUpdatedAt = saved.updatedAt || null;
+      remoteCaseUpdatePending = false;
       $('case-flash').textContent = workspaceError
         ? 'Η υπόθεση αποθηκεύτηκε στον browser, αλλά δεν ενημερώθηκε ο προσωπικός φάκελος εργασίας: ' + workspaceError.message
         : window.AXYP_WORKSPACE && window.AXYP_WORKSPACE.isConnected()
@@ -680,6 +692,10 @@ function uid() {
   }
 
   async function snapshot() {
+    if (remoteCaseUpdatePending) {
+      $('case-flash').textContent = 'Η υπόθεση ενημερώθηκε σε άλλη καρτέλα. Επίλεξέ την ξανά από τη λίστα πριν δημιουργήσεις νέο snapshot.';
+      return;
+    }
     var items = read();
     var item = items.filter(function (entry) { return entry.id === selectedId; })[0];
     if (!item) return;
@@ -1003,7 +1019,13 @@ function uid() {
         if (selectedId && !activeItem) {
           // The selected case was removed in another tab
           selectedId = null;
+          selectedCaseUpdatedAt = null;
+          remoteCaseUpdatePending = false;
           reset();
+        } else if (selectedId && activeItem && activeItem.updatedAt && activeItem.updatedAt !== selectedCaseUpdatedAt) {
+          remoteCaseUpdatePending = true;
+          var flash = $('case-flash');
+          if (flash) flash.textContent = 'Η επιλεγμένη υπόθεση ενημερώθηκε σε άλλη καρτέλα. Η φόρμα δεν θα αποθηκεύσει παλιά στοιχεία πάνω από τη νεότερη έκδοση. Επίλεξε ξανά την υπόθεση από τη λίστα για να φορτώσεις τις αλλαγές.';
         }
         render();
       }

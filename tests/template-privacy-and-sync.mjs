@@ -187,6 +187,10 @@ assert.match(hypothesesSource, /AXYP_STORAGE\.onChange/, 'case views subscribe t
 assert.match(hypothesesSource, /showHypothesesConflict/, 'case views render an explicit conflict resolution flow')
 assert.match(hypothesesSource, /resolveConflict\(KEY, 'local'\)/, 'case views let the user retain the local version')
 assert.match(hypothesesSource, /resolveConflict\(KEY, 'remote'\)/, 'case views let the user retain the remote version')
+assert.match(hypothesesSource, /remoteCaseUpdatePending/, 'stale selected case forms are protected after a remote update')
+assert.match(hypothesesSource, /if \(remoteCaseUpdatePending\)[\s\S]*?return;/, 'saving a stale selected case is blocked')
+assert.match(hypothesesSource, /async function snapshot\(\)[\s\S]*?if \(remoteCaseUpdatePending\)[\s\S]*?return;/, 'snapshot creation is blocked for a stale selected case')
+assert.match(hypothesesSource, /activeItem\.updatedAt !== selectedCaseUpdatedAt/, 'the selected case is marked stale when another tab updates it')
 
 console.log('Template privacy/synchronization regressions passed.')
 
