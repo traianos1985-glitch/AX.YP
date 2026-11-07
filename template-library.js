@@ -1,5 +1,6 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
 import { detectDocxPersonalData, anonymizeDocxParts, createManualAnonymizationCandidates } from './docx-anonymization.js';
+import { listTemplateMappingVersions, saveTemplateMappingVersion, restoreTemplateMappingVersion } from './template-mapping-history.js';
 
 let DEFAULT_NARCOTICS_TEMPLATES = [];
 let DEFAULT_COUNTERFEIT_TEMPLATES = [];
@@ -564,7 +565,7 @@ export function valueFor(path, item) {
     'case.people': item.people,
     'case.evidence': item.evidence,
     'case.arrestingOfficer': item.arrestingOfficer,
-    'officerA.fullName': officerAFull,
+    'officerA.fullName': serviceProfile.operator || officerA.fullName || officerAFull || '',
     'officerA.rank': officerA.rank,
     'officerA.surname': officerA.surname,
     'officerA.name': officerA.name,
@@ -721,6 +722,51 @@ export function replaceInXml(xml, template, item, options = {}) {
     if (!raw || raw === '—') return options.preserveMissing ? placeholder : '—';
     const lines = String(raw).split(/\r?\n/);
     return lines.map((line) => esc(line)).join('</w:t><w:br/><w:t xml:space="preserve">');
+  });
+}
+
+function renderMappingHistory(card, template) {
+  const root = card.querySelector('.template-mapping-history');
+  if (!root) return;
+  root.textContent = '';
+  const versions = listTemplateMappingVersions(template, storage());
+  const heading = document.createElement('strong');
+  heading.textContent = 'Ιστορικό αντιστοιχίσεων';
+  root.appendChild(heading);
+  if (!versions.length) {
+    const empty = document.createElement('p');
+    empty.className = 'muted';
+    empty.textContent = 'Δεν υπάρχουν ακόμη αποθηκευμένες εκδόσεις.';
+    root.appendChild(empty);
+    return;
+  }
+  versions.slice().reverse().forEach((version) => {
+    const row = document.createElement('div');
+    row.className = 'template-history-row';
+    const label = document.createElement('span');
+    label.textContent = 'Έκδοση ' + version.version + ' · ' + new Date(version.savedAt).toLocaleString('el-GR');
+    const restore = document.createElement('button');
+    restore.type = 'button';
+    restore.className = 'mini-button';
+    restore.textContent = 'Επαναφορά';
+    restore.addEventListener('click', () => {
+      if (!window.confirm('Να επανέλθει η αντιστοίχιση της έκδοσης ' + version.version + '; Η τρέχουσα έκδοση θα παραμείνει στο ιστορικό.')) return;
+      try {
+        const mappings = restoreTemplateMappingVersion(template, version.version, storage());
+        const all = read();
+        const index = all.findIndex((item) => (template.id ? item.id === template.id : item.name === template.name));
+        if (index < 0) throw new Error('Το τοπικό πρότυπο δεν βρέθηκε.');
+        all[index].mappings = mappings;
+        all[index].mappingConfirmedAt = new Date().toISOString();
+        write(all);
+        saveTemplateMappingVersion(template, mappings, storage(), { label: 'Επαναφορά έκδοσης ' + version.version });
+        render();
+      } catch (error) {
+        window.alert('Δεν ήταν δυνατή η επαναφορά: ' + error.message);
+      }
+    });
+    row.append(label, restore);
+    root.appendChild(row);
   });
 }
 
@@ -892,7 +938,8 @@ function render() {
         mappingRoot.appendChild(row);
       });
 
-      if (template.source === 'published-package') {
+      const isAdmin = !!(window.AXYP_ROLE && window.AXYP_ROLE.isAdmin());
+      if (template.source === 'published-package' || !isAdmin) {
         card.querySelector('.remove').hidden = true;
         card.querySelector('.save-mapping').hidden = true;
         card.querySelectorAll('.mapping-row select').forEach((select) => { select.disabled = true; });
@@ -909,9 +956,15 @@ function render() {
           all[targetIdx].mappings = mappings;
           all[targetIdx].mappingConfirmedAt = new Date().toISOString();
           write(all);
+          try {
+            saveTemplateMappingVersion(template, mappings, storage(), { label: 'Αποθήκευση αντιστοίχισης από τον διαχειριστή' });
+          } catch (historyError) {
+            console.error('Template mapping history could not be saved:', historyError);
+          }
         }
         card.querySelector('.mapping-result').textContent = 'Η αντιστοίχιση επιβεβαιώθηκε.';
         card.querySelector('.generate').disabled = false;
+        renderMappingHistory(card, template);
       };
 
       card.querySelector('.generate').onclick = () => {
@@ -928,6 +981,13 @@ function render() {
       };
 
       if (template.mappingConfirmedAt) card.querySelector('.generate').disabled = false;
+      if (window.AXYP_ROLE && window.AXYP_ROLE.isAdmin() && template.source !== 'published-package') {
+        const history = document.createElement('section');
+        history.className = 'template-mapping-history';
+        history.setAttribute('aria-label', 'Ιστορικό εκδόσεων αντιστοίχισης');
+        card.appendChild(history);
+        renderMappingHistory(card, template);
+      }
       panel.appendChild(card);
     });
   });

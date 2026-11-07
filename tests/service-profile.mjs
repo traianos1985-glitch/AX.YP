@@ -9,7 +9,9 @@ const storage = {
 };
 const empty = readServiceProfile(storage);
 assert.deepEqual(Object.keys(empty), [...SERVICE_PROFILE_FIELDS]);
-assert.ok(Object.values(empty).every((value) => value === ''));
+assert.equal(empty.name, 'Αστυνομικό Τμήμα Τριφυλίας');
+assert.equal(empty.operator, '');
+assert.ok(Object.values(empty).filter((_, index) => index !== SERVICE_PROFILE_FIELDS.indexOf('name')).every((value) => value === ''));
 assert.equal(getServiceProfileBackupValue(storage), JSON.stringify(empty), 'An empty profile must also be backed up to prevent stale cross-installation values');
 
 const saved = writeServiceProfile(storage, {
@@ -19,10 +21,15 @@ const saved = writeServiceProfile(storage, {
   email: 'test@example.invalid',
   prosecutor: 'Εισαγγελία Πρωτοδικών Δοκιμής',
   chemicalService: 'Χημική Υπηρεσία Δοκιμής',
+  operator: 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος',
   ignored: 'must not be persisted'
 });
 assert.equal(saved.name, 'Αστυνομικό Τμήμα Δοκιμής');
 assert.equal(saved.chemicalService, 'Χημική Υπηρεσία Δοκιμής');
+assert.equal(saved.operator, 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος');
+const exactOperator = writeServiceProfile(storage, { operator: '  Υ/Β΄ ΓΙΟΥΡΟΥΚΗΣ Τραϊανός  ' });
+assert.equal(exactOperator.operator, '  Υ/Β΄ ΓΙΟΥΡΟΥΚΗΣ Τραϊανός  ', 'Operator display text must be preserved verbatim');
+writeServiceProfile(storage, saved);
 assert.ok(!Object.hasOwn(saved, 'ignored'));
 assert.deepEqual(readServiceProfile(storage), saved);
 assert.equal(getServiceProfileBackupValue(storage), JSON.stringify(saved));
@@ -36,12 +43,17 @@ assert.throws(() => getServiceProfileRestoreEntry({ serviceProfile: JSON.stringi
 globalThis.window = { AXYP_SERVICE_PROFILE: { get: () => saved } };
 const { valueFor } = await import('../template-library.js');
 assert.equal(valueFor('service.name', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
+assert.equal(valueFor('officerA.fullName', { title: 'CASE-ONLY-DATA', officerA: { rank: 'Αρχιφύλακας', surname: 'ΑΛΛΟ', name: 'Πρόσωπο' } }), 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος', 'The installation operator is the default first investigating officer');
 assert.equal(valueFor('service.chemicalService', { title: 'CASE-ONLY-DATA' }), 'Χημική Υπηρεσία Δοκιμής');
 assert.equal(valueFor('service.prosecutor', { title: 'CASE-ONLY-DATA' }), 'Εισαγγελία Πρωτοδικών Δοκιμής');
 assert.ok(!JSON.stringify(saved).includes('Τριφυλ'));
 assert.ok(!JSON.stringify(saved).includes('Κυπαρισσ'));
 
 const malformed = { getItem: () => '{invalid', setItem() {} };
-assert.ok(Object.values(readServiceProfile(malformed)).every((value) => value === ''));
+assert.equal(readServiceProfile(malformed).name, 'Αστυνομικό Τμήμα Τριφυλίας', 'Malformed stored data must fall back to the installation default service name');
+assert.ok(Object.entries(readServiceProfile(malformed)).filter(([field]) => field !== 'name').every(([, value]) => value === ''), 'Malformed stored data must clear all non-default fields');
+const whitespaceOperator = '  Υ/Β΄ ΓΙΟΥΡΟΥΚΗΣ Τραϊανός  ';
+const restoredWhitespace = getServiceProfileRestoreEntry({ serviceProfile: JSON.stringify({ operator: whitespaceOperator }) });
+assert.equal(JSON.parse(restoredWhitespace[1]).operator, whitespaceOperator, 'Backup restore must preserve the operator value verbatim');
 assert.throws(() => writeServiceProfile(null, {}), /τοπική αποθήκευση/);
 console.log('Per-installation service profile tests passed.');
