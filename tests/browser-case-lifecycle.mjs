@@ -96,6 +96,7 @@ async function click(selector, label = selector) {
 }
 
 async function openCases() {
+  await waitForExpression("!!document.getElementById('cases-mode') && !!window.HypothesesView && typeof window.HypothesesView.refresh === 'function'", 'cases mode readiness');
   await click('#cases-mode', 'Cases mode');
   await waitForExpression("!document.getElementById('cases-panel').hidden", 'cases workspace');
 }

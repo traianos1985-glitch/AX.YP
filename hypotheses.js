@@ -664,7 +664,11 @@ function uid() {
       if (index >= 0) items[index] = saved;
       else items.unshift(saved);
       write(items);
-      if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) await window.AXYP_STORAGE.flush();
+      if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) {
+        window.AXYP_STORAGE.flush().catch(function (error) {
+          console.warn('[v0] Background storage flush failed:', error);
+        });
+      }
       selectedId = id;
       $('case-flash').textContent = workspaceError
         ? 'Η υπόθεση αποθηκεύτηκε στον browser, αλλά δεν ενημερώθηκε ο προσωπικός φάκελος εργασίας: ' + workspaceError.message
