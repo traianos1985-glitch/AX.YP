@@ -4,7 +4,7 @@ import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS, SERVIC
 assert.equal(SERVICE_PROFILE_STORAGE_KEY, 'axyp-service-profile-v1');
 assert.equal(toGreekGenitiveFullName("Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός"), "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού");
 assert.equal(toGreekGenitiveFullName('Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος'), 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου');
-assert.deepEqual(getServiceProfileOperatorIdentity({ operator: "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός", name: 'Αστυνομικό Τμήμα Τριφυλίας' }), { fullName: "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός", rank: "Υπαστυνόμος Β'", surname: 'ΓΙΟΥΡΟΥΚΗΣ', name: 'Τραϊανός', service: 'Αστυνομικό Τμήμα Τριφυλίας', residence: 'Αστυνομικό Τμήμα Τριφυλίας' });
+assert.deepEqual(getServiceProfileOperatorIdentity({ operator: "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός", name: 'Αστυνομικό Τμήμα Τριφυλίας' }), { fullName: "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός", documentFullName: "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού", rank: "Υπαστυνόμος Β'", surname: 'ΓΙΟΥΡΟΥΚΗΣ', name: 'Τραϊανός', service: 'Αστυνομικό Τμήμα Τριφυλίας', residence: 'Αστυνομικό Τμήμα Τριφυλίας' });
 const values = new Map();
 const storage = {
   getItem(key) { return values.has(key) ? values.get(key) : null; },
@@ -63,13 +63,26 @@ const legacyDateXml = replaceLegacyFixedDateText(
 );
 assert.match(legacyDateXml, /Στην Δοκιμαστική πόλη σήμερα την \d{1,2} του μηνός [\p{L}]+ του έτους \d{4} ημέρα της εβδομάδος [\p{L}]+/u,
   'Legacy fixed date text must use the current local date and installation drafting location when the case has no date/location');
-assert.equal(valueFor('officerA.fullName', { title: 'CASE-ONLY-DATA', officerA: { rank: 'Αρχιφύλακας', surname: 'ΑΛΛΟ', name: 'Πρόσωπο' } }), 'Υπαστυνόμου Β΄ ΔΟΚΙΜΗΣ Αλεξάνδρου', 'The first investigator uses the configured genitive document form');
-assert.equal(valueFor('officerA.nominativeFullName', { title: 'CASE-ONLY-DATA' }), 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος');
-assert.equal(valueFor('officerA.service', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
-assert.equal(valueFor('officerA.residence', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
-assert.equal(valueFor('officerA.rank', { title: 'STALE-CASE-A', officerA: { rank: 'ΠΑΛΙΟΣ ΒΑΘΜΟΣ' } }), 'Υπαστυνόμος Β΄');
-assert.equal(valueFor('officerA.surname', { title: 'STALE-CASE-A', officerA: { surname: 'ΠΑΛΙΟ ΕΠΩΝΥΜΟ' } }), 'ΔΟΚΙΜΗΣ');
-assert.equal(valueFor('officerA.name', { title: 'STALE-CASE-A', officerA: { name: 'ΠΑΛΙΟ ΟΝΟΜΑ' } }), 'Αλέξανδρος');
+assert.equal(valueFor('officerA.fullName', { title: 'NEW-CASE' }), 'Υπαστυνόμου Β΄ ΔΟΚΙΜΗΣ Αλεξάνδρου', 'A new case uses the current installation operator in genitive form');
+assert.equal(valueFor('officerA.nominativeFullName', { title: 'NEW-CASE' }), 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος');
+assert.equal(valueFor('officerA.service', { title: 'NEW-CASE' }), 'Αστυνομικό Τμήμα Δοκιμής');
+assert.equal(valueFor('officerA.residence', { title: 'NEW-CASE' }), 'Αστυνομικό Τμήμα Δοκιμής');
+const historicalOfficerA = {
+  fullName: 'Παλαιός Βαθμός ΠΑΛΑΙΟ ΕΠΩΝΥΜΟ ΠαλιόΌνομα',
+  documentFullName: 'Παλαιού Βαθμού ΠΑΛΑΙΟΥ ΕΠΩΝΥΜΟΥ ΠαλιούΟνόματος',
+  rank: 'Παλαιός Βαθμός', surname: 'ΠΑΛΑΙΟ ΕΠΩΝΥΜΟ', name: 'ΠαλιόΌνομα',
+  service: 'Παλαιά Υπηρεσία', residence: 'Παλαιά Υπηρεσία'
+};
+globalThis.window.AXYP_SERVICE_PROFILE.get = () => ({ ...saved, operator: 'Νέος Βαθμός ΝΕΟΕΠΩΝΥΜΟ ΝέοΌνομα', operatorDocument: 'Νέου Βαθμού ΝΕΟΥΕΠΩΝΥΜΟΥ ΝέουΟνόματος', name: 'Νέα Υπηρεσία' });
+assert.equal(valueFor('officerA.fullName', { title: 'HISTORICAL-CASE', officerA: historicalOfficerA }), historicalOfficerA.documentFullName, 'A saved case must retain its author genitive after the installation profile changes');
+assert.equal(valueFor('officerA.nominativeFullName', { title: 'HISTORICAL-CASE', officerA: historicalOfficerA }), historicalOfficerA.fullName);
+assert.equal(valueFor('officerA.rank', { title: 'HISTORICAL-CASE', officerA: historicalOfficerA }), historicalOfficerA.rank);
+assert.equal(valueFor('officerA.surname', { title: 'HISTORICAL-CASE', officerA: historicalOfficerA }), historicalOfficerA.surname);
+assert.equal(valueFor('officerA.name', { title: 'HISTORICAL-CASE', officerA: historicalOfficerA }), historicalOfficerA.name);
+assert.equal(valueFor('officerA.service', { title: 'HISTORICAL-CASE', officerA: historicalOfficerA }), historicalOfficerA.service);
+assert.equal(valueFor('officerA.residence', { title: 'HISTORICAL-CASE', officerA: historicalOfficerA }), historicalOfficerA.residence);
+assert.equal(valueFor('officerA.fullName', { title: 'LEGACY-CASE-WITHOUT-SNAPSHOT' }), 'Νέου Βαθμού ΝΕΟΥΕΠΩΝΥΜΟΥ ΝέουΟνόματος', 'Legacy cases without a stored author snapshot retain the documented current-profile fallback');
+assert.equal(valueFor('officerA.fullName', { title: 'OLD-CASE-LEGACY-FIELDS', officerA: { rank: 'Παλιός Βαθμός', surname: 'ΠΑΛΑΙΟ', name: 'ΠαλιόΌνομα' } }), 'Παλιού Βαθμού ΠΑΛΑΙΟΥ ΠαλιούΟνόματος', 'Legacy case-level officer fields remain usable as a historical snapshot');
 assert.equal(valueFor('officerB.fullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακα ΔΟΚΙΜΗΣ Γεώργιου');
 assert.equal(valueFor('officerB.nominativeFullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακας ΔΟΚΙΜΗΣ Γεώργιος');
 assert.equal(valueFor('officerB.service', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
