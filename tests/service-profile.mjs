@@ -10,6 +10,7 @@ const storage = {
 const empty = readServiceProfile(storage);
 assert.deepEqual(Object.keys(empty), [...SERVICE_PROFILE_FIELDS]);
 assert.ok(Object.values(empty).every((value) => value === ''));
+assert.equal(getServiceProfileBackupValue(storage), JSON.stringify(empty), 'An empty profile must also be backed up to prevent stale cross-installation values');
 
 const saved = writeServiceProfile(storage, {
   name: 'Αστυνομικό Τμήμα Δοκιμής',
