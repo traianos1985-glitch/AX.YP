@@ -839,7 +839,7 @@ async function reviewAnonymizationCandidates(fileName, candidates, parts) {
     label.style.borderRadius = '8px';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
-    checkbox.checked = true;
+    checkbox.checked = candidate.confidence === 'high';
     checkbox.value = String(index);
     const description = document.createElement('span');
     description.textContent = `${candidate.label}: «${candidate.value}» → ${candidate.placeholder} (${candidate.partName})`;
@@ -933,8 +933,8 @@ async function reviewAnonymizationCandidates(fileName, candidates, parts) {
   document.body.appendChild(dialog);
   if (typeof dialog.showModal !== 'function') {
     dialog.remove();
-    if (!window.confirm('Δεν είναι διαθέσιμη η προεπισκόπηση. Η αυτόματη ανίχνευση δεν εγγυάται πλήρη ανωνυμοποίηση. Έλεγξες χειροκίνητα όλο το έγγραφο;')) return null;
-    return candidates;
+    window.alert('Η ασφαλής προεπισκόπηση DOCX δεν υποστηρίζεται σε αυτό το πρόγραμμα περιήγησης. Η εισαγωγή ακυρώθηκε χωρίς να αποθηκευτεί το αρχείο.');
+    return null;
   }
   return new Promise((resolve) => {
     accept.addEventListener('click', () => {
