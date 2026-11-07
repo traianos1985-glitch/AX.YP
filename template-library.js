@@ -681,7 +681,8 @@ function render() {
   const isCamping = (t) => t.category === 'camping';
   const isCommerce = (t) => t.category === 'commerce';
   const isNarcotics = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && !isCommerce(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
-  const isCustom = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && !isCommerce(t) && !isNarcotics(t);
+  const knownDossierCategories = new Set(['narcotics', 'counterfeit', 'environment', 'health', 'noise', 'camping', 'commerce', 'domestic', 'migration', 'traffic', 'kok', 'animal', 'generic']);
+  const isCustom = (t) => !isNarcotics(t) && !knownDossierCategories.has(t.category);
 
   const groups = [
     { category: 'narcotics', title: (count) => `Δικογραφία Ναρκωτικών (${count} πρότυπα)`, items: allTemplates.filter(isNarcotics) },
@@ -690,7 +691,13 @@ function render() {
     { category: 'health', title: (count) => `Δικογραφία Υγειονομικού Κανονισμού (${count} πρότυπα)`, items: allTemplates.filter(isHealth) },
     { category: 'noise', title: (count) => `Δικογραφία Ηχορύπανσης Κ.Υ.Ε. (${count} πρότυπα)`, items: allTemplates.filter(isNoise) },
     { category: 'camping', title: (count) => `Δικογραφία Παράνομου Camping (${count} πρότυπα)`, items: allTemplates.filter(isCamping) },
-    { category: 'commerce', title: (count) => `Προσωρινά πρότυπα παρεμπορίου (${count})`, items: allTemplates.filter(isCommerce) },
+    { category: 'commerce', title: (count) => `Δικογραφία Παρεμπορίου (${count} έντυπα)`, items: allTemplates.filter(isCommerce) },
+    { category: 'domestic', title: (count) => `Δικογραφία Ενδοοικογενειακής Βίας (${count} έντυπα)`, items: allTemplates.filter((t) => t.category === 'domestic') },
+    { category: 'migration', title: (count) => `Δικογραφία Απελάσεων Αλλοδαπών (${count} έντυπα)`, items: allTemplates.filter((t) => t.category === 'migration') },
+    { category: 'traffic', title: (count) => `Δικογραφία Τροχαίων Ατυχημάτων (${count} έντυπα)`, items: allTemplates.filter((t) => t.category === 'traffic') },
+    { category: 'kok', title: (count) => `Δικογραφία Παραβάσεων Κ.Ο.Κ. (${count} έντυπα)`, items: allTemplates.filter((t) => t.category === 'kok') },
+    { category: 'animal', title: (count) => `Δικογραφία Προστασίας Ζώων (${count} έντυπα)`, items: allTemplates.filter((t) => t.category === 'animal') },
+    { category: 'generic', title: (count) => `Λοιπές Υποθέσεις (${count} έντυπα)`, items: allTemplates.filter((t) => t.category === 'generic') },
     { category: null, title: (count) => `Πρόσθετα / προσαρμοσμένα πρότυπα (${count})`, items: allTemplates.filter(isCustom) }
   ];
 
@@ -747,7 +754,7 @@ function render() {
         return;
       }
       expandedCategories.add(categoryKey);
-      if (!group.category) return;
+      if (!group.category || !CATEGORY_LOADERS[group.category]) return;
       panel.textContent = 'Φόρτωση προτύπων…';
       try {
         await ensureDefaultTemplates(storage(), group.category);
@@ -1021,7 +1028,7 @@ async function importTemplate(event) {
       id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `custom-${Date.now()}-${templates.length}`,
       name: file.name,
       category: category === 'custom' ? undefined : category,
-      categoryLabel: category === 'custom' ? 'Προσαρμοσμένο έντυπο' : '',
+      categoryLabel: category === 'custom' ? 'Προσαρμοσμένο έντυπο' : 'Ανεβασμένο αυθεντικό έντυπο',
       source: 'user-uploaded',
       fidelityMode: 'placeholder-only',
       fields: detected,
