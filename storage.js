@@ -259,8 +259,9 @@
   }
 
   function receiveRemoteChange(message) {
-    if (!message || message.source === TAB_ID || !message.key || message.key.indexOf('axyp-') !== 0) return;
+    if (!message || message.source === TAB_ID || !message.key || message.key.indexOf('axyp-') !== 0 || message.key.indexOf(META_PREFIX) === 0) return;
     var revision = Number(message.revision || 0);
+    revisionClock = Math.max(revisionClock, revision);
     if (dirtyKeys[message.key]) {
       localRevisions[message.key] = Math.max(localRevisions[message.key] || 0, revision);
       conflicts[message.key] = { key: message.key, localValue: cache[message.key] ?? null, remoteValue: message.value ?? null, revision: revision, detectedAt: new Date().toISOString() };
@@ -293,8 +294,9 @@
     var conflict = conflicts[key];
     if (!conflict) return Promise.resolve(getStatus());
     delete conflicts[key];
-    if (choice === 'remote') return setItemDurable(key, conflict.remoteValue);
-    return setItemDurable(key, conflict.localValue);
+    var selectedValue = choice === 'remote' ? conflict.remoteValue : conflict.localValue;
+    if (selectedValue === null || selectedValue === undefined) return removeItemDurable(key);
+    return setItemDurable(key, selectedValue);
   }
   function onConflict(listener) { if (typeof listener === 'function') conflictListeners.push(listener); return function () { conflictListeners = conflictListeners.filter(function (entry) { return entry !== listener; }); }; }
   function onChange(listener) { if (typeof listener !== 'function') return function () {}; changeListeners.push(listener); return function () { changeListeners = changeListeners.filter(function (entry) { return entry !== listener; }); }; }
