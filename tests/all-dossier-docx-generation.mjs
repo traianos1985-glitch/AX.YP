@@ -6,7 +6,7 @@ globalThis.window = {
   AXYP_SERVICE_PROFILE: {
     get: () => ({
       name: 'TEST-SERVICE-NAME',
-      operator: 'TEST-Rank TEST-SURNAME-A TEST-NAME-A',
+      operator: 'TEST-Rank TEST-SURNAME-A TestNameA',
       operatorDocument: 'TEST-OFFICER-A-GENITIVE',
       address: 'TEST-SERVICE-ADDRESS',
       phone: 'TEST-SERVICE-PHONE',
@@ -181,14 +181,14 @@ assert.ok(!narcotics02.text.includes('κάτοικων Α.Τ. Τριφυλίας
 assert.equal((narcotics02.text.match(/<w:tbl>/g) || []).length > 0, true, 'narcotics-02 signatures must use a real Word table');
 assert.ok(narcotics02.text.includes('Ο Β΄ Ανακριτικός Υπάλληλος'), 'narcotics-02 table must label investigator B');
 assert.ok(narcotics02.text.includes('TEST-ARRESTING-OFFICER'), 'narcotics-02 signature table must populate the arresting officer');
-assert.ok(narcotics02.text.includes('TEST-Rank TEST-SURNAME-A TEST-NAME-A'), 'narcotics-02 signature table must populate investigator A full name');
+assert.ok(narcotics02.text.includes('TEST-Rank TEST-SURNAME-A TestNameA'), 'narcotics-02 signature table must populate investigator A full name');
 assert.ok(narcotics02.text.includes('TEST-RANK-B TEST-SURNAME-B TEST-NAME-B'), 'narcotics-02 signature table must populate investigator B full name');
 assert.ok(narcotics02.text.includes('TEST-SERVICE-B'), 'narcotics-02 must populate investigator B service in the generated document');
 
 const narcotics10 = generatedText('narcotics-10');
-assert.ok(narcotics10.text.includes('TEST-Rank TEST-SURNAME-A TEST-NAME-A'), 'narcotics-10 D-33 must populate the responsible officer in the rights notice');
+assert.ok(narcotics10.text.includes('TEST-Rank TEST-SURNAME-A TestNameA'), 'narcotics-10 D-33 must populate the responsible officer in the rights notice');
 assert.equal(
-  (narcotics10.text.match(/TEST-Rank TEST-SURNAME-A TEST-NAME-A/g) || []).length,
+  (narcotics10.text.match(/TEST-Rank TEST-SURNAME-A TestNameA/g) || []).length,
   2,
   'narcotics-10 must populate the officer in both the responsible-officer notice and the final officer declaration'
 );
