@@ -87,8 +87,8 @@ assert.equal(valueFor('officerA.fullName', { title: 'OLD-CASE-LEGACY-FIELDS', of
 assert.equal(valueFor('officerA.nominativeFullName', { title: 'OLD-CASE-LEGACY-FIELDS', officerA: legacyCaseOfficerA }), 'Παλιός Βαθμός ΠΑΛΑΙΟ ΠαλιόΌνομα', 'Legacy case-level officer fields retain their original nominative identity');
 assert.equal(valueFor('officerB.fullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακα ΔΟΚΙΜΗΣ Γεώργιου');
 assert.equal(valueFor('officerB.nominativeFullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακας ΔΟΚΙΜΗΣ Γεώργιος');
-assert.equal(valueFor('officerB.service', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
-assert.equal(valueFor('officerB.residence', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
+assert.equal(valueFor('officerB.service', { title: 'CASE-ONLY-DATA' }), 'Νέα Υπηρεσία', 'A case without a saved second-investigator service uses the current installation service profile');
+assert.equal(valueFor('officerB.residence', { title: 'CASE-ONLY-DATA' }), 'Νέα Υπηρεσία', 'A case without a saved second-investigator residence uses the current installation service profile');
 globalThis.window.AXYP_SERVICE_PROFILE.get = () => empty;
 assert.equal(valueFor('officerA.fullName', { title: 'DEFAULT-PROFILE' }), "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού");
 assert.equal(valueFor('officerB.fullName', { title: 'DEFAULT-PROFILE' }), 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου');
