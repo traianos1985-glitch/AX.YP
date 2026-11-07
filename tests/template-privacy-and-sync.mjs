@@ -187,3 +187,16 @@ console.log('Template privacy/synchronization regressions passed.')
 // The generated DOCX and embedded copies are verified by the PR workflow.
 
 // Confirm the final incremental DOCX patch remains covered by CI.
+
+
+const storageSource = await readFile(path.join(root, 'storage.js'), 'utf8')
+const hypothesesSource = await readFile(path.join(root, 'hypotheses.js'), 'utf8')
+assert.match(storageSource, /onChange:/, 'storage exposes a change listener contract')
+assert.match(storageSource, /notifyChange\(message\.key/, 'remote changes notify subscribers')
+assert.match(storageSource, /unresolvedConflicts/, 'flush refuses success while conflicts remain unresolved')
+assert.match(hypothesesSource, /AXYP_STORAGE\.onChange/, 'case views subscribe to remote changes')
+assert.match(hypothesesSource, /Κράτησε αυτή την καρτέλα/, 'case view offers a local conflict choice')
+assert.match(hypothesesSource, /Χρησιμοποίησε την άλλη καρτέλα/, 'case view offers a remote conflict choice')
+
+assert.match(hypothesesSource, /remoteCaseUpdatePending/, 'unsaved stale case forms are protected after a remote update')
+assert.match(hypothesesSource, /Επίλεξε ξανά την υπόθεση/, 'the user is told how to reload the latest case version')
