@@ -709,7 +709,7 @@ function render() {
     details.open = expandedCategories.has(categoryKey);
     const heading = document.createElement('summary');
     heading.className = 'template-category-heading';
-    const categorySeeded = !group.category || !!storage().getItem(CATEGORY_SEED_KEYS[group.category]);
+    const categorySeeded = !group.category || !CATEGORY_SEED_KEYS[group.category] || !!storage().getItem(CATEGORY_SEED_KEYS[group.category]);
     heading.textContent = group.title(group.items.length) + (categorySeeded ? '' : ' · άνοιγμα για φόρτωση');
     details.appendChild(heading);
     const panel = document.createElement('div');
