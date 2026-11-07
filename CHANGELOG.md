@@ -1,3 +1,9 @@
+## Unreleased — Διορθώσεις Critical (C1 & C2) στην παραγωγή DOCX
+
+- Διορθώθηκε το Critical C1: Ο έλεγχος για υπάρχοντα δηλωμένο namespace `xmlns:r` στο `ensureTemplateVersionFooter` πλέον στοχεύει αποκλειστικά το root tag `<w:document>` αντί για το XML prolog `<?xml ...?>`. Εξαλείφθηκε η διπλή δήλωση `xmlns:r` σε όλα τα παραγόμενα έγγραφα DOCX (39/39 έγκυρα σε XML parsers, python-docx, xmllint και LibreOffice).
+- Διορθώθηκε το Critical C2: Στη συνάρτηση `replaceTextAcrossWordRuns`, το περιεχόμενο των `<w:t>` αποκωδικοποιείται (unescape) πριν από τον έλεγχο ταύτισης και γίνεται re-escaping μόνο στο τελικό στάδιο, αποτρέποντας τη συσσώρευση αλλεπάλληλων XML entities (όπως `&amp;amp;...apos;`). Εξαλείφθηκαν πλήρως τα ορατά υπολείμματα entities σε όλα τα έγγραφα.
+- Προστέθηκε νέο regression test (`tests/docx-xml-validation.mjs`) και εντάχθηκε στο `npm test`, το οποίο παράγει και τα 39 ενσωματωμένα πρότυπα και επαληθεύει την ακεραιότητα των attributes στο root tag και την απουσία διπλών escaped entities σε όλα τα επιμέρους XML αρχεία.
+
 ## 2026-11-06 — Διόρθωση μητρώου και δοκιμές Chrome + Firefox
 
 - Διορθώθηκε ο selector αρχικοποίησης του μητρώου δικογραφίας: πλέον συνδέεται με το πραγματικό `case-register-section` του HTML, ώστε να ενεργοποιούνται οι προσθήκες και αφαιρέσεις προσώπων, πειστηρίων και ενεργειών.
