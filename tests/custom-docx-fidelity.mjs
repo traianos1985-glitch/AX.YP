@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { buildDocx, buildCategoryArchive } from '../template-library.js';
-import { unzipSync, zipSync } from '../vendor/fflate.js';
+import { unzipSync } from '../vendor/fflate.js';
 
 const encode = (value) => new TextEncoder().encode(value);
 const decode = (value) => new TextDecoder().decode(value);
@@ -14,7 +14,6 @@ const originalParts = {
   'word/styles.xml': encode('<?xml version="1.0"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:styleId="Normal"/></w:styles>'),
   'docProps/core.xml': encode('<?xml version="1.0"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"><dc:title xmlns:dc="http://purl.org/dc/elements/1.1/">Original metadata</dc:title></cp:coreProperties>')
 };
-const originalZip = zipSync(originalParts);
 const template = {
   id: 'uploaded-form-001',
   name: 'Αυθεντικό έντυπο.docx',
