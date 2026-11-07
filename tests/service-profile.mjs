@@ -14,9 +14,9 @@ assert.deepEqual(Object.keys(empty), [...SERVICE_PROFILE_FIELDS]);
 assert.equal(empty.name, 'Αστυνομικό Τμήμα Τριφυλίας');
 assert.equal(empty.location, 'Κυπαρισσία');
 assert.equal(empty.operator, "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός");
-assert.equal(empty.operatorDocument, "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού");
+assert.equal(empty.operatorDocument, '');
 assert.equal(empty.secondOfficer, 'Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος');
-assert.equal(empty.secondOfficerDocument, 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου');
+assert.equal(empty.secondOfficerDocument, '');
 assert.ok(Object.entries(empty).filter(([field]) => !['name', 'location', 'operator', 'operatorDocument', 'secondOfficer', 'secondOfficerDocument'].includes(field)).every(([, value]) => value === ''));
 assert.equal(getServiceProfileBackupValue(storage), JSON.stringify(empty), 'An empty profile must also be backed up to prevent stale cross-installation values');
 
@@ -62,6 +62,10 @@ assert.equal(valueFor('officerA.service', { title: 'CASE-ONLY-DATA' }), 'Αστ�
 assert.equal(valueFor('officerB.fullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακα ΔΟΚΙΜΗΣ Γεώργιου');
 assert.equal(valueFor('officerB.nominativeFullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακας ΔΟΚΙΜΗΣ Γεώργιος');
 assert.equal(valueFor('officerB.service', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
+globalThis.window.AXYP_SERVICE_PROFILE.get = () => empty;
+assert.equal(valueFor('officerA.fullName', { title: 'DEFAULT-PROFILE' }), "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού");
+assert.equal(valueFor('officerB.fullName', { title: 'DEFAULT-PROFILE' }), 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου');
+globalThis.window.AXYP_SERVICE_PROFILE.get = () => saved;
 assert.equal(valueFor('service.chemicalService', { title: 'CASE-ONLY-DATA' }), 'Χημική Υπηρεσία Δοκιμής');
 assert.equal(valueFor('service.prosecutor', { title: 'CASE-ONLY-DATA' }), 'Εισαγγελία Πρωτοδικών Δοκιμής');
 assert.ok(!JSON.stringify(saved).includes('Τριφυλ'));
