@@ -984,9 +984,14 @@ async function importTemplate(event) {
     const detected = extractFields(allXml);
     const documentXml = new TextDecoder().decode(anonymizedParts['word/document.xml']);
     const templates = read();
+    const category = $('template-category')?.value || 'custom';
     templates.push({
-      id: `${Date.now()}`,
+      id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `custom-${Date.now()}-${templates.length}`,
       name: file.name,
+      category: category === 'custom' ? undefined : category,
+      categoryLabel: category === 'custom' ? 'Προσαρμοσμένο έντυπο' : '',
+      source: 'user-uploaded',
+      fidelityMode: 'placeholder-only',
       fields: detected,
       documentXml,
       anonymizationReviewedAt: new Date().toISOString(),
@@ -1287,22 +1292,30 @@ function ensureTemplateVersionFooter(files, template) {
 export function buildDocx(template, item) {
   if (!template || !item) throw new Error('Template and case data are required');
   const files = getTemplateParts(template);
+  const userUploaded = template.source === 'user-uploaded' || (!template.category && !!template.files);
 
-  // Use the same production replacement path for the main document,
-  // headers, footers, footnotes and any other Word XML part.
   Object.keys(files).forEach((filename) => {
-    if (filename.startsWith('word/') && filename.endsWith('.xml')) {
-      const xml = new TextDecoder().decode(files[filename]);
-      const templatePatched = template.category === 'narcotics' ? patchNarcoticsTemplateXml(xml, template.id) : xml;
-      const correctedServicePlaceholders = correctOfficerServicePlaceholders(templatePatched);
-      const withCurrentServiceReferences = replaceLegacyLocalServiceReferences(correctedServicePlaceholders);
-      const populated = replaceInXml(withCurrentServiceReferences, template, item);
-      const withCurrentDates = replaceLegacyFixedDateText(populated, item);
-      files[filename] = new TextEncoder().encode(normalizeGreekDocxXml(withCurrentDates));
+    if (!filename.startsWith('word/') || !filename.endsWith('.xml')) return;
+    const originalXml = new TextDecoder().decode(files[filename]);
+
+    if (userUploaded) {
+      // Uploaded official forms are authoritative: resolve placeholders only.
+      // No legacy service/date substitutions, wording corrections, footer injection,
+      // signature-table patches or broad typography normalization are permitted.
+      const placeholderXml = normalizeDocxXml(originalXml);
+      files[filename] = new TextEncoder().encode(replaceInXml(placeholderXml, template, item));
+      return;
     }
+
+    const templatePatched = template.category === 'narcotics' ? patchNarcoticsTemplateXml(originalXml, template.id) : originalXml;
+    const correctedServicePlaceholders = correctOfficerServicePlaceholders(templatePatched);
+    const withCurrentServiceReferences = replaceLegacyLocalServiceReferences(correctedServicePlaceholders);
+    const populated = replaceInXml(withCurrentServiceReferences, template, item);
+    const withCurrentDates = replaceLegacyFixedDateText(populated, item);
+    files[filename] = new TextEncoder().encode(normalizeGreekDocxXml(withCurrentDates));
   });
 
-  ensureTemplateVersionFooter(files, template);
+  if (!userUploaded) ensureTemplateVersionFooter(files, template);
   return zipSync(files);
 }
 
