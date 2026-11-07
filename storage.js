@@ -4,8 +4,10 @@
 
   var DB_NAME = 'axyp-local-db';
   var STORE_NAME = 'kv';
-  var STORAGE_SCHEMA_VERSION = 2;
+  var STORAGE_SCHEMA_VERSION = 3;
   var SCHEMA_KEY = 'axyp-storage-schema';
+  var META_PREFIX = 'axyp-storage-meta:';
+  var revisionClock = Date.now();
   var TAB_ID = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2);
   var channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('axyp-storage') : null;
   var conflicts = Object.create(null);
@@ -107,6 +109,38 @@
     }
   }
 
+  function readLocalMeta(key) {
+    try {
+      var raw = localStorage.getItem(META_PREFIX + key);
+      var parsed = raw ? JSON.parse(raw) : null;
+      if (!parsed || !Number.isFinite(Number(parsed.revision))) return null;
+      return { revision: Number(parsed.revision), updatedAt: String(parsed.updatedAt || '') };
+    } catch (_) { return null; }
+  }
+
+  function nextRevision() {
+    revisionClock = Math.max(Date.now(), revisionClock + 1);
+    return revisionClock;
+  }
+
+  function makeRecord(value, revision) {
+    return { __axypRecord: 1, value: value, revision: revision, updatedAt: new Date().toISOString() };
+  }
+
+  function asRecord(value) {
+    if (value && typeof value === 'object' && value.__axypRecord === 1 && Number.isFinite(Number(value.revision)) && typeof value.value === 'string') {
+      return { value: value.value, revision: Number(value.revision), updatedAt: String(value.updatedAt || '') };
+    }
+    return null;
+  }
+
+  function preferRecord(localValue, localMeta, indexedValue) {
+    var indexedRecord = asRecord(indexedValue);
+    if (!indexedRecord) return localValue !== null ? { value: localValue, revision: localMeta ? localMeta.revision : 0 } : (indexedValue !== undefined && indexedValue !== null ? { value: String(indexedValue), revision: 0 } : null);
+    if (localValue === null || !localMeta) return indexedRecord;
+    return indexedRecord.revision > localMeta.revision ? indexedRecord : { value: localValue, revision: localMeta.revision };
+  }
+
   // Το σύγχρονο API διατηρείται για συμβατότητα με τις υπάρχουσες ενότητες.
   // Οι κρίσιμες ροές μπορούν να καλέσουν flush()/setItemDurable() για επιβεβαίωση.
   KNOWN_KEYS.forEach(function (key) {
@@ -144,10 +178,13 @@
           var request = store.get(key);
           request.onsuccess = function () {
             if (dirtyKeys[key]) return;
-            if (request.result !== undefined && request.result !== null) {
-              cache[key] = request.result;
-            } else if (cache[key] !== undefined) {
-              pendingMigration.push([key, cache[key]]);
+            var localValue = readLocalStorage(key);
+            var localMeta = readLocalMeta(key);
+            var chosen = preferRecord(localValue, localMeta, request.result);
+            if (chosen) {
+              cache[key] = chosen.value;
+              localRevisions[key] = chosen.revision;
+              if (chosen.value !== localValue || !localMeta || chosen.revision > localMeta.revision) pendingMigration.push([key, chosen.value, chosen.revision]);
             }
           };
         });
@@ -157,9 +194,15 @@
             var writeTx = db.transaction(STORE_NAME, 'readwrite');
             var writeStore = writeTx.objectStore(STORE_NAME);
             pendingMigration.forEach(function (entry) {
-              if (!dirtyKeys[entry[0]]) writeStore.put(entry[1], entry[0]);
+              if (!dirtyKeys[entry[0]]) writeStore.put(makeRecord(entry[1], entry[2]), entry[0]);
             });
             transactionDone(writeTx).then(function () {
+              pendingMigration.forEach(function (entry) {
+                try {
+                  localStorage.setItem(entry[0], entry[1]);
+                  localStorage.setItem(META_PREFIX + entry[0], JSON.stringify({ revision: entry[2], updatedAt: new Date().toISOString() }));
+                } catch (_) {}
+              });
               resolve(getStatus());
             }).catch(function (error) {
               lastError = error;
@@ -225,8 +268,8 @@
     return readLocalStorage(key);
   }
 
-  function broadcastChange(key, value) {
-    var revision = Date.now();
+  function broadcastChange(key, value, explicitRevision) {
+    var revision = explicitRevision || nextRevision();
     localRevisions[key] = revision;
     if (channel) channel.postMessage({ source: TAB_ID, key: key, value: value, revision: revision });
   }
@@ -263,33 +306,41 @@
     return tracked;
   }
 
-  function writeToDB(key, value, remove) {
+  function writeToDB(key, value, remove, revision) {
     return openDB().then(function (db) {
       if (!db) throw lastError || makeError('Το IndexedDB δεν είναι διαθέσιμο.');
       var tx = db.transaction(STORE_NAME, 'readwrite');
       var store = tx.objectStore(STORE_NAME);
       if (remove) store.delete(key);
-      else store.put(value, key);
+      else store.put(makeRecord(value, revision), key);
       return transactionDone(tx).then(function () {
       });
     });
   }
 
   function setItem(key, value) {
+    if (conflicts[key]) {
+      lastError = makeError('Η εγγραφή απορρίφθηκε: υπάρχει νεότερη αλλαγή σε άλλη καρτέλα.');
+      notifyConflict(conflicts[key]);
+      return false;
+    }
     var stringValue = String(value);
+    var revision = nextRevision();
     cache[key] = stringValue;
-    broadcastChange(key, stringValue);
+    localRevisions[key] = revision;
+    broadcastChange(key, stringValue, revision);
     dirtyKeys[key] = true;
     var localOk = false;
     try {
       localStorage.setItem(key, stringValue);
+      localStorage.setItem(META_PREFIX + key, JSON.stringify({ revision: revision, updatedAt: new Date().toISOString() }));
       localOk = true;
     } catch (error) {
       if (!indexedDBAvailable) {
         lastError = error;
       }
     }
-    trackWrite(writeToDB(key, stringValue, false).catch(function (error) {
+    trackWrite(writeToDB(key, stringValue, false, revision).catch(function (error) {
       if (localOk) return;
       throw makeError('Δεν αποθηκεύτηκαν τα δεδομένα ούτε στο IndexedDB ούτε στο localStorage.', error);
     }), key);
@@ -301,12 +352,15 @@
   }
 
   function removeItem(key) {
+    var revision = nextRevision();
     delete cache[key];
-    broadcastChange(key, null);
+    localRevisions[key] = revision;
+    broadcastChange(key, null, revision);
     dirtyKeys[key] = true;
     var localOk = false;
     try {
       localStorage.removeItem(key);
+      localStorage.removeItem(META_PREFIX + key);
       localOk = true;
     } catch (error) {
       if (!indexedDBAvailable) {
@@ -327,11 +381,14 @@
   function setItemsDurable(entries) {
     return flush().then(function () {
       if (!Array.isArray(entries) || !entries.length) throw new Error('Δεν δόθηκαν έγκυρα δεδομένα επαναφοράς.');
+      if (entries.some(function (entry) { return Array.isArray(entry) && conflicts[entry[0]]; })) {
+        throw new Error('Η επαναφορά απορρίφθηκε: υπάρχει νεότερη αλλαγή σε άλλη καρτέλα.');
+      }
       var normalized = entries.map(function (entry) {
         if (!Array.isArray(entry) || typeof entry[0] !== 'string' || entry[0].indexOf('axyp-') !== 0) {
           throw new Error('Το αντίγραφο περιέχει μη επιτρεπτό κλειδί αποθήκευσης.');
         }
-        return [entry[0], entry[1] === null || entry[1] === undefined ? null : String(entry[1])];
+        return [entry[0], entry[1] === null || entry[1] === undefined ? null : String(entry[1]), nextRevision()];
       });
       return openDB().then(function (db) {
         var committedToDb = false;
@@ -342,7 +399,7 @@
             var store = tx.objectStore(STORE_NAME);
             normalized.forEach(function (entry) {
               if (entry[1] === null) store.delete(entry[0]);
-              else store.put(entry[1], entry[0]);
+              else store.put(makeRecord(entry[1], entry[2]), entry[0]);
             });
             return transactionDone(tx).then(function () {
               committedToDb = true;
@@ -365,8 +422,13 @@
                 previous.push([entry[0], localStorage.getItem(entry[0])]);
               });
               normalized.forEach(function (entry) {
-                if (entry[1] === null) localStorage.removeItem(entry[0]);
-                else localStorage.setItem(entry[0], entry[1]);
+                if (entry[1] === null) {
+                  localStorage.removeItem(entry[0]);
+                  localStorage.removeItem(META_PREFIX + entry[0]);
+                } else {
+                  localStorage.setItem(entry[0], entry[1]);
+                  localStorage.setItem(META_PREFIX + entry[0], JSON.stringify({ revision: entry[2], updatedAt: new Date().toISOString() }));
+                }
               });
             } catch (error) {
               previous.forEach(function (entry) {
@@ -380,8 +442,13 @@
           } else {
             try {
               normalized.forEach(function (entry) {
-                if (entry[1] === null) localStorage.removeItem(entry[0]);
-                else localStorage.setItem(entry[0], entry[1]);
+                if (entry[1] === null) {
+                  localStorage.removeItem(entry[0]);
+                  localStorage.removeItem(META_PREFIX + entry[0]);
+                } else {
+                  localStorage.setItem(entry[0], entry[1]);
+                  localStorage.setItem(META_PREFIX + entry[0], JSON.stringify({ revision: entry[2], updatedAt: new Date().toISOString() }));
+                }
               });
             } catch (error) {
               // localStorage quota exceeded is expected for large datasets (>5MB).
