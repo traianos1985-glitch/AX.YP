@@ -10,7 +10,7 @@ globalThis.window = {
   AXYP_SERVICE_PROFILE: {
     get: () => ({
       name: 'TEST-SERVICE-A',
-      operator: 'TEST-Rank TEST-SURNAME-A TEST-NAME-A',
+      operator: 'TEST-Rank TEST-SURNAME-A TestNameA',
       operatorDocument: 'TEST-OFFICER-A-GENITIVE'
     })
   }
@@ -40,7 +40,7 @@ for (const value of [
   'TEST-ARRESTING-OFFICER',
   'TEST-PERSON-SURNAME TEST-PERSON-NAME',
   'TEST-RANK-B TEST-SURNAME-B TEST-NAME-B',
-  'TEST-Rank TEST-SURNAME-A TEST-NAME-A'
+  'TEST-Rank TEST-SURNAME-A TestNameA'
 ]) {
   assert.ok(signatureTable.includes(value), `Signature table must include ${value}`);
 }
