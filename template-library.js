@@ -680,7 +680,7 @@ function render() {
   const isNoise = (t) => t.category === 'noise';
   const isCamping = (t) => t.category === 'camping';
   const isCommerce = (t) => t.category === 'commerce';
-  const isNarcotics = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && !isCommerce(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
+  const isNarcotics = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && !isCommerce(t) && (t.category === 'narcotics' || (!t.category && !t.files && (t.name.startsWith('0') || t.name.startsWith('10_'))));
   const knownDossierCategories = new Set(['narcotics', 'counterfeit', 'environment', 'health', 'noise', 'camping', 'commerce', 'domestic', 'migration', 'traffic', 'kok', 'animal', 'generic']);
   const isCustom = (t) => !isNarcotics(t) && !knownDossierCategories.has(t.category);
 
@@ -1027,7 +1027,7 @@ async function importTemplate(event) {
     templates.push({
       id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `custom-${Date.now()}-${templates.length}`,
       name: file.name,
-      category: category === 'custom' ? undefined : category,
+      category,
       categoryLabel: category === 'custom' ? 'Προσαρμοσμένο έντυπο' : 'Ανεβασμένο αυθεντικό έντυπο',
       source: 'user-uploaded',
       fidelityMode: 'placeholder-only',
