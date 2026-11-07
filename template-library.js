@@ -1114,10 +1114,10 @@ async function importTemplate(event) {
     const documentXml = new TextDecoder().decode(anonymizedParts['word/document.xml']);
     const templates = read();
     const category = $('template-category')?.value || 'custom';
-    const categoryCount = templates.filter((template) => template.category === category && (template.source === 'user-uploaded' || template.source === 'published-package')).length;
+    const categoryCount = [...PUBLISHED_DOSSIER_TEMPLATES, ...templates].filter((template) => template.category === category && (template.source === 'user-uploaded' || template.source === 'published-package')).length;
     const enteredName = window.prompt('Δώσε ουδέτερο όνομα για το έντυπο που θα βλέπουν όλοι οι χρήστες. Μην περιλάβεις ονόματα, αριθμούς πρωτοκόλλου ή άλλα στοιχεία πραγματικής υπόθεσης.', `Έντυπο ${categoryCount + 1}.docx`);
     if (enteredName === null) return;
-    let safeName = enteredName.trim().replace(/[\\\\/:*?"<>|]+/gu, '-');
+    let safeName = enteredName.trim().replace(/[\\\\/:*?"<>|\\u0000-\\u001f]+/gu, '-').slice(0, 120);
     if (!safeName) throw new Error('Χρειάζεται ουδέτερο όνομα για το έντυπο.');
     if (!/\\.docx$/iu.test(safeName)) safeName += '.docx';
     templates.push({
