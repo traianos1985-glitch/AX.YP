@@ -62,7 +62,7 @@ const syntheticCase = {
   people: 'TEST-PEOPLE',
   evidence: 'TEST-EVIDENCE',
   arrestingOfficer: 'TEST-ARRESTING-OFFICER',
-  officerA: { rank: 'TEST-RANK-A', surname: 'TEST-SURNAME-A', name: 'TEST-NAME-A', service: 'TEST-SERVICE-A' },
+  officerA: { fullName: 'TEST-Rank TEST-SURNAME-A TestNameA', documentFullName: 'TEST-OFFICER-A-GENITIVE', rank: 'TEST-Rank', surname: 'TEST-SURNAME-A', name: 'TestNameA', service: 'TEST-SERVICE-NAME', residence: 'TEST-SERVICE-NAME' },
   officerB: { rank: 'TEST-RANK-B', surname: 'TEST-SURNAME-B', name: 'TEST-NAME-B', service: 'TEST-SERVICE-B' },
   offender: {
     surname: 'TEST-PERSON-SURNAME', name: 'TEST-PERSON-NAME',
