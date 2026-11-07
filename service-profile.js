@@ -12,6 +12,26 @@ export function readServiceProfile(storageInstance) {
   } catch (_) { return empty(); }
 }
 
+export function getServiceProfileBackupValue(storageInstance) {
+  if (!storageInstance || typeof storageInstance.getItem !== 'function') return null;
+  return storageInstance.getItem(KEY);
+}
+
+export function getServiceProfileRestoreEntry(payload) {
+  if (!payload || !Object.prototype.hasOwnProperty.call(payload, 'serviceProfile') || payload.serviceProfile === null) return null;
+  let saved;
+  try {
+    saved = typeof payload.serviceProfile === 'string' ? JSON.parse(payload.serviceProfile) : payload.serviceProfile;
+  } catch (_) {
+    throw new Error('Το προφίλ υπηρεσίας στο αντίγραφο ασφαλείας δεν είναι έγκυρο JSON.');
+  }
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) {
+    throw new Error('Το προφίλ υπηρεσίας στο αντίγραφο ασφαλείας έχει μη έγκυρη μορφή.');
+  }
+  const profile = Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean(saved[field])]));
+  return [KEY, JSON.stringify(profile)];
+}
+
 export function writeServiceProfile(storageInstance, values) {
   if (!storageInstance || typeof storageInstance.setItem !== 'function') throw new Error('Η τοπική αποθήκευση δεν είναι διαθέσιμη.');
   const profile = Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean(values && values[field])]));
