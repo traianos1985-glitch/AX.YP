@@ -20,7 +20,7 @@ const output = new TextDecoder().decode(anonymized['word/document.xml']);
 assert.ok(output.includes('{{person.taxId}}'));
 assert.ok(output.includes('{{person.idNumber}}'));
 assert.ok(output.includes('{{person.phone}}'));
-assert.ok(output.includes('{{vehicle.plate}}'));
+assert.ok(output.includes('{{vehicle.registration}}'));
 assert.ok(output.includes('{{person.email}}'));
 assert.ok(output.includes('ΜΑΡΙΑ ΠΑΠΑΔΟΠΟΥΛΟΥ'), 'Unapproved name suggestion must remain unchanged');
 assert.ok(!output.includes('123456789'));
