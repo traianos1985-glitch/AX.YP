@@ -476,7 +476,8 @@ function uid() {
     DOSSIER_CATEGORIES.forEach(function (category) {
       var caseCount = items.filter(function (item) { return (item.profile || 'generic') === category.id; }).length;
       var categoryTemplates = window.TemplateLibrary && window.TemplateLibrary.getCategoryTemplates ? window.TemplateLibrary.getCategoryTemplates(category.id) : templates.filter(function (item) { return item.category === category.id || item.profile === category.id; });
-      var templateCount = window.TemplateLibrary && window.TemplateLibrary.templatesForCategoryGeneration ? window.TemplateLibrary.templatesForCategoryGeneration(categoryTemplates).length : categoryTemplates.length;
+      var officialTemplates = categoryTemplates.filter(function (template) { return template.source === 'user-uploaded' || template.source === 'published-package'; });
+      var templateCount = officialTemplates.length;
       var card = document.createElement('article'); card.className = 'dossier-category';
       var top = document.createElement('div'); top.className = 'dossier-category-top';
       var mark = document.createElement('span'); mark.className = 'dossier-category-mark'; mark.textContent = category.mark;
@@ -503,10 +504,10 @@ function uid() {
         // Categories without built-in examples may still contain creator-uploaded official documents.
       }
       var templates = window.TemplateLibrary.getCategoryTemplates(activeProfileFilter);
-      var selected = window.TemplateLibrary.templatesForCategoryGeneration(templates);
+      var selected = templates.filter(function (template) { return template.source === 'user-uploaded' || template.source === 'published-package'; });
       root.textContent = '';
       if (!selected.length) {
-        root.textContent = 'Δεν έχουν προστεθεί ακόμη έντυπα σε αυτή την κατηγορία.';
+        root.textContent = 'Δεν έχει δημοσιευθεί ακόμη επίσημο πακέτο εντύπων για αυτή την κατηγορία. Τα ενσωματωμένα βοηθητικά πρότυπα δεν χρησιμοποιούνται στην κύρια ροή δικογραφίας.';
         return;
       }
       var list = document.createElement('ol');
@@ -544,7 +545,7 @@ function uid() {
         // Creator-uploaded categories do not require built-in seed data.
       }
       var categoryTemplates = window.TemplateLibrary.getCategoryTemplates(activeProfileFilter);
-      var selectedTemplates = window.TemplateLibrary.templatesForCategoryGeneration(categoryTemplates);
+      var selectedTemplates = categoryTemplates.filter(function (template) { return template.source === 'user-uploaded' || template.source === 'published-package'; });
       if (!selectedTemplates.length) {
         $('case-flash').textContent = 'Δεν υπάρχουν διαθέσιμα έντυπα για αυτή την κατηγορία. Η φόρμα δεν καθαρίστηκε.';
         return;
