@@ -1,4 +1,5 @@
-const KEY = 'axyp-service-profile-v1';
+export const SERVICE_PROFILE_STORAGE_KEY = 'axyp-service-profile-v1';
+const KEY = SERVICE_PROFILE_STORAGE_KEY;
 export const SERVICE_PROFILE_FIELDS = Object.freeze(['name', 'directorate', 'address', 'phone', 'email', 'prosecutor', 'chemicalService']);
 const clean = (value) => String(value ?? '').trim();
 
@@ -9,6 +10,32 @@ export function readServiceProfile(storageInstance) {
     const saved = JSON.parse(storageInstance.getItem(KEY) || '{}');
     return Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean(saved[field])]));
   } catch (_) { return empty(); }
+}
+
+export function getServiceProfileBackupValue(storageInstance) {
+  // Store a normalized profile even when this installation has never saved one.
+  // A full restore must not accidentally retain another installation's profile.
+  return JSON.stringify(readServiceProfile(storageInstance));
+}
+
+export function getServiceProfileRestoreEntry(payload) {
+  if (!payload || !Object.prototype.hasOwnProperty.call(payload, 'serviceProfile') || payload.serviceProfile === null) return null;
+  let saved;
+  try {
+    saved = typeof payload.serviceProfile === 'string' ? JSON.parse(payload.serviceProfile) : payload.serviceProfile;
+  } catch (_) {
+    throw new Error('Το προφίλ υπηρεσίας στο αντίγραφο ασφαλείας δεν είναι έγκυρο JSON.');
+  }
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) {
+    throw new Error('Το προφίλ υπηρεσίας στο αντίγραφο ασφαλείας έχει μη έγκυρη μορφή.');
+  }
+  for (const field of SERVICE_PROFILE_FIELDS) {
+    if (saved[field] !== undefined && saved[field] !== null && typeof saved[field] !== 'string') {
+      throw new Error('Το πεδίο ' + field + ' στο προφίλ υπηρεσίας έχει μη έγκυρη μορφή.');
+    }
+  }
+  const profile = Object.fromEntries(SERVICE_PROFILE_FIELDS.map((field) => [field, clean(saved[field])]));
+  return [KEY, JSON.stringify(profile)];
 }
 
 export function writeServiceProfile(storageInstance, values) {

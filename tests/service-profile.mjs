@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS } from '../service-profile.js';
+import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS, SERVICE_PROFILE_STORAGE_KEY, getServiceProfileBackupValue, getServiceProfileRestoreEntry } from '../service-profile.js';
 
+assert.equal(SERVICE_PROFILE_STORAGE_KEY, 'axyp-service-profile-v1');
 const values = new Map();
 const storage = {
   getItem(key) { return values.has(key) ? values.get(key) : null; },
@@ -9,6 +10,7 @@ const storage = {
 const empty = readServiceProfile(storage);
 assert.deepEqual(Object.keys(empty), [...SERVICE_PROFILE_FIELDS]);
 assert.ok(Object.values(empty).every((value) => value === ''));
+assert.equal(getServiceProfileBackupValue(storage), JSON.stringify(empty), 'An empty profile must also be backed up to prevent stale cross-installation values');
 
 const saved = writeServiceProfile(storage, {
   name: 'Αστυνομικό Τμήμα Δοκιμής',
@@ -23,6 +25,13 @@ assert.equal(saved.name, 'Αστυνομικό Τμήμα Δοκιμής');
 assert.equal(saved.chemicalService, 'Χημική Υπηρεσία Δοκιμής');
 assert.ok(!Object.hasOwn(saved, 'ignored'));
 assert.deepEqual(readServiceProfile(storage), saved);
+assert.equal(getServiceProfileBackupValue(storage), JSON.stringify(saved));
+const restoredEntry = getServiceProfileRestoreEntry({ serviceProfile: JSON.stringify(saved) });
+assert.deepEqual(restoredEntry, [SERVICE_PROFILE_STORAGE_KEY, JSON.stringify(saved)]);
+assert.equal(getServiceProfileRestoreEntry({ schema: 2 }), null);
+assert.throws(() => getServiceProfileRestoreEntry({ serviceProfile: '{invalid' }), /έγκυρο JSON/u);
+assert.throws(() => getServiceProfileRestoreEntry({ serviceProfile: JSON.stringify({ name: { unexpected: true } }) }), /μη έγκυρη μορφή/u);
+
 
 globalThis.window = { AXYP_SERVICE_PROFILE: { get: () => saved } };
 const { valueFor } = await import('../template-library.js');

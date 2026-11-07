@@ -41,7 +41,8 @@ async function runFetch({ request, cachedResponse, cachedIndex }) {
       });
     }),
     setTimeout(callback, delay) {
-      assert.equal(delay, 3000, 'network timeout must remain three seconds');
+      const expectedDelay = /\/dossier-packages\/[^/]+\.axyp\.zip$/u.test(new URL(request.url).pathname) ? 60000 : 3000;
+      assert.equal(delay, expectedDelay, 'ordinary assets retain the short timeout while published dossier packages get a longer download window');
       timeoutCallback = callback;
       return 1;
     },
@@ -66,6 +67,14 @@ const assetResult = await runFetch({
 });
 assert.equal(assetResult.aborted, true, 'stalled network request should be aborted');
 assert.equal(await assetResult.response.text(), 'cached asset', 'cached asset should be returned after timeout');
+
+const cachedPackage = new Response('cached dossier package', { status: 200 });
+const packageResult = await runFetch({
+  request: { method: 'GET', url: 'https://axyp.test/dossier-packages/axyp-generic-official-package.axyp.zip', mode: 'cors' },
+  cachedResponse: cachedPackage
+});
+assert.equal(packageResult.aborted, true, 'stalled published package download should be aborted only after the extended timeout');
+assert.equal(await packageResult.response.text(), 'cached dossier package', 'cached dossier package should be returned after timeout');
 
 const cachedIndex = new Response('cached app shell', { status: 200 });
 const navigationResult = await runFetch({

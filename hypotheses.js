@@ -1,4 +1,5 @@
 import { DOSSIER_CATEGORIES } from './dossier-categories.js';
+import { getServiceProfileBackupValue, getServiceProfileRestoreEntry } from './service-profile.js';
 import { getCaseRegisterData, loadCaseRegister, resetCaseRegister } from './case-register.js';
 
 if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
@@ -474,7 +475,9 @@ function uid() {
     var items = read(), templates = readTemplates();
     DOSSIER_CATEGORIES.forEach(function (category) {
       var caseCount = items.filter(function (item) { return (item.profile || 'generic') === category.id; }).length;
-      var templateCount = templates.filter(function (item) { return item.category === category.id || item.profile === category.id; }).length;
+      var categoryTemplates = window.TemplateLibrary && window.TemplateLibrary.getCategoryTemplates ? window.TemplateLibrary.getCategoryTemplates(category.id) : templates.filter(function (item) { return item.category === category.id || item.profile === category.id; });
+      var officialTemplates = categoryTemplates.filter(function (template) { return template.source === 'user-uploaded' || template.source === 'published-package'; });
+      var templateCount = officialTemplates.length;
       var card = document.createElement('article'); card.className = 'dossier-category';
       var top = document.createElement('div'); top.className = 'dossier-category-top';
       var mark = document.createElement('span'); mark.className = 'dossier-category-mark'; mark.textContent = category.mark;
@@ -483,13 +486,96 @@ function uid() {
       var stats = document.createElement('div'); stats.className = 'dossier-category-stats';
       var count = document.createElement('span'); count.className = 'dossier-stat'; count.textContent = caseCount + (caseCount === 1 ? ' υπόθεση' : ' υποθέσεις');
       var docs = document.createElement('span'); docs.className = 'dossier-stat'; docs.textContent = templateCount + (templateCount === 1 ? ' πρότυπο Word' : ' πρότυπα Word'); stats.append(count, docs);
-      var note = document.createElement('p'); note.className = 'dossier-category-note'; note.textContent = templateCount ? 'Διαθέσιμα πρότυπα για αυτή την κατηγορία.' : 'Τα επίσημα έγγραφα και πρότυπα θα προστεθούν όταν τα ανεβάσεις.';
+      var note = document.createElement('p'); note.className = 'dossier-category-note'; note.textContent = templateCount ? 'Διαθέσιμα έντυπα για αυτή την κατηγορία.' : 'Δεν έχει δημοσιευθεί ακόμη πακέτο εντύπων για αυτή την κατηγορία.';
       var actions = document.createElement('div'); actions.className = 'dossier-category-actions';
       var open = document.createElement('button'); open.type = 'button'; open.textContent = 'Προβολή'; open.onclick = function () { openCategory(category.id, false); };
       var create = document.createElement('button'); create.type = 'button'; create.className = 'primary'; create.textContent = '+ Νέα υπόθεση'; create.onclick = function () { openCategory(category.id, true); };
       actions.append(open, create); card.append(top, stats, note, actions); root.appendChild(card);
     });
   }
+  async function renderDossierTemplates() {
+    var root = $('dossier-template-list');
+    if (!root || !activeProfileFilter) return;
+    root.textContent = 'Φόρτωση εντύπων…';
+    try {
+      await import('./template-library.js');
+      await window.TemplateLibrary.ready;
+      var templates = window.TemplateLibrary.getCategoryTemplates(activeProfileFilter);
+      var selected = templates.filter(function (template) { return template.source === 'user-uploaded' || template.source === 'published-package'; });
+      root.textContent = '';
+      if (!selected.length) {
+        root.textContent = 'Δεν έχει δημοσιευθεί ακόμη επίσημο πακέτο εντύπων για αυτή την κατηγορία. Τα ενσωματωμένα βοηθητικά πρότυπα δεν χρησιμοποιούνται στην κύρια ροή δικογραφίας.';
+        return;
+      }
+      var list = document.createElement('ol');
+      list.className = 'dossier-template-items';
+      selected.forEach(function (template) {
+        var item = document.createElement('li');
+        var name = document.createElement('strong');
+        name.textContent = template.name || 'Έντυπο Word';
+        var source = document.createElement('small');
+        source.textContent = template.source === 'published-package' ? 'Επίσημο πακέτο εφαρμογής' : template.source === 'user-uploaded' ? 'Τοπικό ανέβασμα δημιουργού · μη δημοσιευμένο' : 'Ενσωματωμένο βοηθητικό πρότυπο';
+        item.append(name, source);
+        list.appendChild(item);
+      });
+      root.appendChild(list);
+      var note = document.createElement('p');
+      note.className = 'muted';
+      note.textContent = selected.length + (selected.length === 1 ? ' έγγραφο θα συμπεριληφθεί στην εξαγωγή.' : ' έγγραφα θα συμπεριληφθούν στην εξαγωγή.');
+      root.appendChild(note);
+    } catch (error) {
+      root.textContent = 'Δεν ήταν δυνατή η φόρτωση της βιβλιοθήκης εντύπων: ' + (error.message || 'Άγνωστο σφάλμα.');
+    }
+  }
+
+  async function exportCategoryDossier() {
+    if (!activeProfileFilter) return;
+    if (remoteCaseUpdatePending) {
+      $('case-flash').textContent = 'Η υπόθεση ενημερώθηκε σε άλλη καρτέλα. Επίλεξέ την ξανά και έλεγξε τα στοιχεία πριν από την εξαγωγή.';
+      return;
+    }
+    if (!$('case-form').reportValidity()) return;
+    try {
+      await import('./template-library.js');
+      await window.TemplateLibrary.ready;
+      var categoryTemplates = window.TemplateLibrary.getCategoryTemplates(activeProfileFilter);
+      var selectedTemplates = categoryTemplates.filter(function (template) { return template.source === 'user-uploaded' || template.source === 'published-package'; });
+      if (!selectedTemplates.length) {
+        $('case-flash').textContent = 'Δεν υπάρχουν διαθέσιμα έντυπα για αυτή την κατηγορία. Η φόρμα δεν καθαρίστηκε.';
+        return;
+      }
+      var previewData = values();
+      var missing = selectedTemplates.flatMap(function (template) {
+        return window.TemplateLibrary.getMissingTemplateFields
+          ? window.TemplateLibrary.getMissingTemplateFields(template, previewData).map(function (entry) { return template.name + ': {{' + entry.field + '}} — ' + entry.reason; })
+          : [];
+      });
+      if (missing.length && !window.confirm('Ορισμένα πεδία χρειάζονται συμπλήρωση ή αντιστοίχιση:\n\n' + missing.join('\n') + '\n\nΝα συνεχιστεί η παραγωγή; Τα μη συμπληρωμένα placeholders θα παραμείνουν ορατά.')) return;
+
+      var saved = await save({ preventDefault: function () {} });
+      if (!saved || !saved.id) return;
+      var archive = window.TemplateLibrary.buildCategoryArchive(selectedTemplates, saved);
+      var blob = new Blob([archive], { type: 'application/zip' });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      var caseName = String(saved.title || 'δικογραφία').replace(/[\\\\/:*?"<>|]+/gu, '-');
+      link.href = url;
+      link.download = caseName + '-' + activeProfileFilter + '-συμπληρωμένα-έντυπα.zip';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+
+      // Keep the saved case in the local register; only clear the working form after ZIP creation and download initiation.
+      reset();
+      $('case-date').value = '';
+      $('case-flash').textContent = 'Το ZIP δημιουργήθηκε και η λήψη ξεκίνησε. Η υπόθεση διατηρήθηκε στο τοπικό μητρώο και η φόρμα καθαρίστηκε για την επόμενη ίδια δικογραφία.';
+      render();
+    } catch (error) {
+      $('case-flash').textContent = 'Η εξαγωγή δεν ολοκληρώθηκε. Τα στοιχεία παραμένουν στη φόρμα και η αποθηκευμένη υπόθεση δεν διαγράφηκε: ' + (error.message || 'Άγνωστο σφάλμα.');
+    }
+  }
+
   function openCategory(profile, createNew) {
     var category = DOSSIER_CATEGORIES.find(function (entry) { return entry.id === profile; }) || DOSSIER_CATEGORIES[DOSSIER_CATEGORIES.length - 1];
     activeProfileFilter = category.id;
@@ -509,6 +595,7 @@ function uid() {
     $('case-investigators-section').hidden = !['narcotics', 'counterfeit', 'environment', 'health', 'camping'].includes(category.id);
     $('offender-section-title').textContent = (category.id === 'narcotics' || category.id === 'environment' || category.id === 'health') ? 'Στοιχεία δράστη' : category.id === 'counterfeit' ? 'Στοιχεία προσώπου που κατέθεσε το χαρτονόμισμα στο ΑΤΜ' : 'Στοιχεία εμπλεκόμενου προσώπου';
     $('case-form').hidden = !createNew; $('case-layout').hidden = false;
+    renderDossierTemplates();
     if (createNew) {
       reset();
       $('case-profile').value = category.id;
@@ -526,6 +613,7 @@ function uid() {
   }
   function render() {
     renderDossierCategories();
+    if (activeProfileFilter) renderDossierTemplates();
     var list = $('cases-list');
     if (!list) return;
     list.textContent = '';
@@ -644,7 +732,7 @@ function uid() {
     event.preventDefault();
     if (remoteCaseUpdatePending) {
       $('case-flash').textContent = 'Η υπόθεση ενημερώθηκε σε άλλη καρτέλα. Για να αποφύγεις την αντικατάσταση νεότερων στοιχείων, επίλεξέ την ξανά από τη λίστα και έλεγξε τα ενημερωμένα δεδομένα πριν αποθηκεύσεις.';
-      return;
+      return null;
     }
     if (window.AXYP_STORAGE && window.AXYP_STORAGE.checkQuota) {
       window.AXYP_STORAGE.checkQuota().then(function (res) {
@@ -686,8 +774,10 @@ function uid() {
           ? 'Η υπόθεση αποθηκεύτηκε στον προσωπικό φάκελο εργασίας και στον τοπικό κατάλογο.'
           : 'Η υπόθεση αποθηκεύτηκε μόνο στον browser. Επίλεξε προσωπικό φάκελο εργασίας για να δημιουργηθεί και αυτοτελής φάκελος στον υπολογιστή.';
       render();
+      return saved;
     } catch (error) {
       $('case-flash').textContent = 'Δεν επιβεβαιώθηκε η αποθήκευση της υπόθεσης: ' + error.message + ' Τα στοιχεία της φόρμας παραμένουν διαθέσιμα· έλεγξε την αποθήκευση και ξαναπροσπάθησε.';
+      return null;
     }
   }
 
@@ -771,7 +861,8 @@ function uid() {
       privacy: s.getItem('axyp-privacy'),
       bundles: s.getItem('axyp-case-bundles'),
       templates: s.getItem('axyp-docx-templates'),
-      templateMappings: s.getItem('axyp-template-mappings')
+      templateMappings: s.getItem('axyp-template-mappings'),
+      serviceProfile: getServiceProfileBackupValue(s)
     };
     var checksum = await backupChecksum(payload);
     if (checksum) payload.checksum = checksum;
@@ -839,7 +930,8 @@ function uid() {
             privacy: sPre.getItem('axyp-privacy'),
             bundles: sPre.getItem('axyp-case-bundles'),
             templates: sPre.getItem('axyp-docx-templates'),
-            templateMappings: sPre.getItem('axyp-template-mappings')
+            templateMappings: sPre.getItem('axyp-template-mappings'),
+            serviceProfile: getServiceProfileBackupValue(sPre)
           };
           var preBackupSerialized = JSON.stringify(preBackup);
           sPre.setItem('axyp-pre-restore-backup', preBackupSerialized);
@@ -914,8 +1006,10 @@ function uid() {
             ['axyp-privacy', parsed.privacy],
             ['axyp-case-bundles', parsed.bundles],
             ['axyp-docx-templates', parsed.templates],
-            ['axyp-template-mappings', parsed.templateMappings]
+            ['axyp-template-mappings', parsed.templateMappings],
           ];
+          var serviceProfileEntry = getServiceProfileRestoreEntry(parsed);
+          if (serviceProfileEntry) optionalKeys.push(serviceProfileEntry);
           optionalKeys.forEach(function (pair) {
             if (pair[1] !== undefined && pair[1] !== null) {
               entries.push([pair[0], typeof pair[1] === 'string' ? pair[1] : JSON.stringify(pair[1])]);
@@ -1001,6 +1095,7 @@ function uid() {
   $('dossier-new-case').onclick = function () { if (activeProfileFilter) openCategory(activeProfileFilter, true); };
   $('case-form').addEventListener('submit', save);
   $('case-reset').onclick = reset;
+  $('case-export-dossier')?.addEventListener('click', exportCategoryDossier);
   $('case-snapshot').onclick = snapshot;
   $('case-export').onclick = exportData;
   $('case-import').onchange = importData;

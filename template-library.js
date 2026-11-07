@@ -18,6 +18,9 @@ const CATEGORY_LOADERS = {
   camping: () => import('./camping-templates-data.js'),
   commerce: () => import('./paremporio-templates.js')
 };
+let PUBLISHED_DOSSIER_TEMPLATES = [];
+let publishedPackagesPromise = null;
+
 const CATEGORY_SEED_KEYS = {
   narcotics: 'axyp-narcotics-templates-seeded-v1',
   counterfeit: 'axyp-counterfeit-templates-seeded-v1',
@@ -70,6 +73,59 @@ const KEY = 'axyp-docx-templates';
 const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
 const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } catch (_) { return []; } };
+
+export async function loadPublishedDossierPackages() {
+  if (publishedPackagesPromise) return publishedPackagesPromise;
+  publishedPackagesPromise = (async () => {
+    let response;
+    try { response = await fetch(new URL('dossier-packages/manifest.json', document.baseURI)); }
+    catch (_) { return []; }
+    if (!response.ok) return [];
+    const catalog = await response.json();
+    if (!catalog || catalog.schemaVersion !== 1 || !Array.isArray(catalog.packages)) {
+      throw new Error('Invalid published dossier package catalog.');
+    }
+    const loaded = [];
+    for (const entry of catalog.packages) {
+      if (!entry || typeof entry.file !== 'string' || !/^[\\p{L}\\p{N}._-]+\\.axyp\\.zip$/u.test(entry.file)) {
+        throw new Error('Invalid dossier package filename in catalog.');
+      }
+      const packageResponse = await fetch(new URL('dossier-packages/' + entry.file, document.baseURI));
+      if (!packageResponse.ok) throw new Error('Could not load dossier package: ' + entry.file);
+      const packageParts = unzipSync(new Uint8Array(await packageResponse.arrayBuffer()));
+      if (!packageParts['manifest.json']) throw new Error('Dossier package manifest is missing: ' + entry.file);
+      const manifest = JSON.parse(new TextDecoder().decode(packageParts['manifest.json']));
+      if (manifest.schemaVersion !== 1 || !Array.isArray(manifest.documents) || typeof manifest.category !== 'string') {
+        throw new Error('Invalid dossier package: ' + entry.file);
+      }
+      for (const document of manifest.documents) {
+        if (!document || typeof document.path !== 'string' || !document.path.startsWith('documents/') || !packageParts[document.path]) {
+          throw new Error('Invalid document entry in dossier package: ' + entry.file);
+        }
+        const parts = unzipSync(packageParts[document.path]);
+        if (!parts['word/document.xml']) throw new Error('Published DOCX is missing its main document: ' + document.name);
+        loaded.push({
+          id: String(document.id || entry.id + '-' + loaded.length),
+          name: String(document.name || 'Έντυπο Word'),
+          category: manifest.category,
+          categoryLabel: 'Επίσημο πακέτο εφαρμογής',
+          source: 'published-package',
+          fidelityMode: 'placeholder-only',
+          fields: Array.isArray(document.fields) ? document.fields : [],
+          mappings: document.mappings && typeof document.mappings === 'object' ? document.mappings : {},
+          mappingConfirmedAt: manifest.publishedAt || manifest.createdAt || 'published',
+          files: Object.fromEntries(Object.entries(parts).map(([name, bytes]) => [name, Array.from(bytes)]))
+        });
+      }
+    }
+    PUBLISHED_DOSSIER_TEMPLATES = loaded;
+    return loaded;
+  })().catch((error) => {
+    publishedPackagesPromise = null;
+    throw error;
+  });
+  return publishedPackagesPromise;
+}
 const write = (value) => storage().setItem(KEY, JSON.stringify(value));
 const unesc = (value) => String(value ?? '')
   .replace(/&apos;/g, "'")
@@ -120,6 +176,7 @@ export async function ensureDefaultTemplates(storageInstance = storage(), catego
 }
 
 export async function initializeDefaultTemplates(storageInstance = storage()) {
+  if (typeof window !== 'undefined' && typeof fetch === 'function') await loadPublishedDossierPackages();
   // Περιμένουμε μόνο την ενυδάτωση της τοπικής αποθήκευσης.
   // Τα μεγάλα DOCX data chunks φορτώνονται όταν ανοιχτεί η αντίστοιχη κατηγορία.
   if (storageInstance && storageInstance.ready && typeof storageInstance.ready.then === 'function') {
@@ -657,11 +714,11 @@ export function valueFor(path, item) {
   return display(map[path]);
 }
 
-export function replaceInXml(xml, template, item) {
-  return xml.replace(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu, (_, path) => {
+export function replaceInXml(xml, template, item, options = {}) {
+  return xml.replace(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu, (placeholder, path) => {
     const mapped = mappingFor(template, path);
     const raw = mapped ? valueFor(mapped, item) : `{{${path}}}`;
-    if (!raw || raw === '—') return '—';
+    if (!raw || raw === '—') return options.preserveMissing ? placeholder : '—';
     const lines = String(raw).split(/\r?\n/);
     return lines.map((line) => esc(line)).join('</w:t><w:br/><w:t xml:space="preserve">');
   });
@@ -672,7 +729,7 @@ function render() {
   if (!root) return;
   root.textContent = '';
   const currentCase = getCase();
-  const allTemplates = read();
+  const allTemplates = [...PUBLISHED_DOSSIER_TEMPLATES, ...read()];
 
   const isCounterfeit = (t) => t.category === 'counterfeit';
   const isEnvironment = (t) => t.category === 'environment';
@@ -680,8 +737,9 @@ function render() {
   const isNoise = (t) => t.category === 'noise';
   const isCamping = (t) => t.category === 'camping';
   const isCommerce = (t) => t.category === 'commerce';
-  const isNarcotics = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && !isCommerce(t) && (t.category === 'narcotics' || (!t.category && (t.name.startsWith('0') || t.name.startsWith('10_'))));
-  const isCustom = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && !isCommerce(t) && !isNarcotics(t);
+  const isNarcotics = (t) => !isCounterfeit(t) && !isEnvironment(t) && !isHealth(t) && !isNoise(t) && !isCamping(t) && !isCommerce(t) && (t.category === 'narcotics' || (!t.category && !t.files && (t.name.startsWith('0') || t.name.startsWith('10_'))));
+  const knownDossierCategories = new Set(['narcotics', 'counterfeit', 'environment', 'health', 'noise', 'camping', 'commerce', 'domestic', 'migration', 'traffic', 'kok', 'animal', 'generic']);
+  const isCustom = (t) => !isNarcotics(t) && !knownDossierCategories.has(t.category);
 
   const groups = [
     { category: 'narcotics', title: (count) => `Δικογραφία Ναρκωτικών (${count} πρότυπα)`, items: allTemplates.filter(isNarcotics) },
@@ -690,7 +748,13 @@ function render() {
     { category: 'health', title: (count) => `Δικογραφία Υγειονομικού Κανονισμού (${count} πρότυπα)`, items: allTemplates.filter(isHealth) },
     { category: 'noise', title: (count) => `Δικογραφία Ηχορύπανσης Κ.Υ.Ε. (${count} πρότυπα)`, items: allTemplates.filter(isNoise) },
     { category: 'camping', title: (count) => `Δικογραφία Παράνομου Camping (${count} πρότυπα)`, items: allTemplates.filter(isCamping) },
-    { category: 'commerce', title: (count) => `Προσωρινά πρότυπα παρεμπορίου (${count})`, items: allTemplates.filter(isCommerce) },
+    { category: 'commerce', title: (count) => `Δικογραφία Παρεμπορίου (${count} έντυπα)`, items: allTemplates.filter(isCommerce) },
+    { category: 'domestic', title: (count) => `Δικογραφία Ενδοοικογενειακής Βίας (${count} έντυπα)`, items: allTemplates.filter((t) => t.category === 'domestic') },
+    { category: 'migration', title: (count) => `Δικογραφία Απελάσεων Αλλοδαπών (${count} έντυπα)`, items: allTemplates.filter((t) => t.category === 'migration') },
+    { category: 'traffic', title: (count) => `Δικογραφία Τροχαίων Ατυχημάτων (${count} έντυπα)`, items: allTemplates.filter((t) => t.category === 'traffic') },
+    { category: 'kok', title: (count) => `Δικογραφία Παραβάσεων Κ.Ο.Κ. (${count} έντυπα)`, items: allTemplates.filter((t) => t.category === 'kok') },
+    { category: 'animal', title: (count) => `Δικογραφία Προστασίας Ζώων (${count} έντυπα)`, items: allTemplates.filter((t) => t.category === 'animal') },
+    { category: 'generic', title: (count) => `Λοιπές Υποθέσεις (${count} έντυπα)`, items: allTemplates.filter((t) => t.category === 'generic') },
     { category: null, title: (count) => `Πρόσθετα / προσαρμοσμένα πρότυπα (${count})`, items: allTemplates.filter(isCustom) }
   ];
 
@@ -702,12 +766,71 @@ function render() {
     details.open = expandedCategories.has(categoryKey);
     const heading = document.createElement('summary');
     heading.className = 'template-category-heading';
-    const categorySeeded = !group.category || !!storage().getItem(CATEGORY_SEED_KEYS[group.category]);
+    const categorySeeded = !group.category || !CATEGORY_SEED_KEYS[group.category] || !!storage().getItem(CATEGORY_SEED_KEYS[group.category]);
     heading.textContent = group.title(group.items.length) + (categorySeeded ? '' : ' · άνοιγμα για φόρτωση');
     details.appendChild(heading);
     const panel = document.createElement('div');
     panel.className = 'template-category-content';
     details.appendChild(panel);
+    if (group.items.length) {
+      const batchButton = document.createElement('button');
+      batchButton.type = 'button';
+      batchButton.className = 'mini-button';
+      batchButton.textContent = 'Συμπλήρωση όλων των εντύπων της κατηγορίας (ZIP)';
+      batchButton.addEventListener('click', () => {
+        const selectedCase = getCase();
+        if (!selectedCase || !selectedCase.id) {
+          window.alert('Επίλεξε πρώτα τη συγκεκριμένη υπόθεση που αφορά η δικογραφία.');
+          return;
+        }
+        const selectedTemplates = templatesForCategoryGeneration(group.items);
+        const missing = selectedTemplates.flatMap((template) => getMissingTemplateFields(template, selectedCase)
+          .map((entry) => `${template.name}: {{${entry.field}}} — ${entry.reason}`));
+        if (missing.length && !window.confirm('Ορισμένα πεδία χρειάζονται συμπλήρωση ή αντιστοίχιση:\n\n' + missing.join('\n') + '\n\nΝα συνεχιστεί η παραγωγή; Τα κενά πεδία θα παραμείνουν εμφανή για έλεγχο.')) return;
+        try {
+          const archive = buildCategoryArchive(selectedTemplates, selectedCase);
+          const blob = new Blob([archive], { type: 'application/zip' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          const caseName = String(selectedCase.title || 'δικογραφία').replace(/[\\/:*?"<>|]+/gu, '-');
+          link.href = url;
+          link.download = `${caseName}-${categoryKey}-έντυπα.zip`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (error) {
+          window.alert('Δεν δημιουργήθηκε ο φάκελος εντύπων: ' + error.message);
+        }
+      });
+      panel.appendChild(batchButton);
+    }
+    if (group.category && window.AXYP_ROLE && window.AXYP_ROLE.isAdmin()) {
+      const authored = group.items.filter((template) => template.source === 'user-uploaded' || template.source === 'published-package');
+      if (authored.length) {
+        const publishButton = document.createElement('button');
+        publishButton.type = 'button';
+        publishButton.className = 'mini-button';
+        publishButton.textContent = 'Εξαγωγή επίσημου πακέτου για δημοσίευση';
+        publishButton.addEventListener('click', () => {
+          try {
+            const archive = buildOfficialDossierPackage(authored, group.category);
+            const blob = new Blob([archive], { type: 'application/zip' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'axyp-' + group.category + '-official-package.axyp.zip';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+          } catch (error) {
+            window.alert('Δεν δημιουργήθηκε το επίσημο πακέτο: ' + error.message);
+          }
+        });
+        panel.appendChild(publishButton);
+      }
+    }
     root.appendChild(details);
     details.addEventListener('toggle', async () => {
       if (!details.open) {
@@ -715,7 +838,7 @@ function render() {
         return;
       }
       expandedCategories.add(categoryKey);
-      if (!group.category) return;
+      if (!group.category || !CATEGORY_LOADERS[group.category]) return;
       panel.textContent = 'Φόρτωση προτύπων…';
       try {
         await ensureDefaultTemplates(storage(), group.category);
@@ -768,6 +891,12 @@ function render() {
         row.querySelector('select').dispatchEvent(new Event('change'));
         mappingRoot.appendChild(row);
       });
+
+      if (template.source === 'published-package') {
+        card.querySelector('.remove').hidden = true;
+        card.querySelector('.save-mapping').hidden = true;
+        card.querySelectorAll('.mapping-row select').forEach((select) => { select.disabled = true; });
+      }
 
       card.querySelector('.save-mapping').onclick = () => {
         const mappings = {};
@@ -984,9 +1113,20 @@ async function importTemplate(event) {
     const detected = extractFields(allXml);
     const documentXml = new TextDecoder().decode(anonymizedParts['word/document.xml']);
     const templates = read();
+    const category = $('template-category')?.value || 'custom';
+    const categoryCount = [...PUBLISHED_DOSSIER_TEMPLATES, ...templates].filter((template) => template.category === category && (template.source === 'user-uploaded' || template.source === 'published-package')).length;
+    const enteredName = window.prompt('Δώσε ουδέτερο όνομα για το έντυπο που θα βλέπουν όλοι οι χρήστες. Μην περιλάβεις ονόματα, αριθμούς πρωτοκόλλου ή άλλα στοιχεία πραγματικής υπόθεσης.', `Έντυπο ${categoryCount + 1}.docx`);
+    if (enteredName === null) return;
+    let safeName = enteredName.trim().replace(/[\\\\/:*?"<>|\\u0000-\\u001f]+/gu, '-').slice(0, 120);
+    if (!safeName) throw new Error('Χρειάζεται ουδέτερο όνομα για το έντυπο.');
+    if (!/\\.docx$/iu.test(safeName)) safeName += '.docx';
     templates.push({
-      id: `${Date.now()}`,
-      name: file.name,
+      id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `custom-${Date.now()}-${templates.length}`,
+      name: safeName,
+      category,
+      categoryLabel: category === 'custom' ? 'Προσαρμοσμένο έντυπο' : 'Ανεβασμένο αυθεντικό έντυπο',
+      source: 'user-uploaded',
+      fidelityMode: 'placeholder-only',
       fields: detected,
       documentXml,
       anonymizationReviewedAt: new Date().toISOString(),
@@ -996,6 +1136,7 @@ async function importTemplate(event) {
     });
     write(templates);
     render();
+    if (window.HypothesesView) window.HypothesesView.refresh();
   } catch (error) {
     window.alert('Δεν ήταν δυνατή η ασφαλής εισαγωγή του αρχείου Word: ' + error.message);
   } finally {
@@ -1287,23 +1428,84 @@ function ensureTemplateVersionFooter(files, template) {
 export function buildDocx(template, item) {
   if (!template || !item) throw new Error('Template and case data are required');
   const files = getTemplateParts(template);
+  const userUploaded = template.source === 'user-uploaded' || template.source === 'published-package' || (!template.category && !!template.files);
 
-  // Use the same production replacement path for the main document,
-  // headers, footers, footnotes and any other Word XML part.
   Object.keys(files).forEach((filename) => {
-    if (filename.startsWith('word/') && filename.endsWith('.xml')) {
-      const xml = new TextDecoder().decode(files[filename]);
-      const templatePatched = template.category === 'narcotics' ? patchNarcoticsTemplateXml(xml, template.id) : xml;
-      const correctedServicePlaceholders = correctOfficerServicePlaceholders(templatePatched);
-      const withCurrentServiceReferences = replaceLegacyLocalServiceReferences(correctedServicePlaceholders);
-      const populated = replaceInXml(withCurrentServiceReferences, template, item);
-      const withCurrentDates = replaceLegacyFixedDateText(populated, item);
-      files[filename] = new TextEncoder().encode(normalizeGreekDocxXml(withCurrentDates));
+    if (!filename.startsWith('word/') || !filename.endsWith('.xml')) return;
+    const originalXml = new TextDecoder().decode(files[filename]);
+
+    if (userUploaded) {
+      // Uploaded official forms are authoritative: resolve placeholders only.
+      // No legacy service/date substitutions, wording corrections, footer injection,
+      // signature-table patches or broad typography normalization are permitted.
+      const placeholderXml = normalizeDocxXml(originalXml);
+      files[filename] = new TextEncoder().encode(replaceInXml(placeholderXml, template, item, { preserveMissing: true }));
+      return;
     }
+
+    const templatePatched = template.category === 'narcotics' ? patchNarcoticsTemplateXml(originalXml, template.id) : originalXml;
+    const correctedServicePlaceholders = correctOfficerServicePlaceholders(templatePatched);
+    const withCurrentServiceReferences = replaceLegacyLocalServiceReferences(correctedServicePlaceholders);
+    const populated = replaceInXml(withCurrentServiceReferences, template, item);
+    const withCurrentDates = replaceLegacyFixedDateText(populated, item);
+    files[filename] = new TextEncoder().encode(normalizeGreekDocxXml(withCurrentDates));
   });
 
-  ensureTemplateVersionFooter(files, template);
+  if (!userUploaded) ensureTemplateVersionFooter(files, template);
   return zipSync(files);
+}
+
+export function templatesForCategoryGeneration(templates) {
+  const list = Array.isArray(templates) ? templates : [];
+  const uploaded = list.filter((template) =>
+    template && (template.source === 'user-uploaded' || template.source === 'published-package' || (!template.category && !!template.files))
+  );
+  // Never mix the user's authentic forms with approximate built-in examples.
+  return uploaded.length ? uploaded : list;
+}
+
+export function buildOfficialDossierPackage(templates, category) {
+  if (!Array.isArray(templates) || !category) throw new Error('Επίλεξε κατηγορία με έντυπα.');
+  const documents = templates.filter((template) =>
+    template && template.category === category &&
+    (template.source === 'user-uploaded' || template.source === 'published-package')
+  );
+  if (!documents.length) throw new Error('Δεν υπάρχουν αυθεντικά έντυπα για δημοσίευση σε αυτή την κατηγορία.');
+  const packageFiles = {};
+  const manifestDocuments = documents.map((template, index) => {
+    if (!template.mappingConfirmedAt) throw new Error('Πρέπει πρώτα να επιβεβαιωθεί η αντιστοίχιση πεδίων για το έντυπο «' + template.name + '».');
+    const safeId = String(template.id || index + 1).replace(/[^\\p{L}\\p{N}-]+/gu, '-').slice(0, 48) || String(index + 1);
+    const path = 'documents/' + String(index + 1).padStart(2, '0') + '-' + safeId + '.docx';
+    packageFiles[path] = zipSync(getTemplateParts(template));
+    return {
+      id: String(template.id || safeId),
+      name: String(template.name || 'Έντυπο Word'),
+      path,
+      fields: Array.isArray(template.fields) ? template.fields : [],
+      mappings: template.mappings && typeof template.mappings === 'object' ? template.mappings : {}
+    };
+  });
+  packageFiles['manifest.json'] = new TextEncoder().encode(JSON.stringify({
+    schemaVersion: 1,
+    category,
+    createdAt: new Date().toISOString(),
+    documents: manifestDocuments
+  }, null, 2));
+  return zipSync(packageFiles);
+}
+
+export function buildCategoryArchive(templates, item) {
+  if (!Array.isArray(templates) || !templates.length) throw new Error('Δεν υπάρχουν έντυπα στην επιλεγμένη κατηγορία.');
+  if (!item || !item.id) throw new Error('Επίλεξε πρώτα συγκεκριμένη υπόθεση.');
+  const archive = {};
+  templates.forEach((template, index) => {
+    const baseName = String(template.name || `entypo-${index + 1}.docx`)
+      .replace(/[\\/:*?"<>|]+/gu, '-')
+      .replace(/\.docx$/iu, '');
+    const suffix = String(template.id || index + 1).replace(/[^\p{L}\p{N}-]+/gu, '-').slice(0, 32);
+    archive[`${String(index + 1).padStart(2, '0')}-${baseName}-${suffix}.docx`] = buildDocx(template, item);
+  });
+  return zipSync(archive);
 }
 
 export async function generate(template) {
@@ -1358,6 +1560,6 @@ if (typeof document !== 'undefined') {
       throw error;
     });
   if (typeof window !== 'undefined') {
-    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts, ready };
+    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts, getMissingTemplateFields, buildCategoryArchive, buildOfficialDossierPackage, templatesForCategoryGeneration, getCategoryTemplates: (category) => [...PUBLISHED_DOSSIER_TEMPLATES, ...read()].filter((template) => template && template.category === category), ready };
   }
 }
