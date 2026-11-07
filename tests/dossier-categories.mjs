@@ -32,7 +32,7 @@ assert.ok(hyp.includes("witness: {"));
 assert.ok(hyp.includes("depositor: $('case-profile').value === 'counterfeit'"));
 assert.ok(templateLibrary.includes('counterfeit.witness.surname'));
 assert.ok(templateLibrary.includes('counterfeit.depositor.surname'));
-assert.equal(html.split('<option value="environment">Ρύπανση περιβάλλοντος</option>').length - 1, 2, 'Environment category must exist in both case and bundle selectors');
+assert.equal(html.split('<option value="environment">Ρύπανση περιβάλλοντος</option>').length - 1, 3, 'Environment category must exist in case, bundle and admin template selectors');
 assert.match(html,/id="case-environment-section"/);
 assert.match(html,/id="environment-description"/);
 assert.match(html,/id="case-environment-timeline-section"/);
@@ -47,7 +47,7 @@ assert.match(html,/δεν αποδίδει από μόνη της νομικό �
 assert.doesNotMatch(hyp,/category\.id === 'environment'[\s\S]{0,160}case-offence/);
 assert.doesNotMatch(bundles,/bundle\.profile === 'environment'[\s\S]{0,180}Παράβαση άρθρου 28/);
 
-assert.equal(html.split('<option value="health">Υγειονομικός κανονισμός</option>').length - 1, 2, 'Health category must exist in both case and bundle selectors');
+assert.equal(html.split('<option value="health">Υγειονομικός κανονισμός</option>').length - 1, 3, 'Health category must exist in case, bundle and admin template selectors');
 assert.match(html,/id="case-health-section"/);
 assert.match(html,/id="health-description"/);
 assert.match(html,/id="case-health-timeline-section"/);
