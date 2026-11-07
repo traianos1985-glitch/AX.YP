@@ -147,8 +147,8 @@ try {
   await command('Page.enable');
   await command('Runtime.enable');
   await command('Page.navigate', { url: baseUrl });
-  await waitForExpression("document.readyState === 'complete' && !!window.AXYP_STORAGE", 'application startup');
-  await evaluate('window.AXYP_STORAGE.ready');
+  await waitForExpression("document.readyState === 'complete' && !!window.AXYP_STORAGE && !!window.AXYP_STORAGE.ready && typeof window.AXYP_STORAGE.ready.then === 'function'", 'application startup');
+  await evaluate('window.AXYP_STORAGE && window.AXYP_STORAGE.ready');
 
   // Create a real case through the rendered category dashboard and guided form.
   await openCases();
@@ -175,13 +175,16 @@ try {
   await waitForExpression("!document.getElementById('case-workflow-step-2').hidden", 'second workflow step');
 
   await click('#person-register-add', 'Add person');
+  await waitForExpression(`!!document.querySelector('#person-register-list [data-field="fullName"]')`, 'person register row');
   await setValue('#person-register-list [data-field="fullName"]', 'E2E TEST PERSON');
   await setValue('#person-register-list [data-field="idNumber"]', 'E2E-TEST-ID');
   await click('#evidence-register-add', 'Add evidence');
+  await waitForExpression(`!!document.querySelector('#evidence-register-list [data-field="description"]')`, 'evidence register row');
   await setValue('#evidence-register-list [data-field="description"]', 'E2E TEST EVIDENCE');
   await setValue('#evidence-register-list [data-field="quantity"]', '2');
   await setValue('#evidence-register-list [data-field="unit"]', 'τεμάχια');
   await click('#task-register-add', 'Add pending action');
+  await waitForExpression(`!!document.querySelector('#task-register-list [data-field="title"]')`, 'task register row');
   await setValue('#task-register-list [data-field="title"]', 'E2E TEST PENDING ACTION');
   await setValue('#task-register-list [data-field="assignedTo"]', 'E2E TEST OFFICER');
 
@@ -202,8 +205,8 @@ try {
 
   // Reload the actual production build and verify that the saved case and register hydrate again.
   await command('Page.reload', { ignoreCache: true });
-  await waitForExpression("document.readyState === 'complete' && !!window.AXYP_STORAGE", 'application reload');
-  await evaluate('window.AXYP_STORAGE.ready');
+  await waitForExpression("document.readyState === 'complete' && !!window.AXYP_STORAGE && !!window.AXYP_STORAGE.ready && typeof window.AXYP_STORAGE.ready.then === 'function'", 'application reload');
+  await evaluate('window.AXYP_STORAGE && window.AXYP_STORAGE.ready');
   await openCases();
   await evaluate(`(() => {
     const category = [...document.querySelectorAll('.dossier-category')]

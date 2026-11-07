@@ -135,8 +135,13 @@ function uid() {
       people: $('case-people').value.trim(),
       location: ($('case-location') ? $('case-location').value.trim() : ''),
       time: ($('case-time') ? $('case-time').value : ''),
-      incidentDate: ($('case-incident-date') ? $('case-incident-date').value : ''),
-      incidentTime: ($('case-incident-time') ? $('case-incident-time').value : ''),
+  incidentDate: ($('case-incident-date') ? $('case-incident-date').value : ''),
+  incidentTime: ($('case-incident-time') ? $('case-incident-time').value : ''),
+  incident: {
+    date: ($('case-incident-date') ? $('case-incident-date').value : ''),
+    time: ($('case-incident-time') ? $('case-incident-time').value : ''),
+    location: ($('case-incident-location') ? $('case-incident-location').value.trim() : '')
+  },
       prosecutor: ($('case-prosecutor') ? $('case-prosecutor').value.trim() : ''),
       prosecutorPerson: {
         fullName: $('camping-prosecutor-full-name') ? $('camping-prosecutor-full-name').value.trim() : '',
@@ -338,8 +343,9 @@ function uid() {
     $('case-people').value = item.people || '';
     if ($('case-location')) $('case-location').value = item.location || '';
     if ($('case-time')) $('case-time').value = item.time || '';
-    if ($('case-incident-date')) $('case-incident-date').value = item.incidentDate || '';
-    if ($('case-incident-time')) $('case-incident-time').value = item.incidentTime || '';
+  if ($('case-incident-date')) $('case-incident-date').value = item.incidentDate || (item.incident && item.incident.date) || '';
+  if ($('case-incident-time')) $('case-incident-time').value = item.incidentTime || (item.incident && item.incident.time) || '';
+  if ($('case-incident-location')) $('case-incident-location').value = (item.incident && item.incident.location) || '';
     if ($('case-prosecutor')) $('case-prosecutor').value = item.prosecutor || '';
     if ($('case-arresting-officer')) $('case-arresting-officer').value = item.arrestingOfficer || '';
     var officerA = item.officerA || {};
@@ -790,10 +796,15 @@ function uid() {
             templates: sPre.getItem('axyp-docx-templates'),
             templateMappings: sPre.getItem('axyp-template-mappings')
           };
-          sPre.setItem('axyp-pre-restore-backup', JSON.stringify(preBackup));
+          var preBackupSerialized = JSON.stringify(preBackup);
+          sPre.setItem('axyp-pre-restore-backup', preBackupSerialized);
           if (sPre.flush) await sPre.flush();
+          if (sPre.getItem('axyp-pre-restore-backup') !== preBackupSerialized) {
+            throw new Error('Δεν επιβεβαιώθηκε η durable αποθήκευση του προληπτικού αντιγράφου.');
+          }
         } catch (backupErr) {
-          console.warn('Αποτυχία δημιουργίας αυτόματου προ-αντιγράφου ασφαλείας:', backupErr);
+          $('case-flash').textContent = 'Η επαναφορά ακυρώθηκε: δεν επιβεβαιώθηκε το προληπτικό αντίγραφο ασφαλείας. Δεν έγινε καμία αλλαγή. ' + (backupErr.message || backupErr);
+          return;
         }
 
         var shouldMerge = window.confirm(

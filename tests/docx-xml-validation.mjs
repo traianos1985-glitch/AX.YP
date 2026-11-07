@@ -28,11 +28,12 @@ const mockCase = {
   location: 'Αθήνα'
 };
 
-// Check if xmllint is available in the environment
-const hasXmllint = spawnSync('which', ['xmllint']).status === 0;
-if (hasXmllint) {
-  console.log('xmllint detected: full strict XML parser validation enabled.');
+const xmllintCheck = spawnSync('which', ['xmllint']);
+if (xmllintCheck.status !== 0) {
+  throw new Error('H4 requires xmllint; install libxml2-utils before running DOCX XML validation.');
 }
+const hasXmllint = true;
+console.log('xmllint detected: full strict XML parser validation enabled.');
 
 let totalXmlPartsChecked = 0;
 

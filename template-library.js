@@ -495,9 +495,10 @@ export function valueFor(path, item) {
     'case.date.weekdayName': dateParts.weekday,
     'case.releaseDate': formatDateToGreekNumeric(item.releaseDate),
     'case.time': item.time,
-    'incident.date': formatDateToGreekNumeric(item.incidentDate || item.date),
-    'incident.time': item.incidentTime || item.time,
-    'case.location': item.location,
+'incident.date': formatDateToGreekNumeric((item.incident && item.incident.date) || item.incidentDate || item.date),
+  'incident.time': (item.incident && item.incident.time) || item.incidentTime || item.time,
+  'incident.location': (item.incident && item.incident.location) || '',
+  'case.location': item.location,
     'case.prosecutor': item.prosecutor,
     'case.notes': item.notes,
     'case.profile': item.profile,
@@ -967,6 +968,7 @@ function signatureParagraphTable() {
 }
 
 export function patchNarcoticsTemplateXml(xml, templateId) {
+  if (templateId === 'noise-02') return xml.replace(/\{\{case\.location\}\}/gu, '{{incident.location}}');
   if (templateId === 'narcotics-02') {
     xml = xml.replace(/(Στην\s+\{\{case\.location\}\}\s+σήμερα\s+την\s+)\.{3,}(\s+του\s+μηνός\s+)\.{3,}(\s+του\s+έτους\s+)\.{3,}(\s+ημέρα\s+της\s+εβδομάδος\s+)\.{3,}/u, '$1{{case.date.day}}$2{{case.date.monthName}}$3{{case.date.year}}$4{{case.date.weekdayName}}');
     xml = xml.replace(/(Εισαγγελέα\s+Πρωτοδικών\s+)\.{3,}/u, '$1{{case.prosecutor}}');
@@ -1030,8 +1032,7 @@ export function normalizeGreekDocxXml(xml) {
     .replace(/Β[’']/gu, 'Β΄')
     .replace(/\s+([,.;:!?])/gu, '$1')
     // Ensure space after commas when followed by a letter (avoiding numeric decimals like 1,5)
-    .replace(/,([\p{L}])/gu, ', $1')
-    .replace(/ {2,}/gu, ' ');
+  .replace(/,([\p{L}])/gu, ', $1');
   return xml.replace(/(<w:t\b[^>]*>)([\s\S]*?)(<\/w:t>)/gu, (_match, open, text, close) => open + fixes(text) + close);
 }
 

@@ -4,7 +4,8 @@ import {
   buildDocx,
   ensureDefaultTemplates,
   getMissingTemplateFields,
-  getTemplateParts
+  getTemplateParts,
+  normalizeGreekDocxXml
 } from '../template-library.js';
 
 const values = new Map();
@@ -113,10 +114,6 @@ for (const template of templates) {
     for (const part of generatedWordParts) {
       const runs = visibleTextRuns(strFromU8(generatedParts[part.name]));
       for (const run of runs) {
-        if (/ {2,}/u.test(run)) {
-          failures.push(`${label} (${part.name}): διπλά συνεχόμενα κενά σε κείμενο Word — ${JSON.stringify(run)}`);
-          break;
-        }
         if (/[ \t]+[,;:!?]/u.test(run) || / +\.(?=[\p{L}\p{N}])/u.test(run)) {
           failures.push(`${label} (${part.name}): κενό πριν από σημείο στίξης σε κείμενο Word — ${JSON.stringify(run)}`);
           break;
@@ -128,5 +125,7 @@ for (const template of templates) {
   }
 }
 
+assert.equal(normalizeGreekDocxXml('<w:t xml:space="preserve">ΥΠΟΓΡΑΦΗ    ΑΡΧΗ</w:t>').includes('ΥΠΟΓΡΑΦΗ    ΑΡΧΗ'), true, 'Normalization must preserve intentional multiple spaces');
+assert.equal(normalizeGreekDocxXml('<w:t>λέξη ,επόμενη</w:t>').includes('λέξη, επόμενη'), true, 'Normalization must still repair documented punctuation spacing');
 assert.deepEqual(failures, [], `Έλεγχοι ακεραιότητας/privacy προτύπων απέτυχαν:\n${failures.join('\n')}`);
 console.log(`Template integrity/privacy tests passed: ${templates.length} built-in DOCX templates checked.`);

@@ -203,3 +203,5 @@ export function loadCaseRegister(data) {
 export function resetCaseRegister() {
   loadCaseRegister({ persons: [], evidence: [], actions: [] });
 }
+
+init();
