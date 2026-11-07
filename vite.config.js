@@ -25,7 +25,7 @@ function copyStaticFiles() {
         fs.mkdirSync(path.dirname(dest), { recursive: true });
         fs.copyFileSync(file, dest);
       }
-      for (const directory of ['templates', 'sources']) {
+      for (const directory of ['templates', 'sources', 'dossier-packages']) {
         if (fs.existsSync(directory)) fs.cpSync(directory, path.join(outDir, directory), { recursive: true });
       }
 
@@ -37,12 +37,12 @@ function copyStaticFiles() {
         hash.update('\0');
       };
       // Hash the copied service worker while it still contains axyp-dev; this makes SW logic changes invalidate the cache without a circular digest.
-      const candidates = files.concat(['index.html']);
+      const candidates = files.concat(['index.html', 'dossier-packages/manifest.json']);
       for (const file of candidates) {
         const absolutePath = path.join(outDir, file);
         if (fs.existsSync(absolutePath) && fs.statSync(absolutePath).isFile()) addFile(absolutePath, file);
       }
-      for (const directory of ['templates', 'sources']) {
+      for (const directory of ['templates', 'sources', 'dossier-packages']) {
         const root = path.join(outDir, directory);
         if (!fs.existsSync(root)) continue;
         const walk = (current) => {
