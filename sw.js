@@ -61,10 +61,13 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
-  if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
+  const requestUrl = new URL(request.url);
+  if (request.method !== "GET" || requestUrl.origin !== self.location.origin) return;
 
+  // Published DOCX packages may be substantially larger than ordinary app-shell assets.
+  const timeoutMs = /\\/dossier-packages\\/[^/]+\\.axyp\\.zip$/u.test(requestUrl.pathname) ? 60000 : NETWORK_TIMEOUT_MS;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), NETWORK_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   event.respondWith(
     fetch(request, { signal: controller.signal })
