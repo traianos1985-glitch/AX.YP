@@ -1,5 +1,5 @@
 import { DOSSIER_CATEGORIES } from './dossier-categories.js';
-import { SERVICE_PROFILE_STORAGE_KEY, getServiceProfileBackupValue, getServiceProfileRestoreEntry } from './service-profile.js';
+import { getServiceProfileBackupValue, getServiceProfileRestoreEntry } from './service-profile.js';
 import { getCaseRegisterData, loadCaseRegister, resetCaseRegister } from './case-register.js';
 
 if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.ready;
