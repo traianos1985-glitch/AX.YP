@@ -22,6 +22,8 @@ assert.match(hypotheses, /buildCategoryArchive\(selectedTemplates, saved\)/);
 assert.match(hypotheses, /reset\(\);\s*\$\('case-date'\)\.value = ''/);
 assert.match(library, /source === 'published-package'/);
 assert.match(library, /loadPublishedDossierPackages/);
+assert.match(library, /enteredName = window\.prompt/);
+assert.match(library, /name: safeName/);
 assert.match(library, /new URL\('dossier-packages\/manifest\.json', document\.baseURI\)/);
 assert.match(vite, /dossier-packages/);
 assert.match(serviceWorker, /dossier-packages\/manifest\.json/);
