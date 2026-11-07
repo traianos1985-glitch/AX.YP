@@ -10,6 +10,7 @@
   var channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('axyp-storage') : null;
   var conflicts = Object.create(null);
   var conflictListeners = [];
+  var changeListeners = [];
   var localRevisions = Object.create(null);
   var dbPromise = null;
   var cache = Object.create(null);
@@ -204,6 +205,12 @@
     try { window.dispatchEvent(new CustomEvent('axyp:storage-conflict', { detail: conflict })); } catch (_) {}
   }
 
+  function notifyChange(key, value, revision, remote) {
+    var event = { key: key, value: value, revision: Number(revision || 0), remote: !!remote, source: remote ? 'remote' : 'local' };
+    changeListeners.slice().forEach(function (listener) { try { listener(event); } catch (_) {} });
+    try { window.dispatchEvent(new CustomEvent('axyp:storage-change', { detail: event })); } catch (_) {}
+  }
+
   function receiveRemoteChange(message) {
     if (!message || message.source === TAB_ID || !message.key || message.key.indexOf('axyp-') !== 0) return;
     var revision = Number(message.revision || 0);
@@ -216,6 +223,7 @@
     }
     if (message.value === null) delete cache[message.key];
     else cache[message.key] = message.value;
+    notifyChange(message.key, message.value ?? null, revision, true);
   }
   if (channel) channel.onmessage = function (event) { receiveRemoteChange(event.data); };
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') window.addEventListener('storage', function (event) { receiveRemoteChange({ key: event.key, value: event.newValue, revision: Date.now(), source: 'storage-event' }); });
@@ -229,6 +237,7 @@
     var revision = Date.now();
     localRevisions[key] = revision;
     if (channel) channel.postMessage({ source: TAB_ID, key: key, value: value, revision: revision });
+    return revision;
   }
 
   function getConflicts() { return Object.values(conflicts); }
@@ -278,7 +287,8 @@
   function setItem(key, value) {
     var stringValue = String(value);
     cache[key] = stringValue;
-    broadcastChange(key, stringValue);
+    var revision = broadcastChange(key, stringValue);
+    notifyChange(key, stringValue, revision, false);
     dirtyKeys[key] = true;
     var localOk = false;
     try {
@@ -302,7 +312,8 @@
 
   function removeItem(key) {
     delete cache[key];
-    broadcastChange(key, null);
+    var revision = broadcastChange(key, null);
+    notifyChange(key, null, revision, false);
     dirtyKeys[key] = true;
     var localOk = false;
     try {
@@ -505,6 +516,7 @@
     getConflicts: getConflicts,
     resolveConflict: resolveConflict,
     onConflict: onConflict,
+    onChange: function (listener) { if (typeof listener !== 'function') return function () {}; changeListeners.push(listener); return function () { changeListeners = changeListeners.filter(function (entry) { return entry !== listener; }); }; },
     clearError: clearError,
     ready: ready
   };

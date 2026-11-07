@@ -178,6 +178,13 @@ const rendered = replaceInXml(greekPlaceholderXml, { mappings: { 'ΑΡΜΟΔΙΟ
 assert.ok(rendered.includes('Εισαγγελία Πρωτοδικών'), 'Greek placeholder identifiers are recognized and mapped')
 assert.ok(!rendered.includes('{{ΑΡΜΟΔΙΟΣ_ΕΙΣΑΓΓΕΛΕΑΣ}}'), 'Greek placeholder is not left unresolved')
 
+const storageSource = await readFile(path.join(root, 'storage.js'), 'utf8')
+const hypothesesSource = await readFile(path.join(root, 'hypotheses.js'), 'utf8')
+assert.match(storageSource, /onChange:/, 'storage exposes a real change listener contract')
+assert.match(storageSource, /notifyChange\(message\.key/, 'remote storage changes notify listeners')
+assert.match(hypothesesSource, /AXYP_STORAGE\.onChange/, 'case views subscribe to storage changes')
+assert.match(hypothesesSource, /axyp:storage-conflict|onConflict/, 'case views surface conflicts')
+
 console.log('Template privacy/synchronization regressions passed.')
 
 // Keep this regression suite in the guarded template-sanitization PR workflow.

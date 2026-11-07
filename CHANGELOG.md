@@ -1,5 +1,8 @@
 ## Unreleased — Storage, DOCX και Firefox hardening
 
+- Προστέθηκε ενιαίο local storage change contract (`AXYP_STORAGE.onChange`) ώστε οι απομακρυσμένες αλλαγές να ενημερώνουν πραγματικά τα views υποθέσεων χωρίς χειροκίνητο reload.
+- Οι συγκρούσεις στην ίδια υπόθεση εμφανίζονται πλέον στη ροή της καρτέλας αντί να αγνοούνται σιωπηρά.
+
 - Προστέθηκε versioned schema migration για το IndexedDB/local storage και ρητή ανίχνευση/επίλυση συγκρούσεων μεταξύ tabs χωρίς αυτόματο merge δεδομένων.
 - Προστέθηκε semantic visible-text validation των συνθετικών DOCX μέσω LibreOffice.
 - Προστέθηκε local Firefox E2E command και CI trigger για branches `v0/**`.

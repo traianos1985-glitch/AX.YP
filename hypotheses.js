@@ -1013,6 +1013,17 @@ function uid() {
   }
 
   if (typeof window !== 'undefined') {
+    if (window.AXYP_STORAGE && typeof window.AXYP_STORAGE.onChange === 'function') {
+      window.AXYP_STORAGE.onChange(function (event) {
+        if (event && event.key === KEY && event.remote) handleExternalHypothesesUpdate();
+      });
+      window.AXYP_STORAGE.onConflict(function (conflict) {
+        if (conflict && conflict.key === KEY) {
+          var flash = $('case-flash');
+          if (flash) flash.textContent = 'Εντοπίστηκε αλλαγή της ίδιας υπόθεσης σε άλλη καρτέλα. Έλεγξε και επίλυσε τη σύγκρουση πριν συνεχίσεις.';
+        }
+      });
+    }
     window.addEventListener('storage', function (e) {
       if (e.key === KEY) handleExternalHypothesesUpdate();
     });
