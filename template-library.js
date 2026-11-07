@@ -726,11 +726,12 @@ function render() {
           window.alert('Επίλεξε πρώτα τη συγκεκριμένη υπόθεση που αφορά η δικογραφία.');
           return;
         }
-        const missing = group.items.flatMap((template) => getMissingTemplateFields(template, selectedCase)
+        const selectedTemplates = templatesForCategoryGeneration(group.items);
+        const missing = selectedTemplates.flatMap((template) => getMissingTemplateFields(template, selectedCase)
           .map((entry) => `${template.name}: {{${entry.field}}} — ${entry.reason}`));
         if (missing.length && !window.confirm('Ορισμένα πεδία χρειάζονται συμπλήρωση ή αντιστοίχιση:\n\n' + missing.join('\n') + '\n\nΝα συνεχιστεί η παραγωγή; Τα κενά πεδία θα παραμείνουν εμφανή για έλεγχο.')) return;
         try {
-          const archive = buildCategoryArchive(group.items, selectedCase);
+          const archive = buildCategoryArchive(selectedTemplates, selectedCase);
           const blob = new Blob([archive], { type: 'application/zip' });
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
@@ -1356,6 +1357,15 @@ export function buildDocx(template, item) {
 
   if (!userUploaded) ensureTemplateVersionFooter(files, template);
   return zipSync(files);
+}
+
+export function templatesForCategoryGeneration(templates) {
+  const list = Array.isArray(templates) ? templates : [];
+  const uploaded = list.filter((template) =>
+    template && (template.source === 'user-uploaded' || (!template.category && !!template.files))
+  );
+  // Never mix the user's authentic forms with approximate built-in examples.
+  return uploaded.length ? uploaded : list;
 }
 
 export function buildCategoryArchive(templates, item) {
