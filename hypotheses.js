@@ -665,9 +665,7 @@ function uid() {
       else items.unshift(saved);
       write(items);
       if (window.AXYP_STORAGE && window.AXYP_STORAGE.flush) {
-        window.AXYP_STORAGE.flush().catch(function (error) {
-          console.warn('[v0] Background storage flush failed:', error);
-        });
+        await window.AXYP_STORAGE.flush();
       }
       selectedId = id;
       $('case-flash').textContent = workspaceError
