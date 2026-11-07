@@ -1,7 +1,14 @@
 export const SERVICE_PROFILE_STORAGE_KEY = 'axyp-service-profile-v1';
 const KEY = SERVICE_PROFILE_STORAGE_KEY;
-export const SERVICE_PROFILE_FIELDS = Object.freeze(['name', 'directorate', 'address', 'phone', 'email', 'prosecutor', 'chemicalService', 'operator']);
-export const DEFAULT_SERVICE_PROFILE = Object.freeze({ name: 'Αστυνομικό Τμήμα Τριφυλίας' });
+export const SERVICE_PROFILE_FIELDS = Object.freeze(['name', 'directorate', 'address', 'phone', 'email', 'prosecutor', 'chemicalService', 'location', 'operator', 'operatorDocument', 'secondOfficer', 'secondOfficerDocument']);
+export const DEFAULT_SERVICE_PROFILE = Object.freeze({
+  name: 'Αστυνομικό Τμήμα Τριφυλίας',
+  location: 'Κυπαρισσία',
+  operator: "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός",
+  operatorDocument: "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού",
+  secondOfficer: 'Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος',
+  secondOfficerDocument: 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου'
+});
 const clean = (value) => String(value ?? '').trim();
 const cleanField = (field, value) => field === 'operator' ? String(value ?? '') : clean(value);
 
