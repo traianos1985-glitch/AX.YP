@@ -82,7 +82,9 @@ assert.equal(valueFor('officerA.name', { title: 'HISTORICAL-CASE', officerA: his
 assert.equal(valueFor('officerA.service', { title: 'HISTORICAL-CASE', officerA: historicalOfficerA }), historicalOfficerA.service);
 assert.equal(valueFor('officerA.residence', { title: 'HISTORICAL-CASE', officerA: historicalOfficerA }), historicalOfficerA.residence);
 assert.equal(valueFor('officerA.fullName', { title: 'LEGACY-CASE-WITHOUT-SNAPSHOT' }), 'Νέου Βαθμού ΝΕΟΥΕΠΩΝΥΜΟΥ ΝέουΟνόματος', 'Legacy cases without a stored author snapshot retain the documented current-profile fallback');
-assert.equal(valueFor('officerA.fullName', { title: 'OLD-CASE-LEGACY-FIELDS', officerA: { rank: 'Παλιός Βαθμός', surname: 'ΠΑΛΑΙΟ', name: 'ΠαλιόΌνομα' } }), 'Παλιού Βαθμού ΠΑΛΑΙΟΥ ΠαλιούΟνόματος', 'Legacy case-level officer fields remain usable as a historical snapshot');
+const legacyCaseOfficerA = { rank: 'Παλιός Βαθμός', surname: 'ΠΑΛΑΙΟ', name: 'ΠαλιόΌνομα' };
+assert.equal(valueFor('officerA.fullName', { title: 'OLD-CASE-LEGACY-FIELDS', officerA: legacyCaseOfficerA }), 'Παλιού Βαθμού ΠΑΛΑΙΟ ΠαλιόΌνομα', 'Legacy case-level officer fields remain usable and are conservatively inflected only where supported');
+assert.equal(valueFor('officerA.nominativeFullName', { title: 'OLD-CASE-LEGACY-FIELDS', officerA: legacyCaseOfficerA }), 'Παλιός Βαθμός ΠΑΛΑΙΟ ΠαλιόΌνομα', 'Legacy case-level officer fields retain their original nominative identity');
 assert.equal(valueFor('officerB.fullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακα ΔΟΚΙΜΗΣ Γεώργιου');
 assert.equal(valueFor('officerB.nominativeFullName', { title: 'CASE-ONLY-DATA' }), 'Αρχιφύλακας ΔΟΚΙΜΗΣ Γεώργιος');
 assert.equal(valueFor('officerB.service', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
