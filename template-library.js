@@ -1434,6 +1434,6 @@ if (typeof document !== 'undefined') {
       throw error;
     });
   if (typeof window !== 'undefined') {
-    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts, buildCategoryArchive, templatesForCategoryGeneration, getCategoryTemplates: (category) => read().filter((template) => template && template.category === category), ready };
+    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts, getMissingTemplateFields, buildCategoryArchive, templatesForCategoryGeneration, getCategoryTemplates: (category) => read().filter((template) => template && template.category === category), ready };
   }
 }
