@@ -260,6 +260,7 @@ export function computeTimeline(baseTime) {
 }
 
 const FIELD_OPTIONS = [
+  { path: 'service.directorate', label: 'Υπηρεσία · Διεύθυνση Αστυνομίας' },
   { path: 'service.name', label: 'Υπηρεσία · Ονομασία' },
   { path: 'service.address', label: 'Υπηρεσία · Διεύθυνση' },
   { path: 'service.phone', label: 'Υπηρεσία · Τηλέφωνο' },
@@ -432,6 +433,13 @@ function mappingFor(template, field) {
   return '';
 }
 
+function formatDateToGreekNumeric(isoDate) {
+  if (!isoDate || typeof isoDate !== 'string') return '';
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate.trim());
+  if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+  return isoDate;
+}
+
 export function valueFor(path, item) {
   if (!item) return '—';
   const offender = item.offender || {};
@@ -470,6 +478,7 @@ export function valueFor(path, item) {
     : {};
   const map = {
     'service.name': serviceProfile.name,
+    'service.directorate': serviceProfile.directorate || '',
     'service.address': serviceProfile.address,
     'service.phone': serviceProfile.phone,
     'service.email': serviceProfile.email,
@@ -479,14 +488,14 @@ export function valueFor(path, item) {
     'case.protocolNumber': item.protocolNumber,
     'case.offence': item.offence,
     'case.status': item.status,
-    'case.date': item.date,
+    'case.date': formatDateToGreekNumeric(item.date),
     'case.date.day': dateParts.day,
     'case.date.monthName': dateParts.month,
     'case.date.year': dateParts.year,
     'case.date.weekdayName': dateParts.weekday,
-    'case.releaseDate': item.releaseDate,
+    'case.releaseDate': formatDateToGreekNumeric(item.releaseDate),
     'case.time': item.time,
-    'incident.date': item.incidentDate || item.date,
+    'incident.date': formatDateToGreekNumeric(item.incidentDate || item.date),
     'incident.time': item.incidentTime || item.time,
     'case.location': item.location,
     'case.prosecutor': item.prosecutor,
@@ -524,11 +533,11 @@ export function valueFor(path, item) {
     'owner.fullName': item.owner && item.owner.fullName,
     'owner.fatherName': item.owner && item.owner.fatherName,
     'owner.motherName': item.owner && item.owner.motherName,
-    'owner.birthDate': item.owner && item.owner.birthDate,
+    'owner.birthDate': formatDateToGreekNumeric(item.owner && item.owner.birthDate),
     'owner.birthPlace': item.owner && item.owner.birthPlace,
     'owner.city': item.owner && item.owner.city,
     'owner.idNumber': item.owner && item.owner.idNumber,
-    'owner.idDate': item.owner && item.owner.idDate,
+    'owner.idDate': formatDateToGreekNumeric(item.owner && item.owner.idDate),
     'owner.idService': item.owner && item.owner.idService,
     'owner.taxId': item.owner && item.owner.taxId,
     'owner.taxOffice': item.owner && item.owner.taxOffice,
@@ -546,11 +555,11 @@ export function valueFor(path, item) {
     'interpreter.language': item.interpreter && item.interpreter.language,
     'interpreter.fatherName': item.interpreter && item.interpreter.fatherName,
     'interpreter.motherName': item.interpreter && item.interpreter.motherName,
-    'interpreter.birthDate': item.interpreter && item.interpreter.birthDate,
+    'interpreter.birthDate': formatDateToGreekNumeric(item.interpreter && item.interpreter.birthDate),
     'interpreter.birthPlace': item.interpreter && item.interpreter.birthPlace,
     'interpreter.city': item.interpreter && item.interpreter.city,
     'interpreter.idNumber': item.interpreter && item.interpreter.idNumber,
-    'interpreter.idDate': item.interpreter && item.interpreter.idDate,
+    'interpreter.idDate': formatDateToGreekNumeric(item.interpreter && item.interpreter.idDate),
     'interpreter.idService': item.interpreter && item.interpreter.idService,
     'interpreter.nationality': item.interpreter && item.interpreter.nationality,
     'person.spouseFullName': offender.spouseFullName,
@@ -561,12 +570,12 @@ export function valueFor(path, item) {
     'counterfeit.witness.name': witness.name,
     'counterfeit.witness.fatherName': witness.fatherName,
     'counterfeit.witness.motherName': witness.motherName,
-    'counterfeit.witness.birthDate': witness.birthDate,
+    'counterfeit.witness.birthDate': formatDateToGreekNumeric(witness.birthDate),
     'counterfeit.witness.birthPlace': witness.birthPlace,
     'counterfeit.witness.city': witness.city,
     'counterfeit.witness.address': witness.address,
     'counterfeit.witness.idNumber': witness.idNumber,
-    'counterfeit.witness.idDate': witness.idDate,
+    'counterfeit.witness.idDate': formatDateToGreekNumeric(witness.idDate),
     'counterfeit.witness.idService': witness.idService,
     'counterfeit.witness.email': witness.email,
     'counterfeit.depositor.fullName': depositorFullName,
@@ -574,12 +583,12 @@ export function valueFor(path, item) {
     'counterfeit.depositor.name': depositor.name,
     'counterfeit.depositor.fatherName': depositor.fatherName,
     'counterfeit.depositor.motherName': depositor.motherName,
-    'counterfeit.depositor.birthDate': depositor.birthDate,
+    'counterfeit.depositor.birthDate': formatDateToGreekNumeric(depositor.birthDate),
     'counterfeit.depositor.birthPlace': depositor.birthPlace,
     'counterfeit.depositor.city': depositor.city,
     'counterfeit.depositor.address': depositor.address,
     'counterfeit.depositor.idNumber': depositor.idNumber,
-    'counterfeit.depositor.idDate': depositor.idDate,
+    'counterfeit.depositor.idDate': formatDateToGreekNumeric(depositor.idDate),
     'counterfeit.depositor.idService': depositor.idService,
     'counterfeit.depositor.taxId': depositor.taxId,
     'counterfeit.depositor.phone': depositor.phone,
@@ -614,14 +623,14 @@ export function valueFor(path, item) {
     'person.name': offender.name,
     'person.fatherName': offender.fatherName,
     'person.motherName': offender.motherName,
-    'person.birthDate': offender.birthDate,
+    'person.birthDate': formatDateToGreekNumeric(offender.birthDate),
     'person.birthPlace': offender.birthPlace,
     'person.city': offender.city,
     'person.postalCode': offender.postalCode,
     'person.nationality': offender.nationality,
     'person.address': offender.address,
     'person.idNumber': offender.idNumber,
-    'person.idDate': offender.idDate,
+    'person.idDate': formatDateToGreekNumeric(offender.idDate),
     'person.idService': offender.idService,
     'person.taxId': offender.taxId,
     'person.taxOffice': offender.taxOffice,
@@ -631,12 +640,12 @@ export function valueFor(path, item) {
     'offender.name': offender.name,
     'offender.fatherName': offender.fatherName,
     'offender.motherName': offender.motherName,
-    'offender.birthDate': offender.birthDate,
+    'offender.birthDate': formatDateToGreekNumeric(offender.birthDate),
     'offender.birthPlace': offender.birthPlace,
     'offender.city': offender.city,
     'offender.address': offender.address,
     'offender.idNumber': offender.idNumber,
-    'offender.idDate': offender.idDate,
+    'offender.idDate': formatDateToGreekNumeric(offender.idDate),
     'offender.idService': offender.idService,
     'offender.taxId': offender.taxId,
     'offender.phone': offender.phone,
@@ -879,7 +888,9 @@ function replaceTextAcrossWordRuns(xml, pattern, replacement) {
 
 function replaceLegacyLocalServiceReferences(xml) {
   const replacements = [
+    [/ΔΙΕΥΘΥΝΣΗ\s+ΑΣΤΥΝΟΜΙΑΣ\s+ΜΕΣΣΗΝΙΑΣ/giu, '{{service.directorate}}'],
     [/ΑΣΤΥΝΟΜΙΚΟ\s+ΤΜΗΜΑ\s+ΤΡΙΦΥΛΙΑΣ(?:\s+ΜΕΣΣΗΝΙΑΣ)?/giu, '{{service.name}}'],
+    [/(?:ΤΑΧ\.\s*Δ\/ΝΣΗ\s*:\s*|Δ\/νση:\s*)?60\s*[οo]?\s*χλμ\.\s*Ε\.?Ο\.?\s*Π[Υύ]ργου\s*[-–]\s*Μεθ[ώω]νης/giu, 'ΤΑΧ. Δ/ΝΣΗ: {{service.address}}'],
     [/ΤΑΧ\.\s*Δ\/ΝΣΗ:\s*60ο\s*χλμ\.\s*Ε\.Ο\.\s*ΠΥΡΓΟΥ-ΜΕΘΩΝΗΣ/giu, 'ΤΑΧ. Δ/ΝΣΗ: {{service.address}}'],
     [/Τ\.?\s*Κ\.?\s*24500\s*ΚΥΠΑΡΙΣΣΙΑ(?:\s*ΜΕΣΣΗΝΙΑ)?/giu, ''],
     [/2761440970|2761062000/gu, '{{service.phone}}'],
@@ -891,7 +902,9 @@ function replaceLegacyLocalServiceReferences(xml) {
     [/(?:Πλημμελειοδικών|Πρωτοδικών)\s+Κυπαρισσίας/giu, '{{service.prosecutor}}'],
     [/δικηγορικού\s+Συλλόγου\s+Κυπαρισσίας/giu, 'οικείου Δικηγορικού Συλλόγου'],
     [/E-mail:\s*forgelab@otenet\.gr/giu, ''],
-    [/Ελαία\s+Τριφυλίας\s+Μεσσηνίας/giu, '{{case.location}}']
+    [/Ελαία\s+Τριφυλίας\s+Μεσσηνίας/giu, '{{case.location}}'],
+    [/Κυπαρισσία,\s*(?=\{\{case\.date\}\})/giu, '{{case.location}}, '],
+    [/Κυπαρισσία,\s*(?=\d{1,2}\/\d{1,2}\/\d{4})/giu, '{{case.location}}, ']
   ];
 
   let result = xml;
@@ -955,6 +968,8 @@ function signatureParagraphTable() {
 
 export function patchNarcoticsTemplateXml(xml, templateId) {
   if (templateId === 'narcotics-02') {
+    xml = xml.replace(/(Στην\s+\{\{case\.location\}\}\s+σήμερα\s+την\s+)\.{3,}(\s+του\s+μηνός\s+)\.{3,}(\s+του\s+έτους\s+)\.{3,}(\s+ημέρα\s+της\s+εβδομάδος\s+)\.{3,}/u, '$1{{case.date.day}}$2{{case.date.monthName}}$3{{case.date.year}}$4{{case.date.weekdayName}}');
+    xml = xml.replace(/(Εισαγγελέα\s+Πρωτοδικών\s+)\.{3,}/u, '$1{{case.prosecutor}}');
     const oldService = /(?:της ίδιας Υπηρεσίας,\s*)?(?:που προσλήφθηκε ως )?Β[’'] Ανακριτικός Υπάλληλος,\s*(?:κάτοικων|κατοίκων) Α\.Τ\. Τριφυλίας/u;
     if (oldService.test(xml)) {
       xml = xml.replace(oldService, 'που υπηρετεί στο {{officerB.service}} και ενεργεί ως Β΄ Ανακριτικός Υπάλληλος');
@@ -984,8 +999,12 @@ export function patchNarcoticsTemplateXml(xml, templateId) {
       }
     }
   }
+  if (templateId === 'narcotics-06') {
+    xml = xml.replace(/(την\s+)\.{3,}(\s+ώρα\s+και\s+περατώθηκε\s+την\s+)\.{3,}(\s+ώρα\s+της\s+\{\{case\.date\}\})/u, '$1{{timeline.examination.startTime}}$2{{timeline.examination.endTime}}$3');
+  }
   if (templateId === 'narcotics-08') {
     xml = xml.replace(/Εισαγγελία Πρωτοδικών\s*\.{5,}/u, 'Εισαγγελία Πρωτοδικών {{case.prosecutor}}');
+    xml = xml.replace(/\.{5,},\s*\{\{case\.date\}\}/u, '{{case.location}}, {{case.date}}');
   }
   if (templateId === 'narcotics-09') {
     xml = xml.replace(/ΚΑΛΑΜΑΤΑ\s+Τ\.Κ\.\s*241\s*00/u, 'Πάρκο Λιμενικού, Τ.Κ. 24131, Καλαμάτα');
@@ -1009,8 +1028,10 @@ export function normalizeGreekDocxXml(xml) {
     .replace(/σηματική αναφορά μας/gu, 'σχετική αναφορά μας')
     .replace(/Yποβολή/gu, 'Υποβολή')
     .replace(/Β[’']/gu, 'Β΄')
-    .replace(/ {2,}/gu, ' ')
-    .replace(/\s+([,.;:!?])/gu, '$1');
+    .replace(/\s+([,.;:!?])/gu, '$1')
+    // Ensure space after commas when followed by a letter (avoiding numeric decimals like 1,5)
+    .replace(/,([\p{L}])/gu, ', $1')
+    .replace(/ {2,}/gu, ' ');
   return xml.replace(/(<w:t\b[^>]*>)([\s\S]*?)(<\/w:t>)/gu, (_match, open, text, close) => open + fixes(text) + close);
 }
 

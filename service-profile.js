@@ -1,5 +1,5 @@
 const KEY = 'axyp-service-profile-v1';
-export const SERVICE_PROFILE_FIELDS = Object.freeze(['name', 'address', 'phone', 'email', 'prosecutor', 'chemicalService']);
+export const SERVICE_PROFILE_FIELDS = Object.freeze(['name', 'directorate', 'address', 'phone', 'email', 'prosecutor', 'chemicalService']);
 const clean = (value) => String(value ?? '').trim();
 
 export function readServiceProfile(storageInstance) {
