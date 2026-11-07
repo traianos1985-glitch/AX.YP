@@ -43,7 +43,7 @@ assert.throws(() => getServiceProfileRestoreEntry({ serviceProfile: JSON.stringi
 globalThis.window = { AXYP_SERVICE_PROFILE: { get: () => saved } };
 const { valueFor } = await import('../template-library.js');
 assert.equal(valueFor('service.name', { title: 'CASE-ONLY-DATA' }), 'Αστυνομικό Τμήμα Δοκιμής');
-assert.equal(valueFor('officerA.fullName', { title: 'CASE-ONLY-DATA' }), 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος');
+assert.equal(valueFor('officerA.fullName', { title: 'CASE-ONLY-DATA', officerA: { rank: 'Αρχιφύλακας', surname: 'ΑΛΛΟ', name: 'Πρόσωπο' } }), 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος', 'The installation operator is the default first investigating officer');
 assert.equal(valueFor('service.chemicalService', { title: 'CASE-ONLY-DATA' }), 'Χημική Υπηρεσία Δοκιμής');
 assert.equal(valueFor('service.prosecutor', { title: 'CASE-ONLY-DATA' }), 'Εισαγγελία Πρωτοδικών Δοκιμής');
 assert.ok(!JSON.stringify(saved).includes('Τριφυλ'));
