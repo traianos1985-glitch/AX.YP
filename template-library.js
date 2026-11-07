@@ -657,11 +657,11 @@ export function valueFor(path, item) {
   return display(map[path]);
 }
 
-export function replaceInXml(xml, template, item) {
-  return xml.replace(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu, (_, path) => {
+export function replaceInXml(xml, template, item, options = {}) {
+  return xml.replace(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu, (placeholder, path) => {
     const mapped = mappingFor(template, path);
     const raw = mapped ? valueFor(mapped, item) : `{{${path}}}`;
-    if (!raw || raw === '—') return '—';
+    if (!raw || raw === '—') return options.preserveMissing ? placeholder : '—';
     const lines = String(raw).split(/\r?\n/);
     return lines.map((line) => esc(line)).join('</w:t><w:br/><w:t xml:space="preserve">');
   });
@@ -1342,7 +1342,7 @@ export function buildDocx(template, item) {
       // No legacy service/date substitutions, wording corrections, footer injection,
       // signature-table patches or broad typography normalization are permitted.
       const placeholderXml = normalizeDocxXml(originalXml);
-      files[filename] = new TextEncoder().encode(replaceInXml(placeholderXml, template, item));
+      files[filename] = new TextEncoder().encode(replaceInXml(placeholderXml, template, item, { preserveMissing: true }));
       return;
     }
 
