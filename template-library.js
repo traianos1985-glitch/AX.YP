@@ -1130,6 +1130,7 @@ async function importTemplate(event) {
     });
     write(templates);
     render();
+    if (window.HypothesesView) window.HypothesesView.refresh();
   } catch (error) {
     window.alert('Δεν ήταν δυνατή η ασφαλής εισαγωγή του αρχείου Word: ' + error.message);
   } finally {
