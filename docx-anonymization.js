@@ -10,7 +10,7 @@ const RULES = [
   { id: 'tax-id', label: 'Πιθανός Α.Φ.Μ.', placeholder: 'person.taxId', pattern: /(?:Α\.\s*Φ\.\s*Μ\.?|ΑΦΜ)\s*[:#-]?\s*(\d{9})/giu, capture: 1 },
   { id: 'identity', label: 'Αριθμός ταυτότητας / εγγράφου', placeholder: 'person.idNumber', pattern: /(?:Α\.\s*Δ\.\s*Τ\.?|ΑΔΤ|δελτίο\s+ταυτότητας|αριθμός\s+ταυτότητας|διαβατήριο)\s*[:#-]?\s*([A-ZΑ-Ω]{1,3}\s?\d{5,9})/giu, capture: 1 },
   { id: 'phone', label: 'Τηλέφωνο', placeholder: 'person.phone', pattern: /(?:τηλ(?:έφωνο)?|κιν(?:ητό)?|mobile|phone)\s*[:#-]?\s*((?:\+30\s*)?(?:69\d{8}|2\d{9}|\d{10}))/giu, capture: 1 },
-  { id: 'plate', label: 'Πιθανός αριθμός κυκλοφορίας', placeholder: 'vehicle.registration', pattern: /\b([ΑΒΕΖΗΙΚΜΝΟΡΤΥΧ]{3}\s?\d{4})\b/giu, capture: 1 },
+  { id: 'plate', label: 'Πιθανός αριθμός κυκλοφορίας', placeholder: 'vehicle.registration', pattern: /(?<![\p{L}\p{N}])([ΑΒΕΖΗΙΚΜΝΟΡΤΥΧ]{3}\s?\d{4})(?![\p{L}\p{N}])/giu, capture: 1 },
   { id: 'full-name', label: 'Ονοματεπώνυμο (χρειάζεται ανθρώπινη επιβεβαίωση)', placeholder: 'person.fullName', pattern: /(?:ονοματεπώνυμο|ονοματεπωνυμο)\s*[:：-]?\s*([\p{Lu}][\p{L}'’΄-]+(?:\s+[\p{Lu}][\p{L}'’΄-]+){1,3})/giu, capture: 1 }
 ];
 
