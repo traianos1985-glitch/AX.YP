@@ -347,12 +347,14 @@ const FIELD_OPTIONS = [
   { path: 'case.evidence', label: 'Υπόθεση · Ευρήματα / Ποσότητες' },
   { path: 'case.notes', label: 'Υπόθεση · Σημειώσεις' },
   { path: 'case.arrestingOfficer', label: 'Υπόθεση · Συλλαβών (Στοιχεία/Υπηρεσία)' },
-  { path: 'officerA.fullName', label: 'Α΄ Ανακριτικός · Βαθμός & Ονοματεπώνυμο' },
+  { path: 'officerA.fullName', label: 'Α΄ Ανακριτικός · Ονοματεπώνυμο (μορφή έκθεσης)' },
+  { path: 'officerA.nominativeFullName', label: 'Α΄ Ανακριτικός · Ονοματεπώνυμο (ονομαστική)' },
   { path: 'officerA.rank', label: 'Α΄ Ανακριτικός · Βαθμός' },
   { path: 'officerA.surname', label: 'Α΄ Ανακριτικός · Επώνυμο' },
   { path: 'officerA.name', label: 'Α΄ Ανακριτικός · Όνομα' },
   { path: 'officerA.service', label: 'Α΄ Ανακριτικός · Υπηρεσία' },
-  { path: 'officerB.fullName', label: 'Β΄ Ανακριτικός · Βαθμός & Ονοματεπώνυμο' },
+  { path: 'officerB.fullName', label: 'Β΄ Ανακριτικός · Ονοματεπώνυμο (μορφή έκθεσης)' },
+  { path: 'officerB.nominativeFullName', label: 'Β΄ Ανακριτικός · Ονοματεπώνυμο (ονομαστική)' },
   { path: 'officerB.rank', label: 'Β΄ Ανακριτικός · Βαθμός' },
   { path: 'officerB.surname', label: 'Β΄ Ανακριτικός · Επώνυμο' },
   { path: 'officerB.name', label: 'Β΄ Ανακριτικός · Όνομα' },
@@ -500,6 +502,13 @@ function formatDateToGreekNumeric(isoDate) {
   return isoDate;
 }
 
+export function getLocalISODate(now = new Date()) {
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function valueFor(path, item) {
   if (!item) return '—';
   const offender = item.offender || {};
@@ -517,7 +526,8 @@ export function valueFor(path, item) {
   const timeline = item.timeline || {};
   const computed = item.profile === 'narcotics' ? computeTimeline(item.time || '') : {};
   const getTime = (key) => timeline[key] || computed[key] || item[key] || '';
-  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(item.date || ''));
+  const effectiveDate = String(item.date || getLocalISODate());
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(effectiveDate);
   const dateParts = {};
   if (dateMatch) {
     const date = new Date(Date.UTC(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]), 12));
@@ -548,7 +558,7 @@ export function valueFor(path, item) {
     'case.protocolNumber': item.protocolNumber,
     'case.offence': item.offence,
     'case.status': item.status,
-    'case.date': formatDateToGreekNumeric(item.date),
+    'case.date': formatDateToGreekNumeric(effectiveDate),
     'case.date.day': dateParts.day,
     'case.date.monthName': dateParts.month,
     'case.date.year': dateParts.year,
@@ -558,23 +568,25 @@ export function valueFor(path, item) {
 'incident.date': formatDateToGreekNumeric((item.incident && item.incident.date) || item.incidentDate || item.date),
   'incident.time': (item.incident && item.incident.time) || item.incidentTime || item.time,
   'incident.location': (item.incident && item.incident.location) || '',
-  'case.location': item.location,
+  'case.location': item.location || serviceProfile.location || '',
     'case.prosecutor': item.prosecutor,
     'case.notes': item.notes,
     'case.profile': item.profile,
     'case.people': item.people,
     'case.evidence': item.evidence,
     'case.arrestingOfficer': item.arrestingOfficer,
-    'officerA.fullName': serviceProfile.operator || officerA.fullName || officerAFull || '',
+    'officerA.fullName': serviceProfile.operatorDocument || serviceProfile.operator || officerA.documentFullName || officerA.fullName || officerAFull || '',
+    'officerA.nominativeFullName': serviceProfile.operator || officerA.fullName || officerAFull || '',
     'officerA.rank': officerA.rank,
     'officerA.surname': officerA.surname,
     'officerA.name': officerA.name,
-    'officerA.service': officerA.service,
-    'officerB.fullName': officerBFull,
+    'officerA.service': officerA.service || serviceProfile.name || '',
+    'officerB.fullName': officerB.documentFullName || (officerBFull ? officerBFull : (serviceProfile.secondOfficerDocument || serviceProfile.secondOfficer || '')),
+    'officerB.nominativeFullName': officerB.fullName || officerBFull || serviceProfile.secondOfficer || '',
     'officerB.rank': officerB.rank,
     'officerB.surname': officerB.surname,
     'officerB.name': officerB.name,
-    'officerB.service': officerB.service,
+    'officerB.service': officerB.service || serviceProfile.name || '',
     'offenderA.fullName': offenderA.fullName || [offenderA.surname, offenderA.name].filter(Boolean).join(' '),
     'offenderA.idNumber': offenderA.idNumber,
     'offenderA.address': offenderA.address,
