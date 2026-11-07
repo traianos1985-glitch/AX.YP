@@ -25,7 +25,7 @@ const syntheticCase = {
   time: '10:00',
   location: 'TEST-LOCATION',
   arrestingOfficer: 'TEST-ARRESTING-OFFICER',
-  officerA: { rank: 'TEST-RANK-A', surname: 'TEST-SURNAME-A', name: 'TEST-NAME-A', service: 'TEST-SERVICE-A' },
+  // New-case fixture: A investigator must come from the installation profile above.
   officerB: { rank: 'TEST-RANK-B', surname: 'TEST-SURNAME-B', name: 'TEST-NAME-B', service: 'TEST-SERVICE-B' },
   offender: { surname: 'TEST-PERSON-SURNAME', name: 'TEST-PERSON-NAME', fatherName: 'TEST-FATHER', motherName: 'TEST-MOTHER' },
   timeline: { arrestStartTime: '10:06', arrestEndTime: '10:11' }
