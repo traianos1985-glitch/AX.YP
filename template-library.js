@@ -70,6 +70,12 @@ const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
 const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } catch (_) { return []; } };
 const write = (value) => storage().setItem(KEY, JSON.stringify(value));
+const unesc = (value) => String(value ?? '')
+  .replace(/&apos;/g, "'")
+  .replace(/&quot;/g, '"')
+  .replace(/&gt;/g, '>')
+  .replace(/&lt;/g, '<')
+  .replace(/&amp;/g, '&');
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[ch]);
 
 function templatesForCategory(category) {
@@ -825,10 +831,11 @@ function replaceTextAcrossWordRuns(xml, pattern, replacement) {
     const nodes = [...paragraph.matchAll(/(<w:t\b[^>]*>)([\s\S]*?)(<\/w:t>)/gu)];
     if (!nodes.length) return paragraph;
 
-    const values = nodes.map((match) => match[2]);
+    const values = nodes.map((match) => unesc(match[2]));
     const plainText = values.join('');
     const flags = pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g';
     const matches = [...plainText.matchAll(new RegExp(pattern.source, flags))];
+    if (!matches.length) return paragraph;
 
     for (const match of matches.reverse()) {
       const matchStart = match.index;
@@ -1067,7 +1074,8 @@ function ensureTemplateVersionFooter(files, template) {
       updatedDocumentXml = updatedDocumentXml.replace('</w:body>', `<w:sectPr>${reference}</w:sectPr></w:body>`);
     }
   }
-  if (!/xmlns:r="/u.test(updatedDocumentXml.slice(0, updatedDocumentXml.indexOf('>') + 1))) {
+  const documentRootTag = (updatedDocumentXml.match(/<w:document\b[^>]*>/u) || [''])[0];
+  if (!/\bxmlns:r="/u.test(documentRootTag)) {
     updatedDocumentXml = updatedDocumentXml.replace(/<w:document\b/u, '<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"');
   }
   files[documentPath] = encode(updatedDocumentXml);
