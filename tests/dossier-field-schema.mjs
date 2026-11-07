@@ -37,7 +37,7 @@ assert.equal(registration.required, false);
 const data = {};
 setDossierFieldValue(data, registration.path, '0012ΚΥΑ');
 assert.equal(getDossierFieldValue(data, registration.path), '0012ΚΥΑ', 'Registration values must preserve leading zeros and Greek characters');
-assert.equal(valueFor(registration.path, { kok: data.kok }), '0012ΚΥΑ', 'DOCX field lookup must read the same saved value');
+assert.equal(valueFor(registration.path, { categoryData: data }), '0012ΚΥΑ', 'DOCX field lookup must read the same saved value');
 assert.throws(() => setDossierFieldValue(data, '__proto__.polluted', 'x'), /Μη επιτρεπτή/);
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');

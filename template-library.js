@@ -633,7 +633,7 @@ export function valueFor(path, item) {
     'camping.noDesignatedSite': item.camping && item.camping.noDesignatedSite,
     'vehicle.type': item.vehicle && item.vehicle.type,
     'vehicle.registration': item.vehicle && item.vehicle.registration,
-    'kok.vehicle.registration': item.kok && item.kok.vehicle && item.kok.vehicle.registration,
+    'kok.vehicle.registration': item.categoryData && item.categoryData.kok && item.categoryData.kok.vehicle && item.categoryData.kok.vehicle.registration,
     'vehicle.towVehicleRegistration': item.vehicle && item.vehicle.towVehicleRegistration,
     'vehicle.caravanRegistration': item.vehicle && item.vehicle.caravanRegistration,
     'interpreter.fullName': item.interpreter && item.interpreter.fullName,
