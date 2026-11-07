@@ -103,7 +103,7 @@ try {
   assert.ok(sessionId, 'Firefox WebDriver session must start');
 
   await request('/session/' + sessionId + '/url', 'POST', { url: baseUrl });
-  await waitForExpression("document.readyState === 'complete' && !!window.AXYP_STORAGE && !!window.AXYP_STORAGE.ready && typeof window.AXYP_STORAGE.ready.then === 'function'", 'Firefox application startup');
+  await waitForExpression("document.readyState === 'complete' && window.__AXYP_APP_READY === true && !!window.AXYP_STORAGE && !!window.AXYP_STORAGE.ready && typeof window.AXYP_STORAGE.ready.then === 'function'", 'Firefox application startup');
   await request('/session/' + sessionId + '/execute/async', 'POST', {
     script: 'const done = arguments[arguments.length - 1]; Promise.resolve(window.AXYP_STORAGE.ready).then(() => done(true), error => done({ error: String(error) }));',
     args: []
@@ -156,7 +156,7 @@ try {
   assert.equal(saved.caseRegister.actions[0].title, 'FIREFOX E2E TEST ACTION');
 
   await request('/session/' + sessionId + '/refresh', 'POST', {});
-  await waitForExpression("document.readyState === 'complete' && !!window.AXYP_STORAGE && !!window.AXYP_STORAGE.ready && typeof window.AXYP_STORAGE.ready.then === 'function'", 'Firefox page reload');
+  await waitForExpression("document.readyState === 'complete' && window.__AXYP_APP_READY === true && !!window.AXYP_STORAGE && !!window.AXYP_STORAGE.ready && typeof window.AXYP_STORAGE.ready.then === 'function'", 'Firefox page reload');
   await request('/session/' + sessionId + '/execute/async', 'POST', {
     script: 'const done = arguments[arguments.length - 1]; Promise.resolve(window.AXYP_STORAGE.ready).then(() => done(true), error => done({ error: String(error) }));',
     args: []

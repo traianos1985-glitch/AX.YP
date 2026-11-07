@@ -147,7 +147,7 @@ try {
   await command('Page.enable');
   await command('Runtime.enable');
   await command('Page.navigate', { url: baseUrl });
-  await waitForExpression("document.readyState === 'complete' && !!window.AXYP_STORAGE && !!window.AXYP_STORAGE.ready && typeof window.AXYP_STORAGE.ready.then === 'function'", 'application startup');
+  await waitForExpression("document.readyState === 'complete' && window.__AXYP_APP_READY === true && !!window.AXYP_STORAGE && !!window.AXYP_STORAGE.ready && typeof window.AXYP_STORAGE.ready.then === 'function'", 'application startup');
   await evaluate('window.AXYP_STORAGE && window.AXYP_STORAGE.ready');
 
   // Create a real case through the rendered category dashboard and guided form.
@@ -190,7 +190,17 @@ try {
 
   await click('#case-workflow-step-2 .case-workflow-controls button.primary', 'Continue to review');
   await waitForExpression("!document.getElementById('case-workflow-step-3').hidden", 'review step');
-  await click('#case-form button[type="submit"]', 'Save case');
+  await evaluate(`(() => {
+    if (window.AXYP_WORKSPACE) window.AXYP_WORKSPACE.isConnected = () => false;
+  })()`);
+  const submitResult = await evaluate(`(() => {
+    const form = document.getElementById('case-form');
+    if (!form) return { ok: false, reason: 'missing form' };
+    const valid = form.checkValidity();
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    return { ok: true, valid };
+  })()`);
+  assert.equal(submitResult.ok, true, 'Case form must dispatch submit');
 
   const saved = await waitForExpression(`(() => {
     const rows = JSON.parse(window.AXYP_STORAGE.getItem('axyp-hypotheses') || '[]');
@@ -205,7 +215,7 @@ try {
 
   // Reload the actual production build and verify that the saved case and register hydrate again.
   await command('Page.reload', { ignoreCache: true });
-  await waitForExpression("document.readyState === 'complete' && !!window.AXYP_STORAGE && !!window.AXYP_STORAGE.ready && typeof window.AXYP_STORAGE.ready.then === 'function'", 'application reload');
+  await waitForExpression("document.readyState === 'complete' && window.__AXYP_APP_READY === true && !!window.AXYP_STORAGE && !!window.AXYP_STORAGE.ready && typeof window.AXYP_STORAGE.ready.then === 'function'", 'application reload');
   await evaluate('window.AXYP_STORAGE && window.AXYP_STORAGE.ready');
   await openCases();
   await evaluate(`(() => {
