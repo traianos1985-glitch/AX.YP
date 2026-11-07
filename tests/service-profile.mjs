@@ -65,9 +65,23 @@ assert.equal(valueFor('service.prosecutor', { title: 'CASE-ONLY-DATA' }), 'Ει�
 assert.ok(!JSON.stringify(saved).includes('Τριφυλ'));
 assert.ok(!JSON.stringify(saved).includes('Κυπαρισσ'));
 
+const legacyStorage = {
+  getItem() { return JSON.stringify({ name: 'Αστυνομικό Τμήμα Παλαιάς Εγκατάστασης', operator: '' }); },
+  setItem() {}
+};
+assert.equal(readServiceProfile(legacyStorage).operator, "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός", 'Existing installations with an empty legacy operator receive the new default');
+const legacyCustomStorage = {
+  getItem() { return JSON.stringify({ name: 'Αστυνομικό Τμήμα Άλλης Υπηρεσίας', operator: 'Αστυνόμος ΔΟΚΙΜΗΣ Νίκος' }); },
+  setItem() {}
+};
+assert.equal(readServiceProfile(legacyCustomStorage).operator, 'Αστυνόμος ΔΟΚΙΜΗΣ Νίκος');
+assert.equal(readServiceProfile(legacyCustomStorage).operatorDocument, '', 'A legacy custom operator must not inherit another officer’s genitive form');
+
 const malformed = { getItem: () => '{invalid', setItem() {} };
 assert.equal(readServiceProfile(malformed).name, 'Αστυνομικό Τμήμα Τριφυλίας', 'Malformed stored data must fall back to the installation default service name');
-assert.ok(Object.entries(readServiceProfile(malformed)).filter(([field]) => field !== 'name').every(([, value]) => value === ''), 'Malformed stored data must clear all non-default fields');
+assert.equal(readServiceProfile(malformed).location, 'Κυπαρισσία');
+assert.equal(readServiceProfile(malformed).operator, "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός");
+assert.equal(readServiceProfile(malformed).secondOfficer, 'Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος', 'Malformed stored data must fall back to installation defaults');
 const whitespaceOperator = '  Υ/Β΄ ΓΙΟΥΡΟΥΚΗΣ Τραϊανός  ';
 const restoredWhitespace = getServiceProfileRestoreEntry({ serviceProfile: JSON.stringify({ operator: whitespaceOperator }) });
 assert.equal(JSON.parse(restoredWhitespace[1]).operator, whitespaceOperator, 'Backup restore must preserve the operator value verbatim');
