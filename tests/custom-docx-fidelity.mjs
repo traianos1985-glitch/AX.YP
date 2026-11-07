@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildDocx, buildCategoryArchive, getMissingTemplateFields } from '../template-library.js';
+import { buildDocx, buildCategoryArchive, getMissingTemplateFields, templatesForCategoryGeneration } from '../template-library.js';
 import { unzipSync } from '../vendor/fflate.js';
 
 const encode = (value) => new TextEncoder().encode(value);
@@ -49,7 +49,11 @@ assert.ok(!headerXml.includes('{{'));
 assert.equal(decode(generated['word/footer1.xml']).includes('Αυθεντικό υποσέλιδο'), true);
 assert.ok(!Object.keys(generated).some((path) => /^word\/footer\d+\.xml$/u.test(path) && !Object.hasOwn(originalParts, path)), 'The generator must not inject an AX.YP footer');
 
-const archive = unzipSync(buildCategoryArchive([template, { ...template, id: 'uploaded-form-002', name: 'Δεύτερο έντυπο.docx' }], item));
+const builtInExample = { ...template, id: 'builtin-example', name: 'Ενσωματωμένο παράδειγμα.docx', source: undefined };
+const selectedTemplates = templatesForCategoryGeneration([builtInExample, template, { ...template, id: 'uploaded-form-002', name: 'Δεύτερο έντυπο.docx' }]);
+assert.deepEqual(selectedTemplates.map((entry) => entry.id), ['uploaded-form-001', 'uploaded-form-002'], 'Uploaded authentic forms must take precedence over built-in examples');
+assert.deepEqual(templatesForCategoryGeneration([builtInExample]), [builtInExample], 'Built-in templates remain available when no authentic form has been uploaded');
+const archive = unzipSync(buildCategoryArchive(selectedTemplates, item));
 assert.equal(Object.keys(archive).length, 2, 'Category ZIP must contain each selected DOCX exactly once');
 for (const [name, bytes] of Object.entries(archive)) {
   assert.ok(name.endsWith('.docx'));
