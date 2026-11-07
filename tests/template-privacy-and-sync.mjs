@@ -62,9 +62,8 @@ globalThis.window = {
 const counterfeit01Rendered = replaceInXml(counterfeit01Xml, counterfeit01, {
   counterfeit: { serialNumber: 'TEST-SERIAL-123' },
   evidence: 'TEST DENOMINATION',
-  // Investigator A identity and service are now sourced only from this
-  // installation profile; stale per-case investigator-A data must be ignored.
-  officerA: { rank: 'STALE CASE RANK', surname: 'STALE CASE OFFICER', name: 'STALE CASE NAME', service: 'STALE CASE SERVICE A' },
+  // This represents a new case: it has no historical author snapshot yet.
+  // Its A investigator identity and service must come from the installation profile.
   officerB: { rank: 'TEST B', surname: 'OFFICER', name: 'TWO', service: 'SERVICE B' }
 })
 assert.ok(counterfeit01Rendered.includes('TEST-SERIAL-123'))
