@@ -563,7 +563,7 @@ function uid() {
       var blob = new Blob([archive], { type: 'application/zip' });
       var url = URL.createObjectURL(blob);
       var link = document.createElement('a');
-      var caseName = String(saved.title || 'dικογραφία').replace(/[\\\\/:*?"<>|]+/gu, '-');
+      var caseName = String(saved.title || 'δικογραφία').replace(/[\\\\/:*?"<>|]+/gu, '-');
       link.href = url;
       link.download = caseName + '-' + activeProfileFilter + '-συμπληρωμένα-έντυπα.zip';
       document.body.appendChild(link);
@@ -574,7 +574,7 @@ function uid() {
       // Keep the saved case in the local register; only clear the working form after ZIP creation and download initiation.
       reset();
       $('case-date').value = '';
-      $('case-flash').textContent = 'Η εξαγωγή ολοκληρώθηκε. Η υπόθεση διατηρήθηκε στο τοπικό μητρώο και η φόρμα καθαρίστηκε για την επόμενη ίδια δικογραφία.';
+      $('case-flash').textContent = 'Το ZIP δημιουργήθηκε και η λήψη ξεκίνησε. Η υπόθεση διατηρήθηκε στο τοπικό μητρώο και η φόρμα καθαρίστηκε για την επόμενη ίδια δικογραφία.';
       render();
     } catch (error) {
       $('case-flash').textContent = 'Η εξαγωγή δεν ολοκληρώθηκε. Τα στοιχεία παραμένουν στη φόρμα και η αποθηκευμένη υπόθεση δεν διαγράφηκε: ' + (error.message || 'Άγνωστο σφάλμα.');
