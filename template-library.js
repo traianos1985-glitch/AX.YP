@@ -803,6 +803,32 @@ function render() {
       });
       panel.appendChild(batchButton);
     }
+    if (group.category && window.AXYP_ROLE && window.AXYP_ROLE.isAdmin()) {
+      const authored = group.items.filter((template) => template.source === 'user-uploaded' || template.source === 'published-package');
+      if (authored.length) {
+        const publishButton = document.createElement('button');
+        publishButton.type = 'button';
+        publishButton.className = 'mini-button';
+        publishButton.textContent = 'Εξαγωγή επίσημου πακέτου για δημοσίευση';
+        publishButton.addEventListener('click', () => {
+          try {
+            const archive = buildOfficialDossierPackage(authored, group.category);
+            const blob = new Blob([archive], { type: 'application/zip' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'axyp-' + group.category + '-official-package.axyp.zip';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+          } catch (error) {
+            window.alert('Δεν δημιουργήθηκε το επίσημο πακέτο: ' + error.message);
+          }
+        });
+        panel.appendChild(publishButton);
+      }
+    }
     root.appendChild(details);
     details.addEventListener('toggle', async () => {
       if (!details.open) {
@@ -863,6 +889,12 @@ function render() {
         row.querySelector('select').dispatchEvent(new Event('change'));
         mappingRoot.appendChild(row);
       });
+
+      if (template.source === 'published-package') {
+        card.querySelector('.remove').hidden = true;
+        card.querySelector('.save-mapping').hidden = true;
+        card.querySelectorAll('.mapping-row select').forEach((select) => { select.disabled = true; });
+      }
 
       card.querySelector('.save-mapping').onclick = () => {
         const mappings = {};
@@ -1423,6 +1455,36 @@ export function templatesForCategoryGeneration(templates) {
   return uploaded.length ? uploaded : list;
 }
 
+export function buildOfficialDossierPackage(templates, category) {
+  if (!Array.isArray(templates) || !category) throw new Error('Επίλεξε κατηγορία με έντυπα.');
+  const documents = templates.filter((template) =>
+    template && template.category === category &&
+    (template.source === 'user-uploaded' || template.source === 'published-package')
+  );
+  if (!documents.length) throw new Error('Δεν υπάρχουν αυθεντικά έντυπα για δημοσίευση σε αυτή την κατηγορία.');
+  const packageFiles = {};
+  const manifestDocuments = documents.map((template, index) => {
+    if (!template.mappingConfirmedAt) throw new Error('Πρέπει πρώτα να επιβεβαιωθεί η αντιστοίχιση πεδίων για το έντυπο «' + template.name + '».');
+    const safeId = String(template.id || index + 1).replace(/[^\\p{L}\\p{N}-]+/gu, '-').slice(0, 48) || String(index + 1);
+    const path = 'documents/' + String(index + 1).padStart(2, '0') + '-' + safeId + '.docx';
+    packageFiles[path] = zipSync(getTemplateParts(template));
+    return {
+      id: String(template.id || safeId),
+      name: String(template.name || 'Έντυπο Word'),
+      path,
+      fields: Array.isArray(template.fields) ? template.fields : [],
+      mappings: template.mappings && typeof template.mappings === 'object' ? template.mappings : {}
+    };
+  });
+  packageFiles['manifest.json'] = new TextEncoder().encode(JSON.stringify({
+    schemaVersion: 1,
+    category,
+    createdAt: new Date().toISOString(),
+    documents: manifestDocuments
+  }, null, 2));
+  return zipSync(packageFiles);
+}
+
 export function buildCategoryArchive(templates, item) {
   if (!Array.isArray(templates) || !templates.length) throw new Error('Δεν υπάρχουν έντυπα στην επιλεγμένη κατηγορία.');
   if (!item || !item.id) throw new Error('Επίλεξε πρώτα συγκεκριμένη υπόθεση.');
@@ -1489,6 +1551,6 @@ if (typeof document !== 'undefined') {
       throw error;
     });
   if (typeof window !== 'undefined') {
-    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts, getMissingTemplateFields, buildCategoryArchive, templatesForCategoryGeneration, getCategoryTemplates: (category) => [...PUBLISHED_DOSSIER_TEMPLATES, ...read()].filter((template) => template && template.category === category), ready };
+    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts, getMissingTemplateFields, buildCategoryArchive, buildOfficialDossierPackage, templatesForCategoryGeneration, getCategoryTemplates: (category) => [...PUBLISHED_DOSSIER_TEMPLATES, ...read()].filter((template) => template && template.category === category), ready };
   }
 }
