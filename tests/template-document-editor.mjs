@@ -14,11 +14,11 @@ const original = {
 };
 
 const runs = extractTemplateTextRuns(original);
-assert.deepEqual(runs.map(({ path, index, text, editable }) => ({ path, index, text, editable })), [
-  { path: 'word/document.xml', index: 0, text: 'Αρχικό', editable: true },
-  { path: 'word/document.xml', index: 1, text: ' κείμενο', editable: true },
-  { path: 'word/document.xml', index: 2, text: '{{person.fullName}}', editable: false },
-  { path: 'word/header1.xml', index: 0, text: 'Κεφαλίδα', editable: true }
+assert.deepEqual(runs.map(({ path, index, paragraphIndex, text, editable }) => ({ path, index, text, editable })), [
+  { path: 'word/document.xml', index: 0, paragraphIndex: 0, text: 'Αρχικό', editable: true },
+  { path: 'word/document.xml', index: 1, paragraphIndex: 0, text: ' κείμενο', editable: true },
+  { path: 'word/document.xml', index: 2, paragraphIndex: 0, text: '{{person.fullName}}', editable: false },
+  { path: 'word/header1.xml', index: 0, paragraphIndex: 0, text: 'Κεφαλίδα', editable: true }
 ]);
 
 const updated = applyTemplateTextEdits(original, [
