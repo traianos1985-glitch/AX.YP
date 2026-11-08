@@ -16,9 +16,10 @@ assert.match(html, /Τα placeholders παραμένουν κλειδωμένα/
 
 const original = {
   'word/document.xml': new TextEncoder().encode(
-    '<w:document><w:body><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Αρχικό</w:t></w:r><w:r><w:t xml:space="preserve"> κείμενο</w:t></w:r><w:r><w:t>{{person.fullName}}</w:t></w:r></w:p><w:p><w:r><w:t>{{person.</w:t></w:r><w:r><w:t>fullName}}</w:t></w:r></w:p></w:body></w:document>'
+    '<w:document><w:body><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Αρχικό</w:t></w:r><w:r><w:t xml:space="preserve"> κείμενο</w:t></w:r><w:r><w:t>{{person.fullName}}</w:t></w:r></w:p><w:p><w:r><w:t>{{person.</w:t></w:r><w:r><w:t>fullName}}</w:t></w:r></w:p><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Κείμενο πίνακα</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>'
   ),
   'word/header1.xml': new TextEncoder().encode('<w:hdr><w:p><w:r><w:t>Κεφαλίδα</w:t></w:r></w:p></w:hdr>'),
+  'word/footer1.xml': new TextEncoder().encode('<w:ftr><w:p><w:r><w:t>Υποσέλιδο</w:t></w:r></w:p></w:ftr>'),
   'word/styles.xml': new TextEncoder().encode('<w:styles><w:style w:styleId="Keep"/></w:styles>'),
   'word/media/image1.png': new Uint8Array([1, 2, 3])
 };
@@ -30,22 +31,28 @@ assert.deepEqual(runs.map(({ path, index, paragraphIndex, text, editable }) => (
   { path: 'word/document.xml', index: 2, paragraphIndex: 0, text: '{{person.fullName}}', editable: false },
   { path: 'word/document.xml', index: 3, paragraphIndex: 1, text: '{{person.', editable: false },
   { path: 'word/document.xml', index: 4, paragraphIndex: 1, text: 'fullName}}', editable: false },
-  { path: 'word/header1.xml', index: 0, paragraphIndex: 0, text: 'Κεφαλίδα', editable: true }
+  { path: 'word/document.xml', index: 5, paragraphIndex: 2, text: 'Κείμενο πίνακα', editable: true },
+  { path: 'word/header1.xml', index: 0, paragraphIndex: 0, text: 'Κεφαλίδα', editable: true },
+  { path: 'word/footer1.xml', index: 0, paragraphIndex: 0, text: 'Υποσέλιδο', editable: true }
 ]);
 
 const updated = applyTemplateTextEdits(original, [
   { path: 'word/document.xml', index: 0, originalText: 'Αρχικό', text: 'Διορθωμένο & νέο' },
-  { path: 'word/header1.xml', index: 0, originalText: 'Κεφαλίδα', text: 'Νέα κεφαλίδα' }
+  { path: 'word/header1.xml', index: 0, originalText: 'Κεφαλίδα', text: 'Νέα κεφαλίδα' },
+  { path: 'word/document.xml', index: 5, originalText: 'Κείμενο πίνακα', text: 'Νέο κείμενο πίνακα' },
+  { path: 'word/footer1.xml', index: 0, originalText: 'Υποσέλιδο', text: 'Νέο υποσέλιδο' }
 ]);
 const documentXml = new TextDecoder().decode(updated['word/document.xml']);
 assert.match(documentXml, /<w:rPr><w:b\/><\/w:rPr><w:t>Διορθωμένο &amp; νέο<\/w:t>/u);
 assert.match(documentXml, /<w:t xml:space="preserve"> κείμενο<\/w:t>/u);
 assert.match(documentXml, /<w:t>\{\{person\.fullName\}\}<\/w:t>/u);
 assert.equal(new TextDecoder().decode(updated['word/header1.xml']), '<w:hdr><w:p><w:r><w:t>Νέα κεφαλίδα</w:t></w:r></w:p></w:hdr>');
+assert.match(documentXml, /<w:tbl><w:tr><w:tc><w:p><w:r><w:t>Νέο κείμενο πίνακα<\/w:t><\/w:r><\/w:p><\/w:tc><\/w:tr><\/w:tbl>/u);
+assert.equal(new TextDecoder().decode(updated['word/footer1.xml']), '<w:ftr><w:p><w:r><w:t>Νέο υποσέλιδο</w:t></w:r></w:p></w:ftr>');
 assert.deepEqual(updated['word/styles.xml'], original['word/styles.xml']);
 assert.deepEqual(updated['word/media/image1.png'], original['word/media/image1.png']);
 assert.deepEqual(original['word/document.xml'], new TextEncoder().encode(
-  '<w:document><w:body><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Αρχικό</w:t></w:r><w:r><w:t xml:space="preserve"> κείμενο</w:t></w:r><w:r><w:t>{{person.fullName}}</w:t></w:r></w:p><w:p><w:r><w:t>{{person.</w:t></w:r><w:r><w:t>fullName}}</w:t></w:r></w:p></w:body></w:document>'
+  '<w:document><w:body><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Αρχικό</w:t></w:r><w:r><w:t xml:space="preserve"> κείμενο</w:t></w:r><w:r><w:t>{{person.fullName}}</w:t></w:r></w:p><w:p><w:r><w:t>{{person.</w:t></w:r><w:r><w:t>fullName}}</w:t></w:r></w:p><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Κείμενο πίνακα</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>'
 ));
 
 assert.throws(() => applyTemplateTextEdits(original, [
