@@ -68,7 +68,8 @@ const splitDottedParts = { 'word/document.xml': new TextEncoder().encode('<w:p><
 const splitDotted = detectDottedPlaceholderCandidates(splitDottedParts);
 assert.equal(splitDotted.length, 1, 'A dotted position split across Word runs must still be detected as one occurrence');
 const splitDottedOutput = new TextDecoder().decode(anonymizeDocxParts(splitDottedParts, [{ ...splitDotted[0], placeholder: '{{case.location}}' }])['word/document.xml']);
-assert.ok(splitDottedOutput.includes('{{case.location}} συνέχεια'));
+const splitDottedVisibleText = splitDottedOutput.replace(/<[^>]+>/gu, '');
+assert.ok(splitDottedVisibleText.includes('{{case.location}} συνέχεια'), 'The combined visible paragraph text must remain continuous across Word runs');
 assert.ok(!splitDottedOutput.includes('....'));
 assert.ok(splitDottedOutput.includes('<w:rPr><w:b/></w:rPr>') && splitDottedOutput.includes('<w:rPr><w:i/></w:rPr>'), 'Run properties on both sides of the replaced position must remain present');
 
