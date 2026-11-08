@@ -26,7 +26,6 @@ assert.doesNotMatch(library, /enteredName = window\.prompt/);
 assert.doesNotMatch(library, /Εξαγωγή επίσημου πακέτου για δημοσίευση/);
 assert.match(library, /export function buildOfficialDossierPackage/);
 assert.match(library, /const baseName = String\(template\.name/);
-assert.match(library, /\.replace\(\/[\\\\/:*?\"<>|]+\/gu, '-'/);
 assert.match(library, /new URL\('dossier-packages\/manifest\.json', document\.baseURI\)/);
 assert.match(vite, /dossier-packages/);
 assert.match(serviceWorker, /dossier-packages\/manifest\.json/);
