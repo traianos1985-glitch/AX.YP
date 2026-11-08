@@ -55,6 +55,7 @@ assert.equal(packageManifest.category, 'generic');
 assert.equal(packageManifest.schemaVersion, 1);
 assert.equal(packageManifest.documents.length, 1);
 assert.equal(packageManifest.documents[0].name, 'Αναφορά.docx');
+assert.equal(packageManifest.documents[0].path, 'documents/01-official-generic-01.docx');
 const docxParts = unzipSync(packageParts[packageManifest.documents[0].path]);
 assert.equal(new TextDecoder().decode(docxParts['word/document.xml']), xml);
 assert.throws(() => buildOfficialDossierPackage([{ ...template, mappingConfirmedAt: null }], 'generic'), /αντιστοίχιση πεδίων/);
