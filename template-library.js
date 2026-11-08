@@ -1587,7 +1587,7 @@ export function buildOfficialDossierPackage(templates, category) {
   const packageFiles = {};
   const manifestDocuments = documents.map((template, index) => {
     if (!template.mappingConfirmedAt) throw new Error('Πρέπει πρώτα να επιβεβαιωθεί η αντιστοίχιση πεδίων για το έντυπο «' + template.name + '».');
-    const safeId = String(template.id || index + 1).replace(/[^\\p{L}\\p{N}-]+/gu, '-').slice(0, 48) || String(index + 1);
+    const safeId = String(template.id || index + 1).replace(/[^\p{L}\p{N}-]+/gu, '-').slice(0, 48) || String(index + 1);
     const path = 'documents/' + String(index + 1).padStart(2, '0') + '-' + safeId + '.docx';
     packageFiles[path] = zipSync(getTemplateParts(template));
     return {
