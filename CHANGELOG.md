@@ -2,6 +2,7 @@
 - Added a detailed agent playbook for multi-batch authentic dossier intake, document inventory, fixed-versus-variable content, Service Profile and investigator mappings, per-case required second investigator, historical author preservation, and final package quality gates. Documentation only; no application behavior or templates changed.
 
 ## Unreleased
+- Add Admin-only DOCX template maintenance: download a stored form, review a corrected DOCX for personal-data candidates, save it as the active local template, and restore from a bounded five-version document history. Changes are persisted through the existing local storage layer; changed placeholder sets invalidate the previous mapping confirmation.
 - Strengthened the agent intake playbook with per-placeholder occurrence counts, distinct synthetic test values, consolidated clarification questions, root-cause test-failure diagnosis, and a single coherent delivery PR per completed dossier category. Documentation only.
 - Clarified the agent playbook: new dossiers take the first investigator/author from the installation profile and save a per-case snapshot; saved dossiers retain that historical snapshot through edits, history restore, and re-export even after the profile changes. Documentation only.
 - Make the installation Service Profile the sole source of truth for the first investigating officer and report author; remove per-case first-investigator inputs while retaining editable second-investigator details per case.
