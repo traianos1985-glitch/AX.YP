@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { unzipSync, zipSync } from '../vendor/fflate.js';
 import {
   TEMPLATE_DOCUMENT_HISTORY_LIMIT,
   createTemplateDocumentSnapshot,
