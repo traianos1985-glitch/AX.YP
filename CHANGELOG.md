@@ -1,3 +1,10 @@
+## 2026-11-08 — Αντιστοίχιση αυθεντικών κενών DOCX ανά θέση
+
+- Η αρχική εισαγωγή και η αντικατάσταση προτύπου εντοπίζουν κάθε ανεξάρτητη ομάδα τελειών/αποσιωπητικών σε Word παραγράφους.
+- Ο διαχειριστής αντιστοιχίζει κάθε θέση χωριστά σε placeholder ή επιλέγει ρητά να παραμείνει ως έχει. Ίδιες ομάδες τελειών στην ίδια παράγραφο δεν συγχέονται μεταξύ τους.
+- Οι αντικαταστάσεις γίνονται με βάση ακριβείς θέσεις χαρακτήρων στο κείμενο της παραγράφου, συμπεριλαμβανομένων θέσεων που εκτείνονται σε πολλαπλά Word runs. Τα στοιχεία μορφοποίησης των runs διατηρούνται.
+- Προστέθηκαν συνθετικά regression tests για πέντε διαφορετικές θέσεις στην ίδια παράγραφο, απουσία υπολειπόμενων τελειών, διατήρηση του περιβάλλοντος κειμένου και μορφοποίησης.
+
 - Preserve the first investigator/author identity as a per-case snapshot: new cases capture the current installation operator, edits and history snapshots retain the original author, and DOCX mappings read the saved case identity instead of silently switching to a newly configured operator. Legacy cases without a snapshot retain a documented fallback.
 - Added a detailed agent playbook for multi-batch authentic dossier intake, document inventory, fixed-versus-variable content, Service Profile and investigator mappings, per-case required second investigator, historical author preservation, and final package quality gates. Documentation only; no application behavior or templates changed.
 
