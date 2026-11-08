@@ -7,8 +7,8 @@ function decodeXmlText(value) {
     .replace(/&gt;/gu, '>')
     .replace(/&quot;/gu, '"')
     .replace(/&apos;/gu, "'")
-    .replace(/&#(\\d+);/gu, (_match, value) => String.fromCodePoint(Number(value)))
-    .replace(/&#x([\\da-f]+);/giu, (_match, value) => String.fromCodePoint(parseInt(value, 16)))
+    .replace(/&#(\d+);/gu, (_match, value) => String.fromCodePoint(Number(value)))
+    .replace(/&#x([\da-f]+);/giu, (_match, value) => String.fromCodePoint(parseInt(value, 16)))
     .replace(/&amp;/gu, '&');
 }
 
