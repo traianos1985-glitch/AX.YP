@@ -3,6 +3,7 @@ import { detectDocxPersonalData, anonymizeDocxParts, createManualAnonymizationCa
 import { listTemplateMappingVersions, saveTemplateMappingVersion, restoreTemplateMappingVersion } from './template-mapping-history.js';
 import { toGreekGenitiveFullName, getServiceProfileOperatorIdentity } from './service-profile.js';
 import { createTemplateDocumentSnapshot, appendTemplateDocumentSnapshot, restoreTemplateDocumentSnapshot, extractTemplateFieldsFromParts } from './template-document-history.js';
+import { mergeTemplateOverrides } from './template-catalog.js';
 
 let DEFAULT_NARCOTICS_TEMPLATES = [];
 let DEFAULT_COUNTERFEIT_TEMPLATES = [];
@@ -801,8 +802,7 @@ function render() {
   root.textContent = '';
   const currentCase = getCase();
   const localTemplates = read();
-  const localIds = new Set(localTemplates.map((template) => template.id).filter(Boolean));
-  const allTemplates = [...PUBLISHED_DOSSIER_TEMPLATES.filter((template) => !localIds.has(template.id)), ...localTemplates];
+  const allTemplates = mergeTemplateOverrides(PUBLISHED_DOSSIER_TEMPLATES, localTemplates);
 
   const isCounterfeit = (t) => t.category === 'counterfeit';
   const isEnvironment = (t) => t.category === 'environment';
@@ -1809,6 +1809,6 @@ if (typeof document !== 'undefined') {
       throw error;
     });
   if (typeof window !== 'undefined') {
-    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts, getMissingTemplateFields, buildCategoryArchive, buildOfficialDossierPackage, templatesForCategoryGeneration, getCategoryTemplates: (category) => [...PUBLISHED_DOSSIER_TEMPLATES, ...read()].filter((template) => template && template.category === category), ready };
+    window.TemplateLibrary = { refresh: render, ensureDefaultTemplates, initializeDefaultTemplates, generate, getTemplateParts, getMissingTemplateFields, buildCategoryArchive, buildOfficialDossierPackage, templatesForCategoryGeneration, getCategoryTemplates: (category) => mergeTemplateOverrides(PUBLISHED_DOSSIER_TEMPLATES, read()).filter((template) => template && template.category === category), ready };
   }
 }
