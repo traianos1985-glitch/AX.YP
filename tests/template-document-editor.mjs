@@ -16,7 +16,7 @@ assert.match(html, /Τα placeholders παραμένουν κλειδωμένα/
 
 const original = {
   'word/document.xml': new TextEncoder().encode(
-    '<w:document><w:body><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Αρχικό</w:t></w:r><w:r><w:t xml:space="preserve"> κείμενο</w:t></w:r><w:r><w:t>{{person.fullName}}</w:t></w:r></w:p></w:body></w:document>'
+    '<w:document><w:body><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Αρχικό</w:t></w:r><w:r><w:t xml:space="preserve"> κείμενο</w:t></w:r><w:r><w:t>{{person.fullName}}</w:t></w:r></w:p><w:p><w:r><w:t>{{person.</w:t></w:r><w:r><w:t>fullName}}</w:t></w:r></w:p></w:body></w:document>'
   ),
   'word/header1.xml': new TextEncoder().encode('<w:hdr><w:p><w:r><w:t>Κεφαλίδα</w:t></w:r></w:p></w:hdr>'),
   'word/styles.xml': new TextEncoder().encode('<w:styles><w:style w:styleId="Keep"/></w:styles>'),
@@ -28,6 +28,8 @@ assert.deepEqual(runs.map(({ path, index, paragraphIndex, text, editable }) => (
   { path: 'word/document.xml', index: 0, paragraphIndex: 0, text: 'Αρχικό', editable: true },
   { path: 'word/document.xml', index: 1, paragraphIndex: 0, text: ' κείμενο', editable: true },
   { path: 'word/document.xml', index: 2, paragraphIndex: 0, text: '{{person.fullName}}', editable: false },
+  { path: 'word/document.xml', index: 3, paragraphIndex: 1, text: '{{person.', editable: false },
+  { path: 'word/document.xml', index: 4, paragraphIndex: 1, text: 'fullName}}', editable: false },
   { path: 'word/header1.xml', index: 0, paragraphIndex: 0, text: 'Κεφαλίδα', editable: true }
 ]);
 
@@ -48,6 +50,9 @@ assert.deepEqual(original['word/document.xml'], new TextEncoder().encode(
 
 assert.throws(() => applyTemplateTextEdits(original, [
   { path: 'word/document.xml', index: 2, originalText: '{{person.fullName}}', text: 'Όνομα' }
+]), /placeholders δεν επιτρέπεται/u);
+assert.throws(() => applyTemplateTextEdits(original, [
+  { path: 'word/document.xml', index: 3, originalText: '{{person.', text: 'Όνομα' }
 ]), /placeholders δεν επιτρέπεται/u);
 assert.throws(() => applyTemplateTextEdits(original, [
   { path: 'word/document.xml', index: 0, originalText: 'Άλλο', text: 'Κείμενο' }
