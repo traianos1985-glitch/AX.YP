@@ -7,7 +7,7 @@ const decode = (value) => new TextDecoder().decode(value);
 const originalParts = {
   '[Content_Types].xml': encode('<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/></Types>'),
   '_rels/.rels': encode('<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="officeDocument" Target="word/document.xml"/></Relationships>'),
-  'word/document.xml': encode('<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>{{person.fullName}}</w:t></w:r></w:p><w:p><w:r><w:t>{{person.address}}</w:t></w:r></w:p><w:p><w:r><w:t>Αναφορά </w:t></w:r><w:r><w:t>{{case.title}}</w:t></w:r></w:p><w:sectPr/></w:body></w:document>'),
+  'word/document.xml': encode('<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>{{person.fullName}}</w:t></w:r></w:p><w:p><w:r><w:t>{{person.address}}</w:t></w:r></w:p><w:p><w:r><w:t>Αναφορά </w:t></w:r><w:r><w:t>{{case.title}}</w:t></w:r></w:p><w:p><w:r><w:t>σηματική αναφορά μας</w:t></w:r><w:r><w:t>Β’   κείμενο ,με κενά .</w:t></w:r></w:p><w:sectPr/></w:body></w:document>'),
   'word/header1.xml': encode('<?xml version="1.0"?><w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:r><w:t>{{case.</w:t></w:r><w:r><w:t>protocolNumber}}</w:t></w:r></w:p></w:hdr>'),
   'word/footer1.xml': encode('<?xml version="1.0"?><w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:r><w:t>Αυθεντικό υποσέλιδο</w:t></w:r></w:p></w:ftr>'),
   'word/_rels/document.xml.rels': encode('<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdFooter" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/></Relationships>'),
@@ -41,6 +41,8 @@ const documentXml = decode(generated['word/document.xml']);
 const headerXml = decode(generated['word/header1.xml']);
 assert.ok(documentXml.includes('TEST SURNAME TEST NAME'));
 assert.ok(documentXml.includes('TEST CASE TITLE'));
+assert.ok(documentXml.includes('<w:t>σηματική αναφορά μας</w:t>'), 'The exact approved phrase must remain unchanged in uploaded official forms');
+assert.ok(documentXml.includes('<w:t>Β’   κείμενο ,με κενά .</w:t>'), 'Apostrophes, repeated spaces and punctuation spacing in source text must remain unchanged');
 assert.ok(documentXml.includes('{{person.address}}'), 'Missing uploaded-form fields must remain visible for manual completion');
 assert.ok(getMissingTemplateFields(template, item).some((entry) => entry.field === 'person.address'));
 assert.ok(headerXml.includes('TEST-PROTOCOL-001'));
