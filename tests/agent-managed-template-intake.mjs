@@ -13,6 +13,7 @@ const [html, library, readme] = await Promise.all([
 assert.doesNotMatch(html, /id=["']template-file["']/u);
 assert.doesNotMatch(html, /id=["']template-category["']/u);
 assert.doesNotMatch(html, /Ανέβασμα αυθεντικού εντύπου Word/u);
+assert.doesNotMatch(html, /DOCX που ανεβάζει ο χρήστης/u);
 assert.match(html, /προετοιμάζονται από εξουσιοδοτημένο coding agent/u);
 assert.match(html, /Δεν γίνεται εισαγωγή ή ανωνυμοποίηση εγγράφων από αυτό το περιβάλλον/u);
 
