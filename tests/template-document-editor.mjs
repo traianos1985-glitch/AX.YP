@@ -24,7 +24,7 @@ const original = {
 };
 
 const runs = extractTemplateTextRuns(original);
-assert.deepEqual(runs.map(({ path, index, paragraphIndex, text, editable }) => ({ path, index, text, editable })), [
+assert.deepEqual(runs.map(({ path, index, paragraphIndex, text, editable }) => ({ path, index, paragraphIndex, text, editable })), [
   { path: 'word/document.xml', index: 0, paragraphIndex: 0, text: 'Αρχικό', editable: true },
   { path: 'word/document.xml', index: 1, paragraphIndex: 0, text: ' κείμενο', editable: true },
   { path: 'word/document.xml', index: 2, paragraphIndex: 0, text: '{{person.fullName}}', editable: false },
