@@ -35,15 +35,15 @@ export function extractTemplateTextRuns(parts) {
     const xml = decoder.decode(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
     let index = 0;
     let paragraphIndex = 0;
-    for (const paragraph of xml.matchAll(/<w:p\\b[^>]*>([\\s\\S]*?)<\\/w:p>/gu)) {
-      for (const match of paragraph[1].matchAll(/<w:t\\b[^>]*>([\\s\\S]*?)<\\/w:t>/gu)) {
+    for (const paragraph of xml.matchAll(/<w:p\b[^>]*>([\s\S]*?)<\/w:p>/gu)) {
+      for (const match of paragraph[1].matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)) {
         const text = decodeXmlText(match[1]);
         result.push({
           path,
           index: index++,
           paragraphIndex,
           text,
-          editable: !/\\{\\{\\s*[\\p{L}\\p{N}_.-]+\\s*\\}\\}/u.test(text)
+          editable: !/\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/u.test(text)
         });
       }
       paragraphIndex++;
