@@ -86,7 +86,7 @@ try {
   assert.equal(loadedPackages[0].source, 'published-package');
   assert.equal(loadedPackages[0].category, 'generic');
   assert.equal(loadedPackages[0].name, 'Αναφορά.docx');
-  assert.equal(loadedPackages[0].mappingConfirmedAt, 'published');
+  assert.equal(loadedPackages[0].mappingConfirmedAt, packageManifest.createdAt);
 } finally {
   globalThis.fetch = originalFetch;
   if (originalDocument === undefined) delete globalThis.document;
