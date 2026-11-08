@@ -1,5 +1,5 @@
 import { unzipSync, zipSync } from './vendor/fflate.js';
-import { detectDocxPersonalData, anonymizeDocxParts, createManualAnonymizationCandidates } from './docx-anonymization.js';
+import { detectDocxPersonalData, detectDottedPlaceholderCandidates, anonymizeDocxParts, createManualAnonymizationCandidates } from './docx-anonymization.js';
 import { listTemplateMappingVersions, saveTemplateMappingVersion, restoreTemplateMappingVersion } from './template-mapping-history.js';
 import { toGreekGenitiveFullName, getServiceProfileOperatorIdentity } from './service-profile.js';
 import { createTemplateDocumentSnapshot, appendTemplateDocumentSnapshot, restoreTemplateDocumentSnapshot, extractTemplateFieldsFromParts } from './template-document-history.js';
@@ -1182,6 +1182,7 @@ function render() {
 }
 
 async function reviewAnonymizationCandidates(fileName, candidates, parts) {
+  const dottedCandidates = detectDottedPlaceholderCandidates(parts);
   const dialog = document.createElement('dialog');
   dialog.setAttribute('aria-labelledby', 'docx-anonymization-title');
   dialog.style.maxWidth = 'min(760px, 94vw)';
@@ -1245,8 +1246,32 @@ async function reviewAnonymizationCandidates(fileName, candidates, parts) {
     ['vehicle.registration', 'Αριθμός κυκλοφορίας'],
     ['case.protocolNumber', 'Αριθμός πρωτοκόλλου'],
     ['case.location', 'Τόπος σύνταξης'],
-    ['incident.location', 'Τόπος συμβάντος']
+    ['incident.location', 'Τόπος συμβάντος'],
+    ['case.date', 'Ημερομηνία'],
+    ['case.day', 'Ημέρα'],
+    ['incident.date', 'Ημερομηνία συμβάντος'],
+    ['incident.time', 'Ώρα συμβάντος'],
+    ['incident.startTime', 'Ώρα έναρξης'],
+    ['incident.endTime', 'Ώρα περάτωσης'],
+    ['person.birthDate', 'Ημερομηνία γέννησης'],
+    ['person.birthPlace', 'Τόπος γέννησης']
   ];
+  const dottedHeading = document.createElement('h3');
+  dottedHeading.textContent = 'Αντιστοίχιση κάθε ξεχωριστής θέσης με τελείες';
+  const dottedHint = document.createElement('p');
+  dottedHint.textContent = 'Κάθε ομάδα τελειών είναι ανεξάρτητη θέση. Επίλεξε διαφορετικό πεδίο για κάθε θέση ή δήλωσε ρητά ότι θα παραμείνει ως έχει. Η αντικατάσταση γίνεται ακριβώς στη συγκεκριμένη θέση, όχι σε όλες τις ίδιες τελείες.';
+  const dottedRows = document.createElement('div'); dottedRows.style.display = 'grid'; dottedRows.style.gap = '0.5rem';
+  const dottedControls = [];
+  dottedCandidates.forEach((candidate, index) => {
+    const row = document.createElement('label'); row.style.display = 'grid'; row.style.gridTemplateColumns = 'minmax(0, 1fr) minmax(190px, 0.8fr)'; row.style.gap = '0.5rem'; row.style.alignItems = 'center'; row.style.padding = '0.5rem'; row.style.border = '1px solid #aaa'; row.style.borderRadius = '8px';
+    const description = document.createElement('span'); description.textContent = 'Θέση ' + (index + 1) + ' · ' + candidate.partName + ' · παράγραφος ' + (candidate.paragraphIndex + 1) + ': «' + candidate.value + '»';
+    const select = document.createElement('select'); select.setAttribute('aria-label', 'Πεδίο για την κενή θέση ' + (index + 1));
+    const choose = document.createElement('option'); choose.value = ''; choose.textContent = 'Επίλεξε πεδίο…'; select.appendChild(choose);
+    placeholderOptions.forEach(([value, label]) => { const option = document.createElement('option'); option.value = value; option.textContent = label; select.appendChild(option); });
+    const keep = document.createElement('option'); keep.value = '__keep__'; keep.textContent = 'Να παραμείνουν οι τελείες'; select.appendChild(keep);
+    row.append(description, select); dottedRows.appendChild(row); dottedControls.push(select);
+  });
+  if (!dottedCandidates.length) { const empty = document.createElement('p'); empty.textContent = 'Δεν εντοπίστηκαν ομάδες από δύο ή περισσότερες τελείες ή χαρακτήρες αποσιωπητικών.'; dottedRows.appendChild(empty); }
   const addManualRow = () => {
     const row = document.createElement('div');
     row.style.display = 'grid';
@@ -1302,7 +1327,7 @@ async function reviewAnonymizationCandidates(fileName, candidates, parts) {
   reviewed.addEventListener('change', () => { accept.disabled = !reviewed.checked; });
   cancel.addEventListener('click', () => dialog.close('cancel'));
   actions.append(cancel, accept);
-  dialog.append(title, intro, warning, list, manualHeading, manualHint, manualRows, addManual, manualError, reviewedLabel, actions);
+  dialog.append(title, intro, warning, list, dottedHeading, dottedHint, dottedRows, manualHeading, manualHint, manualRows, addManual, manualError, reviewedLabel, actions);
   document.body.appendChild(dialog);
   if (typeof dialog.showModal !== 'function') {
     dialog.remove();
@@ -1324,10 +1349,15 @@ async function reviewAnonymizationCandidates(fileName, candidates, parts) {
         manualError.textContent = 'Δεν βρέθηκε στο κείμενο του Word: ' + unmatched.map((entry) => entry.value).join(', ');
         return;
       }
+      if (dottedControls.some((select) => !select.value)) { manualError.textContent = 'Επίλεξε πεδίο ή «Να παραμείνουν οι τελείες» για κάθε ξεχωριστή θέση.'; return; }
+      const selectedDotted = dottedCandidates.flatMap((candidate, index) => {
+        const field = dottedControls[index].value;
+        return field === '__keep__' ? [] : [{ ...candidate, placeholder: '{{' + field + '}}' }];
+      });
       dialog.close('accept');
       dialog.addEventListener('close', () => {
         const selected = candidates.filter((_candidate, index) => controls[index].checked);
-        resolve([...selected, ...manualCandidates]);
+        resolve([...selected, ...selectedDotted, ...manualCandidates]);
       }, { once: true });
     });
     dialog.addEventListener('close', () => {
