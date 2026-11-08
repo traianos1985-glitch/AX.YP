@@ -160,7 +160,7 @@ export function detectDottedPlaceholderCandidates(parts) {
     paragraphs.forEach((paragraphMatch, paragraphIndex) => {
       const plainText = textNodes(paragraphMatch[0]).map((node) => node.value).join('');
       for (const [occurrenceIndex, match] of [...plainText.matchAll(/(?:\.{2,}|…+)/gu)].entries()) {
-        candidates.push({ id: [partName, paragraphIndex, 'dotted', occurrenceIndex, match.index].join(':'), partName, paragraphIndex, category: 'dotted-placeholder', label: 'Κενή θέση εντύπου', value: match[0], start: match.index, end: match.index + match[0].length, occurrenceIndex, confidence: 'review' });
+        candidates.push({ id: [partName, paragraphIndex, 'dotted', occurrenceIndex, match.index].join(':'), partName, paragraphIndex, category: 'dotted-placeholder', label: 'Κενή θέση εντύπου', value: match[0], start: match.index, end: match.index + match[0].length, contextBefore: plainText.slice(Math.max(0, match.index - 45), match.index), contextAfter: plainText.slice(match.index + match[0].length, match.index + match[0].length + 45), occurrenceIndex, confidence: 'review' });
       }
     });
   }
