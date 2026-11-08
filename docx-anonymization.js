@@ -35,7 +35,16 @@ function replaceParagraphRange(paragraph, start, end, replacement) {
   if (first === last) values[first] = values[first].slice(0, firstOffset) + replacement + values[first].slice(lastOffset);
   else { values[first] = values[first].slice(0, firstOffset) + replacement; for (let index = first + 1; index < last; index++) values[index] = ''; values[last] = values[last].slice(lastOffset); }
   let index = 0;
-  return paragraph.replace(/(<w:t\b[^>]*>)[\s\S]*?(<\/w:t>)/gu, (_match, open, close) => open + encodeXml(values[index++]) + close);
+  return paragraph.replace(/(<w:t\\b[^>]*>)[\\s\\S]*?(<\\/w:t>)/gu, (_match, open, close) => {
+    const value = values[index++];
+    const hasEdgeWhitespace = /^\\s|\\s$/u.test(value);
+    const safeOpen = hasEdgeWhitespace
+      ? (/\\bxml:space="/u.test(open)
+        ? open.replace(/\\bxml:space="[^"]*"/u, 'xml:space="preserve"')
+        : open.replace(/>$/u, ' xml:space="preserve">'))
+      : open;
+    return safeOpen + encodeXml(value) + close;
+  });
 }
 function replaceParagraphText(paragraph, search, replacement) {
   const nodes = textNodes(paragraph);
