@@ -64,6 +64,6 @@ export function extractTemplateFieldsFromParts(parts) {
     .filter(([path]) => path.startsWith('word/') && path.endsWith('.xml'))
     .map(([, bytes]) => new TextDecoder().decode(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)))
     .join('\n');
-  return [...new Set((xml.match(/\{\{\\s*([\\p{L}\\p{N}_.-]+)\\s*\}\}/gu) || [])
+  return [...new Set((xml.match(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu) || [])
     .map((placeholder) => placeholder.replace(/^\{\{|\}\}$/gu, '').trim()))];
 }
