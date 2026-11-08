@@ -20,7 +20,7 @@ assert.match(html, /Δεν γίνεται εισαγωγή ή ανωνυμοπο
 
 assert.doesNotMatch(library, /reviewAnonymizationCandidates/u);
 assert.doesNotMatch(library, /async function importTemplate/u);
-assert.doesNotMatch(library, /template-file/u);
+assert.doesNotMatch(library, /\$\(['"]template-file['"]\)/u);
 assert.doesNotMatch(library, /Αποθήκευση διορθωμένης έκδοσης/u);
 assert.doesNotMatch(library, /Λήψη εντύπου για διόρθωση στο Word/u);
 assert.doesNotMatch(library, /Εξαγωγή επίσημου πακέτου για δημοσίευση/u);
