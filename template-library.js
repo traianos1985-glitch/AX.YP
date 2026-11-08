@@ -1264,7 +1264,7 @@ async function reviewAnonymizationCandidates(fileName, candidates, parts) {
   const dottedControls = [];
   dottedCandidates.forEach((candidate, index) => {
     const row = document.createElement('label'); row.style.display = 'grid'; row.style.gridTemplateColumns = 'minmax(0, 1fr) minmax(190px, 0.8fr)'; row.style.gap = '0.5rem'; row.style.alignItems = 'center'; row.style.padding = '0.5rem'; row.style.border = '1px solid #aaa'; row.style.borderRadius = '8px';
-    const description = document.createElement('span'); description.textContent = 'Θέση ' + (index + 1) + ' · ' + candidate.partName + ' · παράγραφος ' + (candidate.paragraphIndex + 1) + ': «' + candidate.value + '»';
+    const description = document.createElement('span'); description.textContent = 'Θέση ' + (index + 1) + ' · ' + candidate.partName + ' · παράγραφος ' + (candidate.paragraphIndex + 1) + ': «' + candidate.contextBefore + ' [' + candidate.value + '] ' + candidate.contextAfter + '»';
     const select = document.createElement('select'); select.setAttribute('aria-label', 'Πεδίο για την κενή θέση ' + (index + 1));
     const choose = document.createElement('option'); choose.value = ''; choose.textContent = 'Επίλεξε πεδίο…'; select.appendChild(choose);
     placeholderOptions.forEach(([value, label]) => { const option = document.createElement('option'); option.value = value; option.textContent = label; select.appendChild(option); });
