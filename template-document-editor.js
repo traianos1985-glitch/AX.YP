@@ -73,6 +73,7 @@ export function applyTemplateTextEdits(parts, edits) {
       throw new Error('Μη έγκυρη αλλαγή κειμένου προτύπου.');
     }
     if (edit.text.length > 10000) throw new Error('Το κείμενο ενός πεδίου υπερβαίνει το επιτρεπόμενο όριο.');
+    if (/[{}]/u.test(edit.text)) throw new Error('Δεν επιτρέπεται η δημιουργία ή τροποποίηση placeholders από τον επεξεργαστή κειμένου.');
     if (/\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/u.test(edit.originalText)) {
       throw new Error('Τα placeholders δεν επιτρέπεται να τροποποιηθούν από τον επεξεργαστή κειμένου.');
     }
