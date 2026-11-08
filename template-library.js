@@ -3,6 +3,7 @@ import { listTemplateMappingVersions, saveTemplateMappingVersion, restoreTemplat
 import { toGreekGenitiveFullName, getServiceProfileOperatorIdentity } from './service-profile.js';
 import { createTemplateDocumentSnapshot, appendTemplateDocumentSnapshot, restoreTemplateDocumentSnapshot, extractTemplateFieldsFromParts } from './template-document-history.js';
 import { mergeTemplateOverrides } from './template-catalog.js';
+import { extractTemplateTextRuns, applyTemplateTextEdits } from './template-document-editor.js';
 
 let DEFAULT_NARCOTICS_TEMPLATES = [];
 let DEFAULT_COUNTERFEIT_TEMPLATES = [];
@@ -795,6 +796,188 @@ function renderMappingHistory(card, template) {
   });
 }
 
+
+function openTemplateDocumentEditor(template) {
+  if (!window.AXYP_ROLE || !window.AXYP_ROLE.isAdmin()) {
+    window.alert('Η επεξεργασία προτύπων είναι διαθέσιμη μόνο στον διαχειριστή.');
+    return;
+  }
+
+  const originalParts = getTemplateParts(template);
+  if (!originalParts['word/document.xml']) {
+    window.alert('Το πρότυπο δεν περιέχει έγκυρο κύριο έγγραφο Word.');
+    return;
+  }
+  const runs = extractTemplateTextRuns(originalParts);
+  if (!runs.length) {
+    window.alert('Δεν εντοπίστηκε επεξεργάσιμο κείμενο στο πρότυπο.');
+    return;
+  }
+
+  const dialog = document.createElement('dialog');
+  dialog.setAttribute('aria-labelledby', 'template-text-editor-title');
+  dialog.style.cssText = 'width:min(980px,96vw);max-width:96vw;max-height:92vh;padding:18px;border:1px solid #cbd5e1;border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.24);overflow:auto;';
+  const heading = document.createElement('h2');
+  heading.id = 'template-text-editor-title';
+  heading.textContent = 'Προεπισκόπηση και επεξεργασία κειμένου';
+  const name = document.createElement('p');
+  name.textContent = template.name;
+  name.className = 'muted';
+  const notice = document.createElement('p');
+  notice.setAttribute('role', 'note');
+  notice.textContent = 'Επεξεργάζεσαι μόνο υπάρχοντα τμήματα κειμένου. Τα placeholders είναι κλειδωμένα και δεν μπορούν να δημιουργηθούν από εδώ. Η δομή πινάκων, οι γραμματοσειρές, η στοίχιση, τα περιθώρια, η διάταξη υπογραφών και τα λοιπά στοιχεία DOCX δεν αλλάζουν. Η προεπισκόπηση δείχνει τη σειρά του κειμένου, όχι την ακριβή σελιδοποίηση του Word.';
+  notice.style.cssText = 'padding:10px;background:#f1f5f9;border-radius:8px;line-height:1.5;';
+  const preview = document.createElement('div');
+  preview.style.cssText = 'border:1px solid #cbd5e1;border-radius:8px;padding:12px;max-height:58vh;overflow:auto;background:#fff;color:#111827;';
+  const saveStatus = document.createElement('p');
+  saveStatus.setAttribute('role', 'status');
+  saveStatus.style.cssText = 'min-height:1.4em;';
+  const actions = document.createElement('div');
+  actions.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px;';
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.className = 'mini-button';
+  cancel.textContent = 'Ακύρωση';
+  const save = document.createElement('button');
+  save.type = 'button';
+  save.className = 'mini-button primary';
+  save.textContent = 'Αποθήκευση νέας έκδοσης';
+  actions.append(cancel, save);
+  dialog.append(heading, name, notice, preview, saveStatus, actions);
+  document.body.appendChild(dialog);
+
+  const fileLabels = (path) => {
+    if (path === 'word/document.xml') return 'Κύριο σώμα εγγράφου';
+    const match = path.match(/^word\/(header|footer)(\d*)\.xml$/u);
+    if (match) return (match[1] === 'header' ? 'Κεφαλίδα ' : 'Υποσέλιδο ') + (match[2] || '1');
+    if (path === 'word/footnotes.xml') return 'Υποσημειώσεις';
+    if (path === 'word/endnotes.xml') return 'Σημειώσεις τέλους';
+    if (path === 'word/comments.xml') return 'Σχόλια';
+    return path;
+  };
+
+  const groupedFiles = new Map();
+  for (const run of runs) {
+    if (!groupedFiles.has(run.path)) groupedFiles.set(run.path, new Map());
+    const paragraphs = groupedFiles.get(run.path);
+    if (!paragraphs.has(run.paragraphIndex)) paragraphs.set(run.paragraphIndex, []);
+    paragraphs.get(run.paragraphIndex).push(run);
+  }
+
+  for (const [path, paragraphs] of groupedFiles) {
+    const section = document.createElement('section');
+    section.style.cssText = 'margin:0 0 18px;';
+    const sectionTitle = document.createElement('h3');
+    sectionTitle.textContent = fileLabels(path);
+    sectionTitle.style.cssText = 'font-size:1rem;border-bottom:1px solid #cbd5e1;padding-bottom:6px;';
+    section.appendChild(sectionTitle);
+    for (const [paragraphIndex, paragraphRuns] of paragraphs) {
+      const paragraph = document.createElement('p');
+      paragraph.style.cssText = 'margin:0 0 9px;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere;';
+      for (const run of paragraphRuns) {
+        if (!run.text) continue;
+        if (!run.editable) {
+          const locked = document.createElement('code');
+          locked.textContent = run.text;
+          locked.title = 'Κλειδωμένο placeholder — δεν επεξεργάζεται';
+          locked.style.cssText = 'background:#e2e8f0;border-radius:3px;padding:0 2px;color:#334155;';
+          paragraph.appendChild(locked);
+          continue;
+        }
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = run.text;
+        input.maxLength = 10000;
+        input.dataset.path = run.path;
+        input.dataset.runIndex = String(run.index);
+        input.dataset.originalText = run.text;
+        input.setAttribute('aria-label', fileLabels(path) + ', παράγραφος ' + (paragraphIndex + 1) + ', τμήμα ' + (run.index + 1));
+        input.spellcheck = false;
+        input.style.cssText = 'display:inline-block;vertical-align:baseline;min-width:5ch;max-width:100%;width:' + Math.max(6, Math.min(42, run.text.length + 1)) + 'ch;padding:1px 3px;margin:0;border:1px dashed #94a3b8;border-radius:3px;background:#fffbeb;color:inherit;font:inherit;';
+        input.addEventListener('input', () => {
+          input.style.width = Math.max(6, Math.min(42, input.value.length + 1)) + 'ch';
+        });
+        paragraph.appendChild(input);
+      }
+      section.appendChild(paragraph);
+    }
+    preview.appendChild(section);
+  }
+
+  const closeDialog = () => {
+    try { dialog.close(); } catch (_) {}
+    dialog.remove();
+  };
+  cancel.addEventListener('click', closeDialog);
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) closeDialog();
+  });
+
+  save.addEventListener('click', async () => {
+    const edits = [...preview.querySelectorAll('input[data-run-index]')].map((input) => ({
+      path: input.dataset.path,
+      index: Number(input.dataset.runIndex),
+      originalText: input.dataset.originalText,
+      text: input.value
+    })).filter((edit) => edit.text !== edit.originalText);
+    if (!edits.length) {
+      saveStatus.textContent = 'Δεν υπάρχουν αλλαγές για αποθήκευση.';
+      return;
+    }
+    save.disabled = true;
+    saveStatus.textContent = 'Αποθήκευση τοπικής έκδοσης…';
+    try {
+      const all = read();
+      const targetIndex = all.findIndex((entry) => template.id ? entry.id === template.id : entry.name === template.name);
+      const active = targetIndex >= 0 ? all[targetIndex] : template;
+      const activeParts = getTemplateParts(active);
+      const backupTemplate = {
+        ...active,
+        files: Object.fromEntries(Object.entries(activeParts).map(([partPath, bytes]) => [partPath, Array.from(bytes)]))
+      };
+      const backup = createTemplateDocumentSnapshot(backupTemplate, { label: 'Πριν από επεξεργασία κειμένου' });
+      const updatedParts = applyTemplateTextEdits(activeParts, edits);
+      const updatedFields = extractTemplateFieldsFromParts(updatedParts);
+      const previousFields = Array.isArray(active.fields) ? active.fields : [];
+      const fieldsChanged = previousFields.length !== updatedFields.length || previousFields.some((field, index) => field !== updatedFields[index]);
+      const updated = {
+        ...active,
+        files: Object.fromEntries(Object.entries(updatedParts).map(([partPath, bytes]) => [partPath, Array.from(bytes)])),
+        documentXml: new TextDecoder().decode(updatedParts['word/document.xml']),
+        fields: updatedFields,
+        documentHistory: appendTemplateDocumentSnapshot(active.documentHistory, backup),
+        documentRevision: Math.max(1, Number(active.documentRevision) || 1) + 1,
+        documentUpdatedAt: new Date().toISOString()
+      };
+      if (fieldsChanged) {
+        updated.mappingConfirmedAt = null;
+        updated.mappings = Object.fromEntries(Object.entries(active.mappings || {}).filter(([field]) => updatedFields.includes(field)));
+      }
+      if (targetIndex >= 0) all[targetIndex] = updated;
+      else all.push(updated);
+      const storageInstance = storage();
+      const saved = storageInstance.setItem(KEY, JSON.stringify(all));
+      if (saved === false) throw new Error('Η αποθήκευση απορρίφθηκε λόγω σύγκρουσης με άλλη καρτέλα.');
+      if (storageInstance.flush) await storageInstance.flush();
+      saveStatus.textContent = 'Η νέα έκδοση αποθηκεύτηκε τοπικά. Το αρχικό πρότυπο παραμένει στο ιστορικό.';
+      closeDialog();
+      render();
+    } catch (error) {
+      save.disabled = false;
+      saveStatus.textContent = 'Δεν αποθηκεύτηκε καμία αλλαγή.';
+      window.alert('Δεν ήταν δυνατή η αποθήκευση του προτύπου: ' + error.message);
+    }
+  });
+
+  if (typeof dialog.showModal === 'function') dialog.showModal();
+  else {
+    dialog.setAttribute('open', '');
+    dialog.style.position = 'fixed';
+    dialog.style.inset = '3vh 2vw';
+    dialog.style.zIndex = '10000';
+  }
+}
+
 function render() {
   const root = $('template-library');
   if (!root) return;
@@ -939,6 +1122,14 @@ function render() {
       });
 
       const isAdmin = !!(window.AXYP_ROLE && window.AXYP_ROLE.isAdmin());
+      if (isAdmin && (template.files || template.dataBase64)) {
+        const editDocument = document.createElement('button');
+        editDocument.type = 'button';
+        editDocument.className = 'mini-button';
+        editDocument.textContent = 'Προεπισκόπηση / επεξεργασία κειμένου';
+        editDocument.addEventListener('click', () => openTemplateDocumentEditor(template));
+        card.querySelector('.template-review-actions').insertBefore(editDocument, card.querySelector('.template-review-actions').querySelector('.save-mapping'));
+      }
       if (template.source === 'published-package' || !isAdmin) {
         card.querySelector('.remove').hidden = true;
         card.querySelector('.save-mapping').hidden = true;
