@@ -87,6 +87,16 @@ export function applyTemplateTextEdits(parts, edits) {
 
   for (const [path, pathEdits] of grouped) {
     if (!output[path]) throw new Error('Το τμήμα DOCX προς επεξεργασία δεν βρέθηκε: ' + path);
+    const currentRuns = new Map(extractTemplateTextRuns({ [path]: output[path] }).map((run) => [run.index, run]));
+    for (const [editIndex, edit] of pathEdits) {
+      const currentRun = currentRuns.get(editIndex);
+      if (!currentRun || !currentRun.editable) {
+        throw new Error('Τα placeholders δεν επιτρέπεται να τροποποιηθούν από τον επεξεργαστή κειμένου.');
+      }
+      if (currentRun.text !== edit.originalText) {
+        throw new Error('Το πρότυπο άλλαξε από τότε που άνοιξες τον επεξεργαστή. Κλείσε τον και άνοιξέ τον ξανά.');
+      }
+    }
     const xml = decoder.decode(output[path]);
     let index = 0;
     let applied = 0;
