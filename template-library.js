@@ -91,7 +91,7 @@ export async function loadPublishedDossierPackages() {
     }
     const loaded = [];
     for (const entry of catalog.packages) {
-      if (!entry || typeof entry.file !== 'string' || !/^[\\p{L}\\p{N}._-]+\\.axyp\\.zip$/u.test(entry.file)) {
+      if (!entry || typeof entry.file !== 'string' || !/^[\p{L}\p{N}._-]+\.axyp\.zip$/u.test(entry.file)) {
         throw new Error('Invalid dossier package filename in catalog.');
       }
       const packageResponse = await fetch(new URL('dossier-packages/' + entry.file, document.baseURI));
@@ -1587,7 +1587,7 @@ export function buildOfficialDossierPackage(templates, category) {
   const packageFiles = {};
   const manifestDocuments = documents.map((template, index) => {
     if (!template.mappingConfirmedAt) throw new Error('Πρέπει πρώτα να επιβεβαιωθεί η αντιστοίχιση πεδίων για το έντυπο «' + template.name + '».');
-    const safeId = String(template.id || index + 1).replace(/[^\\p{L}\\p{N}-]+/gu, '-').slice(0, 48) || String(index + 1);
+    const safeId = String(template.id || index + 1).replace(/[^\p{L}\p{N}-]+/gu, '-').slice(0, 48) || String(index + 1);
     const path = 'documents/' + String(index + 1).padStart(2, '0') + '-' + safeId + '.docx';
     packageFiles[path] = zipSync(getTemplateParts(template));
     return {

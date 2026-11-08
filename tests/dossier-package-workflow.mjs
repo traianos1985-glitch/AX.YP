@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { buildOfficialDossierPackage, buildCategoryArchive, templatesForCategoryGeneration } from '../template-library.js';
+import { buildOfficialDossierPackage, buildCategoryArchive, templatesForCategoryGeneration, loadPublishedDossierPackages } from '../template-library.js';
 import { unzipSync } from '../vendor/fflate.js';
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
@@ -55,9 +55,44 @@ assert.equal(packageManifest.category, 'generic');
 assert.equal(packageManifest.schemaVersion, 1);
 assert.equal(packageManifest.documents.length, 1);
 assert.equal(packageManifest.documents[0].name, 'Αναφορά.docx');
+assert.equal(packageManifest.documents[0].path, 'documents/01-official-generic-01.docx');
 const docxParts = unzipSync(packageParts[packageManifest.documents[0].path]);
 assert.equal(new TextDecoder().decode(docxParts['word/document.xml']), xml);
 assert.throws(() => buildOfficialDossierPackage([{ ...template, mappingConfirmedAt: null }], 'generic'), /αντιστοίχιση πεδίων/);
+
+
+const originalFetch = globalThis.fetch;
+const originalDocument = globalThis.document;
+try {
+  globalThis.document = { baseURI: 'https://axyp-test.invalid/' };
+  globalThis.fetch = async (input) => {
+    const url = new URL(input);
+    if (url.pathname.endsWith('/manifest.json')) {
+      return {
+        ok: true,
+        json: async () => ({ schemaVersion: 1, packages: [{ id: 'generic', file: 'generic.axyp.zip' }] })
+      };
+    }
+    if (url.pathname.endsWith('/generic.axyp.zip')) {
+      const bytes = packageBytes;
+      return {
+        ok: true,
+        arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+      };
+    }
+    return { ok: false };
+  };
+  const loadedPackages = await loadPublishedDossierPackages();
+  assert.equal(loadedPackages.length, 1, 'A valid package listed in the manifest must load');
+  assert.equal(loadedPackages[0].source, 'published-package');
+  assert.equal(loadedPackages[0].category, 'generic');
+  assert.equal(loadedPackages[0].name, 'Αναφορά.docx');
+  assert.equal(loadedPackages[0].mappingConfirmedAt, packageManifest.createdAt);
+} finally {
+  globalThis.fetch = originalFetch;
+  if (originalDocument === undefined) delete globalThis.document;
+  else globalThis.document = originalDocument;
+}
 
 const generatedArchive = buildCategoryArchive([{ ...template, name: '../unsafe:name.docx' }], { id: 'case-1', protocolNumber: '123' });
 const generatedArchiveNames = Object.keys(unzipSync(generatedArchive));
