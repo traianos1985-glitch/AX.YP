@@ -2,6 +2,7 @@ import { unzipSync, zipSync } from './vendor/fflate.js';
 import { detectDocxPersonalData, anonymizeDocxParts, createManualAnonymizationCandidates } from './docx-anonymization.js';
 import { listTemplateMappingVersions, saveTemplateMappingVersion, restoreTemplateMappingVersion } from './template-mapping-history.js';
 import { toGreekGenitiveFullName, getServiceProfileOperatorIdentity } from './service-profile.js';
+import { createTemplateDocumentSnapshot, appendTemplateDocumentSnapshot, restoreTemplateDocumentSnapshot, extractTemplateFieldsFromParts } from './template-document-history.js';
 
 let DEFAULT_NARCOTICS_TEMPLATES = [];
 let DEFAULT_COUNTERFEIT_TEMPLATES = [];
@@ -799,7 +800,9 @@ function render() {
   if (!root) return;
   root.textContent = '';
   const currentCase = getCase();
-  const allTemplates = [...PUBLISHED_DOSSIER_TEMPLATES, ...read()];
+  const localTemplates = read();
+  const localIds = new Set(localTemplates.map((template) => template.id).filter(Boolean));
+  const allTemplates = [...PUBLISHED_DOSSIER_TEMPLATES.filter((template) => !localIds.has(template.id)), ...localTemplates];
 
   const isCounterfeit = (t) => t.category === 'counterfeit';
   const isEnvironment = (t) => t.category === 'environment';
@@ -963,6 +966,97 @@ function render() {
       });
 
       const isAdmin = !!(window.AXYP_ROLE && window.AXYP_ROLE.isAdmin());
+      if (isAdmin) {
+        const documentActions = document.createElement('div');
+        documentActions.className = 'template-review-actions';
+        documentActions.style.margin = '10px 0';
+        const downloadButton = document.createElement('button');
+        downloadButton.type = 'button';
+        downloadButton.className = 'mini-button';
+        downloadButton.textContent = 'Λήψη εντύπου για διόρθωση στο Word';
+        const replaceButton = document.createElement('button');
+        replaceButton.type = 'button';
+        replaceButton.className = 'mini-button';
+        replaceButton.textContent = 'Αποθήκευση διορθωμένης έκδοσης';
+        const replacementInput = document.createElement('input');
+        replacementInput.type = 'file';
+        replacementInput.accept = '.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        replacementInput.hidden = true;
+        downloadButton.addEventListener('click', () => {
+          try {
+            const archive = zipSync(getTemplateParts(template));
+            const blob = new Blob([archive], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = String(template.name || 'entypo.docx').replace(/[\\/:*?"<>|]+/gu, '-').replace(/\\.docx$/iu, '') + '-αντίγραφο.docx';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          } catch (error) {
+            window.alert('Δεν ήταν δυνατή η εξαγωγή του εντύπου: ' + error.message);
+          }
+        });
+        replaceButton.addEventListener('click', () => replacementInput.click());
+        replacementInput.addEventListener('change', async () => {
+          const file = replacementInput.files && replacementInput.files[0];
+          if (!file) return;
+          try {
+            const replacementParts = unzipSync(new Uint8Array(await file.arrayBuffer()));
+            if (!replacementParts['word/document.xml']) throw new Error('Το αρχείο δεν περιέχει έγκυρο κύριο σώμα Word.');
+            const candidates = detectDocxPersonalData(replacementParts);
+            const approved = await reviewAnonymizationCandidates(file.name, candidates, replacementParts);
+            if (!approved) return;
+            const reviewedParts = anonymizeDocxParts(replacementParts, approved);
+            const detectedFields = extractTemplateFieldsFromParts(reviewedParts);
+            const currentTemplates = read();
+            const existingIndex = currentTemplates.findIndex((entry) => entry.id === template.id);
+            const currentTemplate = existingIndex >= 0 ? currentTemplates[existingIndex] : template;
+            const currentParts = getTemplateParts(currentTemplate);
+            const snapshotSource = {
+              ...currentTemplate,
+              files: Object.fromEntries(Object.entries(currentParts).map(([path, bytes]) => [path, Array.from(bytes)]))
+            };
+            const snapshot = createTemplateDocumentSnapshot(snapshotSource, {
+              label: 'Πριν από αντικατάσταση DOCX'
+            });
+            const nextHistory = appendTemplateDocumentSnapshot(currentTemplate.documentHistory, snapshot);
+            const previousFields = Array.isArray(currentTemplate.fields) ? currentTemplate.fields : [];
+            const fieldsChanged = previousFields.length !== detectedFields.length ||
+              previousFields.some((field, index) => field !== detectedFields[index]);
+            const updatedTemplate = {
+              ...currentTemplate,
+              source: currentTemplate.source === 'published-package' ? 'user-uploaded' : currentTemplate.source,
+              files: Object.fromEntries(Object.entries(reviewedParts).map(([path, bytes]) => [path, Array.from(bytes)])),
+              fields: detectedFields,
+              documentXml: new TextDecoder().decode(reviewedParts['word/document.xml']),
+              documentHistory: nextHistory,
+              documentRevision: Math.max(1, Number(currentTemplate.documentRevision) || 1) + 1,
+              documentUpdatedAt: new Date().toISOString(),
+              documentReviewCompletedAt: new Date().toISOString()
+            };
+            if (fieldsChanged) {
+              updatedTemplate.mappingConfirmedAt = null;
+              updatedTemplate.mappings = Object.fromEntries(Object.entries(currentTemplate.mappings || {}).filter(([field]) => detectedFields.includes(field)));
+            }
+            if (existingIndex >= 0) currentTemplates[existingIndex] = updatedTemplate;
+            else currentTemplates.push(updatedTemplate);
+            const saved = storage().setItem(KEY, JSON.stringify(currentTemplates));
+            if (saved === false) throw new Error('Η αποθήκευση απορρίφθηκε λόγω σύγκρουσης με άλλη καρτέλα.');
+            if (storage().flush) await storage().flush();
+            window.alert('Η διορθωμένη έκδοση αποθηκεύτηκε μόνιμα σε αυτή τη συσκευή. Οι επόμενες δικογραφίες θα χρησιμοποιούν την αποθηκευμένη έκδοση.');
+            render();
+            if (window.HypothesesView) window.HypothesesView.refresh();
+          } catch (error) {
+            window.alert('Δεν αποθηκεύτηκε η διορθωμένη έκδοση: ' + error.message);
+          } finally {
+            replacementInput.value = '';
+          }
+        });
+        documentActions.append(downloadButton, replaceButton, replacementInput);
+        card.insertBefore(documentActions, card.querySelector('.mapping-review'));
+      }
       if (template.source === 'published-package' || !isAdmin) {
         card.querySelector('.remove').hidden = true;
         card.querySelector('.save-mapping').hidden = true;
@@ -1005,6 +1099,74 @@ function render() {
       };
 
       if (template.mappingConfirmedAt) card.querySelector('.generate').disabled = false;
+      if (window.AXYP_ROLE && window.AXYP_ROLE.isAdmin()) {
+        const documentHistory = document.createElement('section');
+        documentHistory.className = 'template-mapping-history';
+        documentHistory.setAttribute('aria-label', 'Ιστορικό εκδόσεων εντύπου Word');
+        const historyTitle = document.createElement('strong');
+        historyTitle.textContent = 'Ιστορικό εκδόσεων εντύπου';
+        documentHistory.appendChild(historyTitle);
+        const versions = Array.isArray(template.documentHistory) ? template.documentHistory : [];
+        if (!versions.length) {
+          const empty = document.createElement('p');
+          empty.className = 'muted';
+          empty.textContent = 'Δεν υπάρχουν προηγούμενες εκδόσεις του εντύπου.';
+          documentHistory.appendChild(empty);
+        } else {
+          versions.slice().reverse().forEach((version, reverseIndex) => {
+            const originalIndex = versions.length - 1 - reverseIndex;
+            const row = document.createElement('div');
+            row.className = 'template-history-row';
+            const label = document.createElement('span');
+            label.textContent = 'Προηγούμενη έκδοση ' + (originalIndex + 1) + ' · ' + new Date(version.savedAt).toLocaleString('el-GR') + (version.label ? ' · ' + version.label : '');
+            const restoreButton = document.createElement('button');
+            restoreButton.type = 'button';
+            restoreButton.className = 'mini-button';
+            restoreButton.textContent = 'Επαναφορά';
+            restoreButton.addEventListener('click', async () => {
+              if (!window.confirm('Να επανέλθει αυτή η έκδοση του εντύπου; Η τρέχουσα έκδοση θα διατηρηθεί στο ιστορικό.')) return;
+              try {
+                const all = read();
+                const index = all.findIndex((entry) => entry.id === template.id);
+                if (index < 0) throw new Error('Το αποθηκευμένο έντυπο δεν βρέθηκε.');
+                const active = all[index];
+                const activeParts = getTemplateParts(active);
+                const backup = createTemplateDocumentSnapshot({
+                  ...active,
+                  files: Object.fromEntries(Object.entries(activeParts).map(([path, bytes]) => [path, Array.from(bytes)]))
+                }, { label: 'Πριν από επαναφορά έκδοσης' });
+                const restoredFiles = restoreTemplateDocumentSnapshot(version);
+                const restoredParts = Object.fromEntries(Object.entries(restoredFiles).map(([path, bytes]) => [path, new Uint8Array(bytes)]));
+                const restoredFields = extractTemplateFieldsFromParts(restoredParts);
+                const oldFields = Array.isArray(active.fields) ? active.fields : [];
+                const fieldsChanged = oldFields.length !== restoredFields.length || oldFields.some((field, fieldIndex) => field !== restoredFields[fieldIndex]);
+                all[index] = {
+                  ...active,
+                  files: restoredFiles,
+                  fields: restoredFields,
+                  documentXml: new TextDecoder().decode(restoredParts['word/document.xml']),
+                  documentHistory: appendTemplateDocumentSnapshot(active.documentHistory, backup),
+                  documentRevision: Math.max(1, Number(active.documentRevision) || 1) + 1,
+                  documentUpdatedAt: new Date().toISOString()
+                };
+                if (fieldsChanged) {
+                  all[index].mappingConfirmedAt = null;
+                  all[index].mappings = Object.fromEntries(Object.entries(active.mappings || {}).filter(([field]) => restoredFields.includes(field)));
+                }
+                const saved = storage().setItem(KEY, JSON.stringify(all));
+                if (saved === false) throw new Error('Η αποθήκευση απορρίφθηκε λόγω σύγκρουσης με άλλη καρτέλα.');
+                if (storage().flush) await storage().flush();
+                render();
+              } catch (error) {
+                window.alert('Δεν ήταν δυνατή η επαναφορά της έκδοσης: ' + error.message);
+              }
+            });
+            row.append(label, restoreButton);
+            documentHistory.appendChild(row);
+          });
+        }
+        card.appendChild(documentHistory);
+      }
       if (window.AXYP_ROLE && window.AXYP_ROLE.isAdmin() && template.source !== 'published-package') {
         const history = document.createElement('section');
         history.className = 'template-mapping-history';
