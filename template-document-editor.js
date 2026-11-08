@@ -36,15 +36,18 @@ export function extractTemplateTextRuns(parts) {
     let index = 0;
     let paragraphIndex = 0;
     for (const paragraph of xml.matchAll(/<w:p\b[^>]*>([\s\S]*?)<\/w:p>/gu)) {
-      for (const match of paragraph[1].matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)) {
-        const text = decodeXmlText(match[1]);
-        result.push({
-          path,
-          index: index++,
-          paragraphIndex,
-          text,
-          editable: !/\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/u.test(text)
-        });
+      const nodes = [...paragraph[1].matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)]
+        .map((match) => decodeXmlText(match[1]));
+      const combined = nodes.join('');
+      const protectedRanges = [...combined.matchAll(/\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/gu)]
+        .map((match) => ({ start: match.index, end: match.index + match[0].length }));
+      let offset = 0;
+      for (const text of nodes) {
+        const start = offset;
+        const end = start + text.length;
+        const editable = !protectedRanges.some((range) => start < range.end && end > range.start);
+        result.push({ path, index: index++, paragraphIndex, text, editable });
+        offset = end;
       }
       paragraphIndex++;
     }
