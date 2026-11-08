@@ -91,7 +91,7 @@ export async function loadPublishedDossierPackages() {
     }
     const loaded = [];
     for (const entry of catalog.packages) {
-      if (!entry || typeof entry.file !== 'string' || !/^[\\p{L}\\p{N}._-]+\\.axyp\\.zip$/u.test(entry.file)) {
+      if (!entry || typeof entry.file !== 'string' || !/^[\p{L}\p{N}._-]+\.axyp\.zip$/u.test(entry.file)) {
         throw new Error('Invalid dossier package filename in catalog.');
       }
       const packageResponse = await fetch(new URL('dossier-packages/' + entry.file, document.baseURI));
