@@ -1,8 +1,18 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   extractTemplateTextRuns,
   applyTemplateTextEdits
 } from '../template-document-editor.js';
+
+const library = await readFile(new URL('../template-library.js', import.meta.url), 'utf8');
+const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+assert.match(library, /function openTemplateDocumentEditor\(template\)/u);
+assert.match(library, /window\.AXYP_ROLE\.isAdmin\(\)/u);
+assert.match(library, /createTemplateDocumentSnapshot\(backupTemplate/u);
+assert.match(library, /appendTemplateDocumentSnapshot\(active\.documentHistory, backup\)/u);
+assert.match(library, /Προεπισκόπηση \/ επεξεργασία κειμένου/u);
+assert.match(html, /Τα placeholders παραμένουν κλειδωμένα/u);
 
 const original = {
   'word/document.xml': new TextEncoder().encode(
