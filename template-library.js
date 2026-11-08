@@ -825,7 +825,7 @@ function openTemplateDocumentEditor(template) {
   name.className = 'muted';
   const notice = document.createElement('p');
   notice.setAttribute('role', 'note');
-  notice.textContent = 'Επεξεργάζεσαι μόνο υπάρχοντα τμήματα κειμένου. Τα placeholders είναι κλειδωμένα. Η δομή πινάκων, οι γραμματοσειρές, η στοίχιση, τα περιθώρια, η διάταξη υπογραφών και τα λοιπά στοιχεία DOCX δεν αλλάζουν. Η προεπισκόπηση δείχνει τη σειρά του κειμένου, όχι την ακριβή σελιδοποίηση του Word.';
+  notice.textContent = 'Επεξεργάζεσαι μόνο υπάρχοντα τμήματα κειμένου. Τα placeholders είναι κλειδωμένα και δεν μπορούν να δημιουργηθούν από εδώ. Η δομή πινάκων, οι γραμματοσειρές, η στοίχιση, τα περιθώρια, η διάταξη υπογραφών και τα λοιπά στοιχεία DOCX δεν αλλάζουν. Η προεπισκόπηση δείχνει τη σειρά του κειμένου, όχι την ακριβή σελιδοποίηση του Word.';
   notice.style.cssText = 'padding:10px;background:#f1f5f9;border-radius:8px;line-height:1.5;';
   const preview = document.createElement('div');
   preview.style.cssText = 'border:1px solid #cbd5e1;border-radius:8px;padding:12px;max-height:58vh;overflow:auto;background:#fff;color:#111827;';
