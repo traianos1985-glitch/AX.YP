@@ -54,6 +54,8 @@ const dottedParts = { 'word/document.xml': new TextEncoder().encode(dottedXml) }
 const dottedCandidates = detectDottedPlaceholderCandidates(dottedParts);
 assert.equal(dottedCandidates.length, 5, 'Five separate dotted positions in one paragraph must be detected independently');
 assert.deepEqual(dottedCandidates.map((candidate) => candidate.value), ['....', '....', '....', '....', '....']);
+assert.equal(dottedCandidates[0].contextBefore, 'Τόπος: ');
+assert.equal(dottedCandidates[0].contextAfter, ' Ημέρα: .... Ημερομηνία: .... Ώρα: .... Περιγραφή: .... Τέλος.');
 const dottedFields = ['case.location', 'case.day', 'case.date', 'incident.time', 'incident.description'];
 const dottedApproved = dottedCandidates.map((candidate, index) => ({ ...candidate, placeholder: '{{' + dottedFields[index] + '}}' }));
 const dottedOutput = new TextDecoder().decode(anonymizeDocxParts(dottedParts, dottedApproved)['word/document.xml']);
