@@ -52,7 +52,7 @@ assert.equal(new TextDecoder().decode(updated['word/footer1.xml']), '<w:ftr><w:p
 assert.deepEqual(updated['word/styles.xml'], original['word/styles.xml']);
 assert.deepEqual(updated['word/media/image1.png'], original['word/media/image1.png']);
 assert.deepEqual(original['word/document.xml'], new TextEncoder().encode(
-  '<w:document><w:body><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Αρχικό</w:t></w:r><w:r><w:t xml:space="preserve"> κείμενο</w:t></w:r><w:r><w:t>{{person.fullName}}</w:t></w:r></w:p><w:p><w:r><w:t>{{person.</w:t></w:r><w:r><w:t>fullName}}</w:t></w:r></w:p></w:body></w:document>'
+  '<w:document><w:body><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Αρχικό</w:t></w:r><w:r><w:t xml:space="preserve"> κείμενο</w:t></w:r><w:r><w:t>{{person.fullName}}</w:t></w:r></w:p><w:p><w:r><w:t>{{person.</w:t></w:r><w:r><w:t>fullName}}</w:t></w:r></w:p><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Κείμενο πίνακα</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>'
 ));
 
 assert.throws(() => applyTemplateTextEdits(original, [
