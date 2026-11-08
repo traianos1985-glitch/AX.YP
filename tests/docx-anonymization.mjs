@@ -70,6 +70,7 @@ assert.equal(splitDotted.length, 1, 'A dotted position split across Word runs mu
 const splitDottedOutput = new TextDecoder().decode(anonymizeDocxParts(splitDottedParts, [{ ...splitDotted[0], placeholder: '{{case.location}}' }])['word/document.xml']);
 const splitDottedVisibleText = splitDottedOutput.replace(/<[^>]+>/gu, '');
 assert.ok(splitDottedVisibleText.includes('{{case.location}} συνέχεια'), 'The combined visible paragraph text must remain continuous across Word runs');
+assert.ok(splitDottedOutput.includes('<w:t xml:space="preserve"> συνέχεια</w:t>'), 'Leading whitespace in the surviving Word run must remain significant');
 assert.ok(!splitDottedOutput.includes('....'));
 assert.ok(splitDottedOutput.includes('<w:rPr><w:b/></w:rPr>') && splitDottedOutput.includes('<w:rPr><w:i/></w:rPr>'), 'Run properties on both sides of the replaced position must remain present');
 
