@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { buildOfficialDossierPackage, templatesForCategoryGeneration } from '../template-library.js';
+import { buildOfficialDossierPackage, buildCategoryArchive, templatesForCategoryGeneration } from '../template-library.js';
 import { unzipSync } from '../vendor/fflate.js';
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
@@ -22,8 +22,10 @@ assert.match(hypotheses, /buildCategoryArchive\(selectedTemplates, saved\)/);
 assert.doesNotMatch(hypotheses, /reset\(\);\s*\$\('case-date'\)\.value = ''/, 'Successful export must preserve the automatically populated date for the next case');
 assert.match(library, /source === 'published-package'/);
 assert.match(library, /loadPublishedDossierPackages/);
-assert.match(library, /enteredName = window\.prompt/);
-assert.match(library, /name: safeName/);
+assert.doesNotMatch(library, /enteredName = window\.prompt/);
+assert.doesNotMatch(library, /Εξαγωγή επίσημου πακέτου για δημοσίευση/);
+assert.match(library, /export function buildOfficialDossierPackage/);
+assert.match(library, /const baseName = String\(template\.name/);
 assert.match(library, /new URL\('dossier-packages\/manifest\.json', document\.baseURI\)/);
 assert.match(vite, /dossier-packages/);
 assert.match(serviceWorker, /dossier-packages\/manifest\.json/);
@@ -56,5 +58,11 @@ assert.equal(packageManifest.documents[0].name, 'Αναφορά.docx');
 const docxParts = unzipSync(packageParts[packageManifest.documents[0].path]);
 assert.equal(new TextDecoder().decode(docxParts['word/document.xml']), xml);
 assert.throws(() => buildOfficialDossierPackage([{ ...template, mappingConfirmedAt: null }], 'generic'), /αντιστοίχιση πεδίων/);
+
+const generatedArchive = buildCategoryArchive([{ ...template, name: '../unsafe:name.docx' }], { id: 'case-1', protocolNumber: '123' });
+const generatedArchiveNames = Object.keys(unzipSync(generatedArchive));
+assert.equal(generatedArchiveNames.length, 1);
+assert.match(generatedArchiveNames[0], /^01-unsafe-name-official-generic-01\.docx$/u);
+assert.doesNotMatch(generatedArchiveNames[0], /[\\/]/u);
 
 console.log('Official dossier package workflow tests passed.');
