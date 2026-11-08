@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { anonymizeDocxParts, createManualAnonymizationCandidates, detectDocxPersonalData } from '../docx-anonymization.js';
+import { anonymizeDocxParts, createManualAnonymizationCandidates, detectDocxPersonalData, detectDottedPlaceholderCandidates } from '../docx-anonymization.js';
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>
@@ -48,5 +48,30 @@ assert.equal(manual.length, 1, 'Manual review should locate exact text that auto
 const manualOutput = new TextDecoder().decode(anonymizeDocxParts(manualParts, manual)['word/document.xml']);
 assert.ok(manualOutput.includes('{{person.address}}'));
 assert.ok(!manualOutput.includes('Οδός Δοκιμής 12'));
+
+const dottedXml = '<w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Τόπος: .... Ημέρα: .... Ημερομηνία: .... Ώρα: .... Περιγραφή: .... Τέλος.</w:t></w:r></w:p>';
+const dottedParts = { 'word/document.xml': new TextEncoder().encode(dottedXml) };
+const dottedCandidates = detectDottedPlaceholderCandidates(dottedParts);
+assert.equal(dottedCandidates.length, 5, 'Five separate dotted positions in one paragraph must be detected independently');
+assert.deepEqual(dottedCandidates.map((candidate) => candidate.value), ['....', '....', '....', '....', '....']);
+assert.equal(dottedCandidates[0].contextBefore, 'Τόπος: ');
+assert.equal(dottedCandidates[0].contextAfter, ' Ημέρα: .... Ημερομηνία: .... Ώρα: .... Περιγ', 'The review context is intentionally capped at 45 characters after each dotted position');
+const dottedFields = ['case.location', 'case.day', 'case.date', 'incident.time', 'incident.description'];
+const dottedApproved = dottedCandidates.map((candidate, index) => ({ ...candidate, placeholder: '{{' + dottedFields[index] + '}}' }));
+const dottedOutput = new TextDecoder().decode(anonymizeDocxParts(dottedParts, dottedApproved)['word/document.xml']);
+for (const field of dottedFields) assert.ok(dottedOutput.includes('{{' + field + '}}'), 'Each dotted position must receive its own field: ' + field);
+assert.ok(!dottedOutput.includes('....'), 'No trailing dots may remain after replacing a dotted position');
+assert.ok(dottedOutput.includes('Τόπος: {{case.location}} Ημέρα: {{case.day}} Ημερομηνία: {{case.date}} Ώρα: {{incident.time}} Περιγραφή: {{incident.description}} Τέλος.'));
+assert.ok(dottedOutput.includes('<w:rPr><w:b/></w:rPr>'), 'The original run formatting must remain intact');
+assert.ok(dottedXml.includes('....'), 'The source DOCX part must remain unchanged');
+const splitDottedParts = { 'word/document.xml': new TextEncoder().encode('<w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Τόπος: ..</w:t></w:r><w:r><w:rPr><w:i/></w:rPr><w:t>.. συνέχεια</w:t></w:r></w:p>') };
+const splitDotted = detectDottedPlaceholderCandidates(splitDottedParts);
+assert.equal(splitDotted.length, 1, 'A dotted position split across Word runs must still be detected as one occurrence');
+const splitDottedOutput = new TextDecoder().decode(anonymizeDocxParts(splitDottedParts, [{ ...splitDotted[0], placeholder: '{{case.location}}' }])['word/document.xml']);
+const splitDottedVisibleText = splitDottedOutput.replace(/<[^>]+>/gu, '');
+assert.ok(splitDottedVisibleText.includes('{{case.location}} συνέχεια'), 'The combined visible paragraph text must remain continuous across Word runs');
+assert.ok(splitDottedOutput.includes('<w:t xml:space="preserve"> συνέχεια</w:t>'), 'Leading whitespace in the surviving Word run must remain significant');
+assert.ok(!splitDottedOutput.includes('....'));
+assert.ok(splitDottedOutput.includes('<w:rPr><w:b/></w:rPr>') && splitDottedOutput.includes('<w:rPr><w:i/></w:rPr>'), 'Run properties on both sides of the replaced position must remain present');
 
 console.log('DOCX anonymization tests passed.');

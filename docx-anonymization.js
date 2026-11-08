@@ -20,6 +20,32 @@ function textNodes(paragraph) {
   }));
 }
 
+function replaceParagraphRange(paragraph, start, end, replacement) {
+  const nodes = textNodes(paragraph);
+  if (!nodes.length || !Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end <= start) return paragraph;
+  const positions = []; let offset = 0;
+  for (const node of nodes) { positions.push({ start: offset, end: offset + node.value.length }); offset += node.value.length; }
+  if (end > offset) throw new Error('DOCX replacement range is outside the paragraph text.');
+  const first = positions.findIndex((position) => start < position.end && end > position.start);
+  if (first < 0) throw new Error('DOCX replacement range does not overlap a text run.');
+  let last = first;
+  for (let index = first; index < positions.length; index++) if (start < positions[index].end && end > positions[index].start) last = index;
+  const values = nodes.map((node) => node.value);
+  const firstOffset = start - positions[first].start, lastOffset = end - positions[last].start;
+  if (first === last) values[first] = values[first].slice(0, firstOffset) + replacement + values[first].slice(lastOffset);
+  else { values[first] = values[first].slice(0, firstOffset) + replacement; for (let index = first + 1; index < last; index++) values[index] = ''; values[last] = values[last].slice(lastOffset); }
+  let index = 0;
+  return paragraph.replace(/(<w:t\b[^>]*>)[\s\S]*?(<\/w:t>)/gu, (_match, open, close) => {
+    const value = values[index++];
+    const hasEdgeWhitespace = /^\s|\s$/u.test(value);
+    const safeOpen = hasEdgeWhitespace
+      ? (/\bxml:space="/u.test(open)
+        ? open.replace(/\bxml:space="[^"]*"/u, 'xml:space="preserve"')
+        : open.replace(/>$/u, ' xml:space="preserve">'))
+      : open;
+    return safeOpen + encodeXml(value) + close;
+  });
+}
 function replaceParagraphText(paragraph, search, replacement) {
   const nodes = textNodes(paragraph);
   if (!nodes.length) return paragraph;
@@ -102,25 +128,31 @@ export function anonymizeDocxParts(parts, approvedCandidates) {
     if (!candidate || !candidate.partName || !Number.isInteger(candidate.paragraphIndex) || !candidate.value || !candidate.placeholder) continue;
     if (!grouped.has(candidate.partName)) grouped.set(candidate.partName, new Map());
     const paragraphs = grouped.get(candidate.partName);
-    if (!paragraphs.has(candidate.paragraphIndex)) paragraphs.set(candidate.paragraphIndex, new Map());
-    const byValue = paragraphs.get(candidate.paragraphIndex);
-    // Conflicting classifications for the same text are deliberately not guessed.
-    if (byValue.has(candidate.value) && byValue.get(candidate.value) !== candidate.placeholder) {
-      throw new Error('Conflicting anonymization placeholders for the same text');
+    if (!paragraphs.has(candidate.paragraphIndex)) paragraphs.set(candidate.paragraphIndex, { ranges: [], byValue: new Map() });
+    const replacements = paragraphs.get(candidate.paragraphIndex);
+    if (Number.isInteger(candidate.start) && Number.isInteger(candidate.end)) {
+      if (candidate.end <= candidate.start) throw new Error('Invalid DOCX replacement range.');
+      const duplicate = replacements.ranges.find((entry) => entry.start === candidate.start && entry.end === candidate.end);
+      if (duplicate && duplicate.placeholder !== candidate.placeholder) throw new Error('Conflicting anonymization placeholders for the same text position');
+      if (!duplicate) replacements.ranges.push({ start: candidate.start, end: candidate.end, value: candidate.value, placeholder: candidate.placeholder });
+      continue;
     }
-    byValue.set(candidate.value, candidate.placeholder);
+    if (replacements.byValue.has(candidate.value) && replacements.byValue.get(candidate.value) !== candidate.placeholder) throw new Error('Conflicting anonymization placeholders for the same text');
+    replacements.byValue.set(candidate.value, candidate.placeholder);
   }
   for (const [partName, paragraphReplacements] of grouped) {
     if (!output[partName]) continue;
-    let paragraphIndex = 0;
-    let xml = new TextDecoder().decode(output[partName]);
+    let paragraphIndex = 0, xml = new TextDecoder().decode(output[partName]);
     xml = xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/gu, (paragraph) => {
       const replacements = paragraphReplacements.get(paragraphIndex++);
       if (!replacements) return paragraph;
       let updated = paragraph;
-      for (const [value, placeholder] of replacements) {
-        updated = replaceParagraphText(updated, value, placeholder);
+      const originalText = textNodes(paragraph).map((node) => node.value).join('');
+      for (const range of [...replacements.ranges].sort((left, right) => right.start - left.start)) {
+        if (originalText.slice(range.start, range.end) !== range.value) throw new Error('DOCX replacement position no longer matches the reviewed text.');
+        updated = replaceParagraphRange(updated, range.start, range.end, range.placeholder);
       }
+      for (const [value, placeholder] of replacements.byValue) updated = replaceParagraphText(updated, value, placeholder);
       return updated;
     });
     output[partName] = new TextEncoder().encode(xml);
@@ -128,6 +160,21 @@ export function anonymizeDocxParts(parts, approvedCandidates) {
   return output;
 }
 
+export function detectDottedPlaceholderCandidates(parts) {
+  const candidates = [];
+  for (const [partName, bytes] of Object.entries(parts || {})) {
+    if (!partName.startsWith('word/') || !partName.endsWith('.xml')) continue;
+    const xml = new TextDecoder().decode(bytes);
+    const paragraphs = [...xml.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/gu)];
+    paragraphs.forEach((paragraphMatch, paragraphIndex) => {
+      const plainText = textNodes(paragraphMatch[0]).map((node) => node.value).join('');
+      for (const [occurrenceIndex, match] of [...plainText.matchAll(/(?:\.{2,}|…+)/gu)].entries()) {
+        candidates.push({ id: [partName, paragraphIndex, 'dotted', occurrenceIndex, match.index].join(':'), partName, paragraphIndex, category: 'dotted-placeholder', label: 'Κενή θέση εντύπου', value: match[0], start: match.index, end: match.index + match[0].length, contextBefore: plainText.slice(Math.max(0, match.index - 45), match.index), contextAfter: plainText.slice(match.index + match[0].length, match.index + match[0].length + 45), occurrenceIndex, confidence: 'review' });
+      }
+    });
+  }
+  return candidates;
+}
 export function createManualAnonymizationCandidates(parts, entries) {
   const candidates = [];
   for (const entry of entries || []) {
