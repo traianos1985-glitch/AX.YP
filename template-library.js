@@ -1423,8 +1423,8 @@ export function buildCategoryArchive(templates, item) {
   templates.forEach((template, index) => {
     const baseName = String(template.name || `entypo-${index + 1}.docx`)
       .replace(/[\\/:*?"<>|]+/gu, '-')
-      .replace(/^\.+/u, '')
-      .replace(/\.docx$/iu, '');
+      .replace(/^[.-]+/u, '')
+      .replace(/\.docx$/iu, '') || `entypo-${index + 1}`;
     const suffix = String(template.id || index + 1).replace(/[^\p{L}\p{N}-]+/gu, '-').slice(0, 32);
     archive[`${String(index + 1).padStart(2, '0')}-${baseName}-${suffix}.docx`] = buildDocx(template, item);
   });
