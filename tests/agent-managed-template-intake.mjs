@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const [html, library, readme] = await Promise.all([
+const [html, library, readme, agentGuide] = await Promise.all([
   readFile(new URL('../index.html', import.meta.url), 'utf8'),
   readFile(new URL('../template-library.js', import.meta.url), 'utf8'),
-  readFile(new URL('../README.md', import.meta.url), 'utf8')
+  readFile(new URL('../README.md', import.meta.url), 'utf8'),
+  readFile(new URL('../docs/ΟΔΗΓΙΕΣ-AGENTS-ΠΡΟΤΥΠΑ-ΔΙΚΟΓΡΑΦΙΩΝ.md', import.meta.url), 'utf8')
 ]);
 
 // New official dossier documents are prepared and reviewed by a coding agent,
@@ -30,5 +31,9 @@ assert.match(anonymization, /detectDottedPlaceholderCandidates/u);
 assert.match(anonymization, /anonymizeDocxParts/u);
 assert.match(readme, /προετοιμάζονται εκτός εφαρμογής από εξουσιοδοτημένο coding agent/u);
 assert.match(readme, /μέσω PR/u);
+assert.doesNotMatch(agentGuide, /εισαγωγή πραγματικού DOCX από την εφαρμογή/u);
+assert.doesNotMatch(agentGuide, /Εξαγωγή επίσημου πακέτου για δημοσίευση/u);
+assert.match(agentGuide, /αποκλειστικά από εξουσιοδοτημένο coding agent/u);
+assert.match(agentGuide, /Δεν χρησιμοποιεί runtime upload ή admin λειτουργία/u);
 
 console.log('Agent-managed template intake boundary checks passed.');
