@@ -63,5 +63,8 @@ assert.throws(() => applyTemplateTextEdits(original, [
 assert.throws(() => applyTemplateTextEdits(original, [
   { path: 'word/document.xml', index: 0, originalText: 'Αρχικό', text: 'x'.repeat(10001) }
 ]), /υπερβαίνει/u);
+assert.throws(() => applyTemplateTextEdits(original, [
+  { path: 'word/document.xml', index: 0, originalText: 'Αρχικό', text: '{{new.placeholder}}' }
+]), /δημιουργία ή τροποποίηση placeholders/u);
 
 console.log('Safe template text editor tests passed.');
