@@ -62,7 +62,7 @@ assert.throws(() => buildOfficialDossierPackage([{ ...template, mappingConfirmed
 const generatedArchive = buildCategoryArchive([{ ...template, name: '../unsafe:name.docx' }], { id: 'case-1', protocolNumber: '123' });
 const generatedArchiveNames = Object.keys(unzipSync(generatedArchive));
 assert.equal(generatedArchiveNames.length, 1);
-assert.match(generatedArchiveNames[0], /^01-.*-case-1\.docx$/u);
+assert.match(generatedArchiveNames[0], /^01-unsafe-name-official-generic-01\.docx$/u);
 assert.doesNotMatch(generatedArchiveNames[0], /[\\/]/u);
 
 console.log('Official dossier package workflow tests passed.');
