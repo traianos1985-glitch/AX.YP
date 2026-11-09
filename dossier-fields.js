@@ -90,6 +90,7 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('suddenDeath.interpreter.language', 'Διερμηνέας', 'Γλώσσα διερμηνείας (γενική)'),
     defineDossierField('suddenDeath.interpreter.phone', 'Διερμηνέας', 'Τηλέφωνο διερμηνέα', 'text', false),
     defineDossierField('suddenDeath.interpreter.address', 'Διερμηνέας', 'Διεύθυνση διερμηνέα', 'text', false),
+    defineDossierField('suddenDeath.interpreter.city', 'Διερμηνέας', 'Πόλη κατοικίας διερμηνέα'),
     defineDossierField('suddenDeath.recipients.embassy', 'Αποδέκτες εγγράφων', 'Πρεσβεία / προξενική αρχή'),
     defineDossierField('suddenDeath.recipients.embassyEmail', 'Αποδέκτες εγγράφων', 'Email πρεσβείας / προξενικής αρχής', 'text', false),
     defineDossierField('suddenDeath.recipients.forensicCity', 'Αποδέκτες εγγράφων', 'Πόλη αρμόδιας ιατροδικαστικής υπηρεσίας'),
@@ -118,6 +119,7 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('suddenDeath.witness.givenName', 'Μάρτυρας', 'Όνομα μάρτυρα'),
     defineDossierField('suddenDeath.witness.motherName', 'Μάρτυρας', 'Μητρώνυμο μάρτυρα'),
     defineDossierField('suddenDeath.witness.surname', 'Μάρτυρας', 'Επώνυμο μάρτυρα'),
+    defineDossierField('suddenDeath.witness.residence', 'Μάρτυρας', 'Τόπος κατοικίας μάρτυρα'),
     defineDossierField('suddenDeath.witness.yearsInResidence', 'Μάρτυρας', 'Έτη διαμονής μάρτυρα στην περιοχή', 'number', false, { min: 0, step: '1' })
   ]),
   migration: Object.freeze([]),
