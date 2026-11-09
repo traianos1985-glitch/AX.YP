@@ -54,6 +54,13 @@ Branch: `feat/narcotics-official-package-v2`
    - Explicitly exclude hidden wizard-step sections from this disabling rule: the wizard hides prior steps temporarily, but their entered values must remain enabled and included in the saved dossier.
    - Status: pending CI verification. Do not record this as a confirmed fix until Firefox E2E and all other required jobs pass on this exact commit.
 
+7. **Firefox still rejected hidden required controls on run #1373**
+   - Tested PR merge commit: `42cb9db69b159309974020b92cf2f213b13776f4`, corresponding to feature head `576396b6c66718fbaa7599e844360899dea2a077`.
+   - Run: `1373`; regression/build job passed and Chrome production E2E passed, but Firefox failed at the pre-save `form.checkValidity()` assertion.
+   - The invalid controls were still inside hidden fieldsets/category wrappers. The previous broad scan was correct for controls already present, but it ran before schema-driven category fields were dynamically inserted by `renderCategoryFields()`. Those newly inserted required controls were never passed through the disabling rule.
+   - Fix attempt: observe form subtree additions and re-run `applyCategoryFields()` only when inserted nodes contain form controls. This preserves the values and keeps prior wizard steps enabled; inactive category fields are disabled after they are rendered. The Firefox test now records disabled state and hidden-ancestor identity for every invalid control.
+   - Status: pending CI verification on the latest branch head. Do not treat as confirmed until Firefox and all required jobs pass.
+
 ## Rules for future dossier/template PRs
 
 1. **Start from the latest green main branch.** Keep each dossier/category in its own focused PR/branch. Do not stack unverified changes from unrelated work.
