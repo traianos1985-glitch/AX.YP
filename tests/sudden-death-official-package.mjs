@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { unzipSync, unzlibSync, strFromU8 } from '../vendor/fflate.js';
 import { base64ToUint8, buildDocx, getMissingTemplateFields } from '../template-library.js';
+import { getDossierFieldDefinitions } from '../dossier-fields.js';
 
 const catalog = JSON.parse(await readFile(new URL('../dossier-packages/manifest.json', import.meta.url), 'utf8'));
 const entry = catalog.packages.find((item) => item.id === 'sudden-death-v1');
@@ -38,6 +39,8 @@ const setPath = (root, path, value) => {
   current[parts.at(-1)] = value;
 };
 const allMappings = new Set(manifest.documents.flatMap((doc) => Object.values(doc.mappings)));
+const schemaPaths = new Set(getDossierFieldDefinitions('sudden-death').map((field) => field.path));
+for (const path of allMappings) if (path.startsWith('suddenDeath.')) assert.ok(schemaPaths.has(path), 'The category form must expose ' + path);
 for (const path of allMappings) {
   if (!path.startsWith('suddenDeath.')) continue;
   let value = 'TEST-' + path.toUpperCase().replaceAll('.', '-');
