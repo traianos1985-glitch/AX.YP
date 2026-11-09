@@ -812,6 +812,7 @@ export function valueFor(path, item) {
     'offender.idDate': formatDateToGreekNumeric(offender.idDate),
     'offender.idService': offender.idService,
     'offender.taxId': offender.taxId,
+    'offender.taxOffice': offender.taxOffice,
     'offender.phone': offender.phone,
     'offender.email': offender.email,
     'offender.profession': offender.profession,
