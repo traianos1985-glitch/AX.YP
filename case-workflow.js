@@ -29,6 +29,18 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
     return section;
   }
 
+  function validateStep(section) {
+    var fields = section.querySelectorAll('input, select, textarea');
+    for (var i = 0; i < fields.length; i += 1) {
+      var field = fields[i];
+      if (field.disabled || field.closest('[hidden]') || !field.willValidate || field.checkValidity()) continue;
+      field.reportValidity();
+      field.focus();
+      return false;
+    }
+    return true;
+  }
+
   function addControls(section, index) {
     var controls = document.createElement('div');
     controls.className = 'case-workflow-controls';
@@ -46,7 +58,7 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
       next.className = 'mini-button primary';
       next.textContent = index === 0 ? 'Συνέχεια στα ειδικά στοιχεία →' : 'Έλεγχος και ολοκλήρωση →';
       next.addEventListener('click', function () {
-        if (index === 0 && !form.reportValidity()) return;
+        if (index === 0 && !validateStep(section)) return;
         showStep(index + 1);
       });
       controls.appendChild(next);
@@ -266,7 +278,7 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
     if (currentStep !== 2) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (currentStep === 0 && !form.reportValidity()) return;
+      if (currentStep === 0 && !validateStep(steps[0])) return;
       showStep(Math.min(currentStep + 1, 2));
     } else {
       updateSummary();
