@@ -41,7 +41,7 @@ async function runFetch({ request, cachedResponse, cachedIndex }) {
       });
     }),
     setTimeout(callback, delay) {
-      const expectedDelay = /\/dossier-packages\/[^/]+\.axyp\.zip$/u.test(new URL(request.url).pathname) ? 60000 : 3000;
+      const expectedDelay = /\/dossier-packages\/[^/]+(?:\.axyp\.zip|\.axyp\.pack\.json|\.b64)$/u.test(new URL(request.url).pathname) ? 60000 : 3000;
       assert.equal(delay, expectedDelay, 'ordinary assets retain the short timeout while published dossier packages get a longer download window');
       timeoutCallback = callback;
       return 1;
@@ -70,7 +70,7 @@ assert.equal(await assetResult.response.text(), 'cached asset', 'cached asset sh
 
 const cachedPackage = new Response('cached dossier package', { status: 200 });
 const packageResult = await runFetch({
-  request: { method: 'GET', url: 'https://axyp.test/dossier-packages/axyp-generic-official-package.axyp.zip', mode: 'cors' },
+  request: { method: 'GET', url: 'https://axyp.test/dossier-packages/narcotics-v2.axyp.pack.json', mode: 'cors' },
   cachedResponse: cachedPackage
 });
 assert.equal(packageResult.aborted, true, 'stalled published package download should be aborted only after the extended timeout');

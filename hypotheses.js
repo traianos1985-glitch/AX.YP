@@ -57,6 +57,9 @@ if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.
       control.maxLength = field.maxLength || 200;
       control.placeholder = field.placeholder || '';
       control.required = field.required === true;
+      if (field.step !== undefined) control.step = String(field.step);
+      if (field.min !== undefined) control.min = String(field.min);
+      if (field.max !== undefined) control.max = String(field.max);
       control.dataset.categoryFieldPath = field.path;
       control.value = getDossierFieldValue(data, field.path);
       label.appendChild(control);

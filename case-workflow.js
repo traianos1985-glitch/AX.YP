@@ -29,6 +29,18 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
     return section;
   }
 
+  function validateStep(section) {
+    var fields = section.querySelectorAll('input, select, textarea');
+    for (var i = 0; i < fields.length; i += 1) {
+      var field = fields[i];
+      if (field.disabled || field.closest('[hidden]') || !field.willValidate || field.checkValidity()) continue;
+      field.reportValidity();
+      field.focus();
+      return false;
+    }
+    return true;
+  }
+
   function addControls(section, index) {
     var controls = document.createElement('div');
     controls.className = 'case-workflow-controls';
@@ -46,7 +58,7 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
       next.className = 'mini-button primary';
       next.textContent = index === 0 ? 'Συνέχεια στα ειδικά στοιχεία →' : 'Έλεγχος και ολοκλήρωση →';
       next.addEventListener('click', function () {
-        if (index === 0 && !form.reportValidity()) return;
+        if (index === 0 && !validateStep(section)) return;
         showStep(index + 1);
       });
       controls.appendChild(next);
@@ -106,9 +118,29 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
     updateSummary();
   }
 
+  function syncStepRequiredState() {
+    steps.forEach(function (step, index) {
+      var active = index === currentStep;
+      step.querySelectorAll('input, select, textarea').forEach(function (field) {
+        if (!active || field.disabled) {
+          if (field.required) {
+            field.setAttribute('data-axyp-step-required', 'true');
+            field.required = false;
+          }
+        } else if (field.hasAttribute('data-axyp-step-required')) {
+          field.required = true;
+          field.removeAttribute('data-axyp-step-required');
+        }
+      });
+    });
+  }
+
   function showStep(index, focusHeading) {
     currentStep = Math.max(0, Math.min(index, steps.length - 1));
     steps.forEach(function (step, i) { step.hidden = i !== currentStep; });
+    // Native form validation must only require fields in the visible wizard step.
+    // Keep all values and controls enabled so previous-step data is still saved.
+    syncStepRequiredState();
     var items = form.querySelectorAll('.case-workflow-progress li');
     items.forEach(function (item, i) {
       item.setAttribute('aria-current', i === currentStep ? 'step' : 'false');
@@ -266,12 +298,28 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
     if (currentStep !== 2) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (currentStep === 0 && !form.reportValidity()) return;
+      if (currentStep === 0 && !validateStep(steps[0])) return;
       showStep(Math.min(currentStep + 1, 2));
     } else {
       updateSummary();
     }
   }, true);
+
+  function setCategoryControlsDisabled(container, disabled) {
+    if (!container) return;
+    var fields = container.querySelectorAll('input, select, textarea');
+    fields.forEach(function (field) {
+      if (disabled) {
+        if (!field.disabled) {
+          field.disabled = true;
+          field.setAttribute('data-axyp-category-disabled', 'true');
+        }
+      } else if (field.hasAttribute('data-axyp-category-disabled')) {
+        field.disabled = false;
+        field.removeAttribute('data-axyp-category-disabled');
+      }
+    });
+  }
 
   function applyCategoryFields() {
     var selected = profile ? profile.value : 'generic';
@@ -286,6 +334,34 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
     var generalPerson = $('offender-section-title');
     var generalFieldset = generalPerson && generalPerson.closest('fieldset');
     if (generalFieldset) generalFieldset.hidden = selected === 'commerce';
+
+    // Firefox validates required controls inside hidden category sections unless
+    // they are disabled. Keep inactive categories out of native form validation
+    // without changing their values or their saved-data mapping.
+    // Apply this to every category fieldset, including categories whose
+    // visibility is controlled by their own renderer rather than this function.
+    Array.prototype.forEach.call(form.querySelectorAll('fieldset.offender-section'), function (section) {
+      setCategoryControlsDisabled(section, !!section.hidden);
+    });
+    var categoryFields = $('case-category-fields');
+    setCategoryControlsDisabled(categoryFields, !!(categoryFields && categoryFields.hidden));
+
+    // Catch every other hidden category wrapper as well. Do not disable controls
+    // merely because their wizard step is hidden: those values remain part of
+    // the dossier and must be submitted when the final step is reached.
+    Array.prototype.forEach.call(form.querySelectorAll('input, select, textarea'), function (field) {
+      var hiddenCategoryAncestor = field.closest('[hidden]:not(.case-workflow-step)');
+      if (hiddenCategoryAncestor) {
+        if (!field.disabled) {
+          field.disabled = true;
+          field.setAttribute('data-axyp-category-disabled', 'true');
+        }
+      } else if (field.hasAttribute('data-axyp-category-disabled')) {
+        field.disabled = false;
+        field.removeAttribute('data-axyp-category-disabled');
+      }
+    });
+    syncStepRequiredState();
     updateSummary();
   }
 
@@ -304,6 +380,24 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
   });
   formObserver.observe(form, { attributes: true, attributeFilter: ['hidden'] });
   build();
+
+  // Category-specific fields can be rendered asynchronously after the case form
+  // has opened (renderCategoryFields replaces the contents of this root).
+  // Re-apply the inactive-category rule whenever a renderer inserts controls.
+  // Observe only additions that contain form controls so summary updates do not
+  // cause an observer loop.
+  var categoryRenderObserver = new MutationObserver(function (records) {
+    var addedControls = records.some(function (record) {
+      return Array.prototype.some.call(record.addedNodes, function (node) {
+        if (!node || node.nodeType !== 1) return false;
+        return (node.matches && node.matches('fieldset, input, select, textarea')) ||
+          (node.querySelector && node.querySelector('fieldset, input, select, textarea'));
+      });
+    });
+    if (addedControls) applyCategoryFields();
+  });
+  categoryRenderObserver.observe(form, { childList: true, subtree: true });
+
   window.AXYPCaseWorkflow = {
     showStep: showStep,
     updateSummary: updateSummary,

@@ -143,6 +143,29 @@ try {
 
   await click('#case-workflow-step-2 .case-workflow-controls button.primary', 'Continue to review in Firefox');
   await waitForExpression("!document.getElementById('case-workflow-step-3').hidden", 'Firefox review step');
+  const submitValidation = await execute(`(() => {
+    const form = document.getElementById('case-form');
+    return {
+      valid: form.checkValidity(),
+      invalid: [...form.querySelectorAll(':invalid')].map((field) => {
+        const hiddenAncestor = field.closest('[hidden]');
+        return {
+          id: field.id || field.name || field.tagName.toLowerCase(),
+          value: field.value,
+          message: field.validationMessage,
+          disabled: field.disabled,
+          willValidate: field.willValidate,
+          hidden: !!hiddenAncestor,
+          hiddenAncestor: hiddenAncestor ? {
+            tag: hiddenAncestor.tagName.toLowerCase(),
+            id: hiddenAncestor.id,
+            className: typeof hiddenAncestor.className === 'string' ? hiddenAncestor.className : ''
+          } : null
+        };
+      })
+    };
+  })()`);
+  assert.equal(submitValidation.valid, true, 'Firefox form must be valid before save: ' + JSON.stringify(submitValidation));
   await click('#case-form button[type="submit"]', 'Save case in Firefox');
 
   const saved = await waitForExpression(`(() => {

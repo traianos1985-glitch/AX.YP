@@ -1,9 +1,10 @@
-import { unzipSync, zipSync } from './vendor/fflate.js';
+import { unzipSync, zipSync, unzlibSync, strFromU8, strToU8 } from './vendor/fflate.js';
 import { listTemplateMappingVersions, saveTemplateMappingVersion, restoreTemplateMappingVersion } from './template-mapping-history.js';
 import { toGreekGenitiveFullName, getServiceProfileOperatorIdentity } from './service-profile.js';
 import { createTemplateDocumentSnapshot, appendTemplateDocumentSnapshot, restoreTemplateDocumentSnapshot, extractTemplateFieldsFromParts } from './template-document-history.js';
 import { mergeTemplateOverrides } from './template-catalog.js';
 import { extractTemplateTextRuns, applyTemplateTextEdits } from './template-document-editor.js';
+import { getDossierFieldValue } from './dossier-fields.js';
 
 let DEFAULT_NARCOTICS_TEMPLATES = [];
 let DEFAULT_COUNTERFEIT_TEMPLATES = [];
@@ -24,6 +25,7 @@ const CATEGORY_LOADERS = {
 };
 let PUBLISHED_DOSSIER_TEMPLATES = [];
 let publishedPackagesPromise = null;
+let publishedPackageCatalogLoaded = false;
 
 const CATEGORY_SEED_KEYS = {
   narcotics: 'axyp-narcotics-templates-seeded-v1',
@@ -91,12 +93,66 @@ export async function loadPublishedDossierPackages() {
     }
     const loaded = [];
     for (const entry of catalog.packages) {
-      if (!entry || typeof entry.file !== 'string' || !/^[\p{L}\p{N}._-]+\.axyp\.zip$/u.test(entry.file)) {
+      if (!entry || typeof entry.file !== 'string' || !/^[\p{L}\p{N}._-]+\.axyp\.(?:zip|pack\.json)$/u.test(entry.file)) {
         throw new Error('Invalid dossier package filename in catalog.');
       }
       const packageResponse = await fetch(new URL('dossier-packages/' + entry.file, document.baseURI));
       if (!packageResponse.ok) throw new Error('Could not load dossier package: ' + entry.file);
-      const packageParts = unzipSync(new Uint8Array(await packageResponse.arrayBuffer()));
+      let packageBytes = new Uint8Array(await packageResponse.arrayBuffer());
+      if (entry.file.endsWith('.axyp.pack') || entry.file.endsWith('.axyp.pack.json')) {
+        if (entry.file.endsWith('.axyp.pack.json')) {
+          const descriptor = JSON.parse(strFromU8(packageBytes));
+          if (descriptor.encoding !== 'base64-chunks' || !Array.isArray(descriptor.parts) || descriptor.parts.length < 1 || descriptor.parts.length > 10) {
+            throw new Error('Invalid compressed package descriptor: ' + entry.file);
+          }
+          const encodedParts = [];
+          for (const partName of descriptor.parts) {
+            if (typeof partName !== 'string' || !/^[\p{L}\p{N}._-]+\.b64$/u.test(partName)) {
+              throw new Error('Invalid compressed package part filename: ' + entry.file);
+            }
+            const partResponse = await fetch(new URL('dossier-packages/' + partName, document.baseURI));
+            if (!partResponse.ok) throw new Error('Could not load compressed package part: ' + partName);
+            encodedParts.push((await partResponse.text()).trim());
+          }
+          packageBytes = base64ToUint8(encodedParts.join(''));
+          if (descriptor.byteLength && packageBytes.length !== descriptor.byteLength) {
+            throw new Error('Compressed package byte length mismatch: ' + entry.file);
+          }
+        }
+        const packed = JSON.parse(strFromU8(unzlibSync(packageBytes)));
+        if (packed.schemaVersion !== 1 || !Array.isArray(packed.documents) || typeof packed.category !== 'string') {
+          throw new Error('Invalid compressed dossier package: ' + entry.file);
+        }
+        for (const document of packed.documents) {
+          if (!document || !document.parts || typeof document.parts !== 'object' || Array.isArray(document.parts)) {
+            throw new Error('Invalid compressed document entry: ' + entry.file);
+          }
+          const parts = {};
+          for (const [name, part] of Object.entries(document.parts)) {
+            if (!name || name.startsWith('/') || name.includes('..') || !part || typeof part.data !== 'string') {
+              throw new Error('Invalid compressed DOCX part: ' + entry.file);
+            }
+            if (part.encoding === 'utf8') parts[name] = strToU8(part.data);
+            else if (part.encoding === 'base64') parts[name] = base64ToUint8(part.data);
+            else throw new Error('Unsupported compressed DOCX part encoding: ' + entry.file);
+          }
+          if (!parts['word/document.xml']) throw new Error('Published DOCX is missing its main document: ' + document.name);
+          loaded.push({
+            id: String(document.id || entry.id + '-' + loaded.length),
+            name: String(document.name || 'Έντυπο Word'),
+            category: packed.category,
+            categoryLabel: 'Επίσημο πακέτο εφαρμογής',
+            source: 'published-package',
+            fidelityMode: 'placeholder-only',
+            fields: Array.isArray(document.fields) ? document.fields : [],
+            mappings: document.mappings && typeof document.mappings === 'object' ? document.mappings : {},
+            mappingConfirmedAt: packed.publishedAt || packed.createdAt || 'published',
+            files: Object.fromEntries(Object.entries(parts).map(([name, bytes]) => [name, Array.from(bytes)]))
+          });
+        }
+        continue;
+      }
+      const packageParts = unzipSync(packageBytes);
       if (!packageParts['manifest.json']) throw new Error('Dossier package manifest is missing: ' + entry.file);
       const manifest = JSON.parse(new TextDecoder().decode(packageParts['manifest.json']));
       if (manifest.schemaVersion !== 1 || !Array.isArray(manifest.documents) || typeof manifest.category !== 'string') {
@@ -123,6 +179,7 @@ export async function loadPublishedDossierPackages() {
       }
     }
     PUBLISHED_DOSSIER_TEMPLATES = loaded;
+    publishedPackageCatalogLoaded = true;
     return loaded;
   })().catch((error) => {
     publishedPackagesPromise = null;
@@ -151,7 +208,27 @@ function templatesForCategory(category) {
   }[category] || [];
 }
 
+export function migrateLegacyNarcoticsTemplates(storageInstance = storage()) {
+  const existing = (() => {
+    try { return JSON.parse(storageInstance.getItem(KEY) || '[]'); } catch (_) { return []; }
+  })();
+  if (!Array.isArray(existing)) throw new Error('Η τοπική βιβλιοθήκη προτύπων δεν έχει έγκυρη μορφή.');
+  const retained = existing.filter((template) => !(
+    template && template.category === 'narcotics' &&
+    (template.builtin === true || /^narcotics-\d{2}$/u.test(String(template.id || '')))
+  ));
+  const changed = retained.length !== existing.length;
+  if (changed) storageInstance.setItem(KEY, JSON.stringify(retained));
+  storageInstance.setItem('axyp-narcotics-package-migrated-v2', 'true');
+  return changed;
+}
+
 async function seedCategory(storageInstance, category) {
+  if (category === 'narcotics' && publishedPackageCatalogLoaded) {
+    migrateLegacyNarcoticsTemplates(storageInstance);
+    storageInstance.setItem(CATEGORY_SEED_KEYS.narcotics, 'true');
+    return;
+  }
   await loadBuiltinTemplateData(category);
   const seedKey = CATEGORY_SEED_KEYS[category];
   if (storageInstance.getItem(seedKey)) return;
@@ -735,9 +812,29 @@ export function valueFor(path, item) {
     'offender.idDate': formatDateToGreekNumeric(offender.idDate),
     'offender.idService': offender.idService,
     'offender.taxId': offender.taxId,
+    'offender.taxOffice': offender.taxOffice,
     'offender.phone': offender.phone,
-    'offender.email': offender.email
+    'offender.email': offender.email,
+    'offender.profession': offender.profession,
+    'offender.education': offender.education,
+    'offender.maritalStatus': offender.maritalStatus,
+    'offender.children': offender.children
   };
+  if (path === 'narcotics.service.cityUpper') {
+    const city = getDossierFieldValue(item.categoryData, 'narcotics.service.city') || item.location || serviceProfile.location || '';
+    return String(city).toLocaleUpperCase('el-GR');
+  }
+  if (path === 'narcotics.exhibits.cannabis.unit') return 'γραμμαρίων';
+  if (path === 'narcotics.exhibits.cigarette.unit') {
+    const count = getDossierFieldValue(item.categoryData, 'narcotics.exhibits.cigarette.quantity');
+    return Number(count) === 1 ? 'τεμάχιο' : 'τεμάχια';
+  }
+  const categoryValue = getDossierFieldValue(item.categoryData, path);
+  if (categoryValue !== '' && categoryValue !== undefined && categoryValue !== null) {
+    if (path === 'narcotics.exhibits.cannabis.quantity') return String(categoryValue).replace('.', ',');
+    if (/\.(?:birthDate|idDate)$/u.test(path)) return formatDateToGreekNumeric(String(categoryValue));
+    return display(categoryValue);
+  }
   return display(map[path]);
 }
 
@@ -1544,7 +1641,7 @@ export function buildDocx(template, item) {
   const userUploaded = template.source === 'user-uploaded' || template.source === 'published-package' || (!template.category && !!template.files);
 
   Object.keys(files).forEach((filename) => {
-    if (!filename.startsWith('word/') || !filename.endsWith('.xml')) return;
+    if (!filename.startsWith('word/') || !(filename.endsWith('.xml') || filename.endsWith('.rels'))) return;
     const originalXml = new TextDecoder().decode(files[filename]);
 
     if (userUploaded) {
