@@ -84,6 +84,15 @@ for (const document of manifest.documents) {
   };
   assert.deepEqual(getMissingTemplateFields(template, syntheticCase), [], document.name + ' must have every required mapped field populated');
   const generated = unzipSync(buildDocx(template, syntheticCase));
+  if (document.name === '02_ΕΓΓΡΑΦΟ_ΠΡΟΣ_ΠΡΕΣΒΕΙΑ.docx') {
+    const optionalCase = structuredClone(syntheticCase);
+    setPath(optionalCase.categoryData, 'suddenDeath.deceased.relativePhone', '');
+    const optionalOutput = unzipSync(buildDocx(template, optionalCase));
+    const optionalXml = Object.entries(optionalOutput)
+      .filter(([name]) => name.startsWith('word/') && (name.endsWith('.xml') || name.endsWith('.rels')))
+      .map(([, bytes]) => new TextDecoder().decode(bytes)).join('\n');
+    assert.doesNotMatch(optionalXml, /\{\{\s*[\w.-]+\s*\}\}/u, 'An empty optional mapped field must not leave a raw placeholder in the DOCX');
+  }
   for (const [name, bytes] of Object.entries(generated)) {
     if (!name.startsWith('word/') || !(name.endsWith('.xml') || name.endsWith('.rels'))) continue;
     const xml = new TextDecoder().decode(bytes);
