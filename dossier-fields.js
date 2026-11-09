@@ -109,6 +109,8 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('suddenDeath.service.locationGenitive', 'Υπηρεσία · γραμματικοί τύποι', 'Τόπος υπηρεσίας (γενική)'),
     defineDossierField('suddenDeath.service.municipalityGenitive', 'Υπηρεσία · γραμματικοί τύποι', 'Δήμος / περιοχή υπηρεσίας (γενική)'),
     defineDossierField('suddenDeath.service.regionGenitive', 'Υπηρεσία · γραμματικοί τύποι', 'Περιφερειακή ενότητα (γενική)'),
+    defineDossierField('suddenDeath.service.postalCode', 'Υπηρεσία · γραμματικοί τύποι', 'Ταχυδρομικός κώδικας υπηρεσίας'),
+    defineDossierField('suddenDeath.service.locationUpper', 'Υπηρεσία · γραμματικοί τύποι', 'Τόπος υπηρεσίας (κεφαλαία)'),
     defineDossierField('suddenDeath.witness.birthDate', 'Μάρτυρας', 'Ημερομηνία γέννησης μάρτυρα', 'date'),
     defineDossierField('suddenDeath.witness.examinationEndTime', 'Μάρτυρας', 'Ώρα περάτωσης εξέτασης', 'time'),
     defineDossierField('suddenDeath.witness.examinationStartTime', 'Μάρτυρας', 'Ώρα έναρξης εξέτασης', 'time'),
