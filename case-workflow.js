@@ -359,6 +359,24 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
   });
   formObserver.observe(form, { attributes: true, attributeFilter: ['hidden'] });
   build();
+
+  // Category-specific fields can be rendered asynchronously after the case form
+  // has opened (renderCategoryFields replaces the contents of this root).
+  // Re-apply the inactive-category rule whenever a renderer inserts controls.
+  // Observe only additions that contain form controls so summary updates do not
+  // cause an observer loop.
+  var categoryRenderObserver = new MutationObserver(function (records) {
+    var addedControls = records.some(function (record) {
+      return Array.prototype.some.call(record.addedNodes, function (node) {
+        if (!node || node.nodeType !== 1) return false;
+        return (node.matches && node.matches('fieldset, input, select, textarea')) ||
+          (node.querySelector && node.querySelector('fieldset, input, select, textarea'));
+      });
+    });
+    if (addedControls) applyCategoryFields();
+  });
+  categoryRenderObserver.observe(form, { childList: true, subtree: true });
+
   window.AXYPCaseWorkflow = {
     showStep: showStep,
     updateSummary: updateSummary,
