@@ -173,7 +173,21 @@ try {
   await setValue('#case-incident-time', '21:30');
 
   await click('#case-workflow-step-1 .case-workflow-controls button.primary', 'Continue to people and evidence');
-  await waitForExpression("!document.getElementById('case-workflow-step-2').hidden", 'second workflow step');
+  const firstStepResult = await evaluate(`(() => {
+    const form = document.getElementById('case-form');
+    const second = document.getElementById('case-workflow-step-2');
+    const invalid = [...form.querySelectorAll(':invalid')].map((field) => ({
+      id: field.id || field.name || field.tagName.toLowerCase(),
+      value: field.value,
+      message: field.validationMessage
+    }));
+    return { secondStepVisible: !!second && !second.hidden, invalid };
+  })()`);
+  assert.equal(
+    firstStepResult.secondStepVisible,
+    true,
+    'First workflow step must advance; browser validation state: ' + JSON.stringify(firstStepResult)
+  );
 
   await click('#person-register-add', 'Add person');
   await waitForExpression(`!!document.querySelector('#person-register-list [data-field="fullName"]')`, 'person register row');
