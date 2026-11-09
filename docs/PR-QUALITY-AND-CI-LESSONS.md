@@ -61,6 +61,12 @@ Branch: `feat/narcotics-official-package-v2`
    - Fix attempt: observe form subtree additions and re-run `applyCategoryFields()` only when inserted nodes contain form controls. This preserves the values and keeps prior wizard steps enabled; inactive category fields are disabled after they are rendered. The Firefox test now records disabled state and hidden-ancestor identity for every invalid control.
    - Status: pending CI verification on the latest branch head. Do not treat as confirmed until Firefox and all required jobs pass.
 
+8. **Run #1378/1379 exposed two distinct browser failures**
+   - On merge commit `73fe30f4862ff630128363df45b64ddcfcbdcc82`, run #1378 Firefox failed at the final `form.checkValidity()`: required inputs from the hidden wizard step 2 remained `willValidate=true`. The diagnostic showed the hidden ancestor was `.case-workflow-step`, not a hidden category wrapper. Excluding wizard steps from category disabling was correct for preserving values, but native validation still evaluated their required attributes.
+   - Fix attempt: `syncStepRequiredState()` temporarily removes the `required` attribute from controls in inactive wizard steps, retaining an explicit marker and restoring the attribute when that step becomes active. Controls remain enabled, so values from previous steps remain available to dossier serialization. Category-disabled controls remain non-validating and regain required status only when both category and wizard step are active.
+   - Run #1379 Chrome failed separately at application reload with `CDP command timed out: Runtime.evaluate` in `tests/browser-case-lifecycle.mjs:233`. Production build and regression job passed. This reload/renderer timeout is not yet root-caused and must be investigated independently; do not conflate it with the Firefox required-field issue.
+   - Status: both fixes/diagnostics pending verification on a new CI run for the latest feature head.
+
 ## Rules for future dossier/template PRs
 
 1. **Start from the latest green main branch.** Keep each dossier/category in its own focused PR/branch. Do not stack unverified changes from unrelated work.
