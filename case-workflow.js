@@ -118,9 +118,29 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
     updateSummary();
   }
 
+  function syncStepRequiredState() {
+    steps.forEach(function (step, index) {
+      var active = index === currentStep;
+      step.querySelectorAll('input, select, textarea').forEach(function (field) {
+        if (!active || field.disabled) {
+          if (field.required) {
+            field.setAttribute('data-axyp-step-required', 'true');
+            field.required = false;
+          }
+        } else if (field.hasAttribute('data-axyp-step-required')) {
+          field.required = true;
+          field.removeAttribute('data-axyp-step-required');
+        }
+      });
+    });
+  }
+
   function showStep(index, focusHeading) {
     currentStep = Math.max(0, Math.min(index, steps.length - 1));
     steps.forEach(function (step, i) { step.hidden = i !== currentStep; });
+    // Native form validation must only require fields in the visible wizard step.
+    // Keep all values and controls enabled so previous-step data is still saved.
+    syncStepRequiredState();
     var items = form.querySelectorAll('.case-workflow-progress li');
     items.forEach(function (item, i) {
       item.setAttribute('aria-current', i === currentStep ? 'step' : 'false');
@@ -341,6 +361,7 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
         field.removeAttribute('data-axyp-category-disabled');
       }
     });
+    syncStepRequiredState();
     updateSummary();
   }
 
