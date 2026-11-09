@@ -49,6 +49,9 @@ for (const path of allMappings) {
   if (/\.age$/u.test(path) || /\.yearsInResidence$/u.test(path)) value = '58';
   setPath(categoryData, path, value);
 }
+setPath(categoryData, 'suddenDeath.witness.residence', 'TEST-WITNESS-RESIDENCE');
+setPath(categoryData, 'suddenDeath.interpreter.city', 'TEST-INTERPRETER-CITY');
+
 const syntheticCase = {
   id: 'sudden-death-package-test', profile: 'sudden-death',
   title: 'TEST-SUDDEN-DEATH', protocolNumber: 'TEST-PROTOCOL',
