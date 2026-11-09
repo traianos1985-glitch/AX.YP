@@ -285,6 +285,22 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
     }
   }, true);
 
+  function setCategoryControlsDisabled(container, disabled) {
+    if (!container) return;
+    var fields = container.querySelectorAll('input, select, textarea');
+    fields.forEach(function (field) {
+      if (disabled) {
+        if (!field.disabled) {
+          field.disabled = true;
+          field.setAttribute('data-axyp-category-disabled', 'true');
+        }
+      } else if (field.hasAttribute('data-axyp-category-disabled')) {
+        field.disabled = false;
+        field.removeAttribute('data-axyp-category-disabled');
+      }
+    });
+  }
+
   function applyCategoryFields() {
     var selected = profile ? profile.value : 'generic';
     var commerce = $('commerce-offenders');
@@ -298,6 +314,17 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
     var generalPerson = $('offender-section-title');
     var generalFieldset = generalPerson && generalPerson.closest('fieldset');
     if (generalFieldset) generalFieldset.hidden = selected === 'commerce';
+
+    // Firefox validates required controls inside hidden category sections unless
+    // they are disabled. Keep inactive categories out of native form validation
+    // without changing their values or their saved-data mapping.
+    setCategoryControlsDisabled(commerce, selected !== 'commerce');
+    setCategoryControlsDisabled(narcoticsReleaseFields, selected !== 'narcotics');
+    setCategoryControlsDisabled(noiseFields, selected !== 'noise');
+    setCategoryControlsDisabled(campingFields, selected !== 'camping');
+    setCategoryControlsDisabled(generalFieldset, selected === 'commerce');
+    var categoryFields = $('case-category-fields');
+    setCategoryControlsDisabled(categoryFields, !!(categoryFields && categoryFields.hidden));
     updateSummary();
   }
 
