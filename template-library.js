@@ -842,7 +842,11 @@ export function replaceInXml(xml, template, item, options = {}) {
   return xml.replace(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu, (placeholder, path) => {
     const mapped = mappingFor(template, path);
     const raw = mapped ? valueFor(mapped, item) : `{{${path}}}`;
-    if (!raw || raw === '—') return options.preserveMissing ? placeholder : '—';
+    if (!raw || raw === '—') {
+      const required = new Set(Array.isArray(template.fields) ? template.fields : []);
+      const optionalMappedPlaceholder = Boolean(mapped) && !required.has(path) && !required.has(mapped);
+      return options.preserveMissing && !optionalMappedPlaceholder ? placeholder : '';
+    }
     const lines = String(raw).split(/\r?\n/);
     return lines.map((line) => esc(line)).join('</w:t><w:br/><w:t xml:space="preserve">');
   });
