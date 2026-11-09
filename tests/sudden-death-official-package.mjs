@@ -37,7 +37,7 @@ const setPath = (root, path, value) => {
   for (const part of parts.slice(0, -1)) current = current[part] ||= {};
   current[parts.at(-1)] = value;
 };
-const allMappings = new Set(manifest.documents.flatMap((doc) => Object.keys(doc.mappings)));
+const allMappings = new Set(manifest.documents.flatMap((doc) => Object.values(doc.mappings)));
 for (const path of allMappings) {
   if (!path.startsWith('suddenDeath.')) continue;
   let value = 'TEST-' + path.toUpperCase().replaceAll('.', '-');
