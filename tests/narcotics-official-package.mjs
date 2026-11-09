@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { unzlibSync, strFromU8, strToU8 } from '../vendor/fflate.js';
+import { unzipSync, unzlibSync, strFromU8, strToU8 } from '../vendor/fflate.js';
 import { base64ToUint8 } from '../template-library.js';
 import { buildDocx, getMissingTemplateFields } from '../template-library.js';
 
