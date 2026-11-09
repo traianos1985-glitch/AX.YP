@@ -147,12 +147,22 @@ try {
     const form = document.getElementById('case-form');
     return {
       valid: form.checkValidity(),
-      invalid: [...form.querySelectorAll(':invalid')].map((field) => ({
-        id: field.id || field.name || field.tagName.toLowerCase(),
-        value: field.value,
-        message: field.validationMessage,
-        hidden: !!field.closest('[hidden]')
-      }))
+      invalid: [...form.querySelectorAll(':invalid')].map((field) => {
+        const hiddenAncestor = field.closest('[hidden]');
+        return {
+          id: field.id || field.name || field.tagName.toLowerCase(),
+          value: field.value,
+          message: field.validationMessage,
+          disabled: field.disabled,
+          willValidate: field.willValidate,
+          hidden: !!hiddenAncestor,
+          hiddenAncestor: hiddenAncestor ? {
+            tag: hiddenAncestor.tagName.toLowerCase(),
+            id: hiddenAncestor.id,
+            className: typeof hiddenAncestor.className === 'string' ? hiddenAncestor.className : ''
+          } : null
+        };
+      })
     };
   })()`);
   assert.equal(submitValidation.valid, true, 'Firefox form must be valid before save: ' + JSON.stringify(submitValidation));
