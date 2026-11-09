@@ -321,10 +321,26 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
     // Apply this to every category fieldset, including categories whose
     // visibility is controlled by their own renderer rather than this function.
     Array.prototype.forEach.call(form.querySelectorAll('fieldset.offender-section'), function (section) {
-      setCategoryControlsDisabled(section, !!(section.hidden || section.closest('#case-category-fields[hidden]')));
+      setCategoryControlsDisabled(section, !!section.hidden);
     });
     var categoryFields = $('case-category-fields');
     setCategoryControlsDisabled(categoryFields, !!(categoryFields && categoryFields.hidden));
+
+    // Catch every other hidden category wrapper as well. Do not disable controls
+    // merely because their wizard step is hidden: those values remain part of
+    // the dossier and must be submitted when the final step is reached.
+    Array.prototype.forEach.call(form.querySelectorAll('input, select, textarea'), function (field) {
+      var hiddenCategoryAncestor = field.closest('[hidden]:not(.case-workflow-step)');
+      if (hiddenCategoryAncestor) {
+        if (!field.disabled) {
+          field.disabled = true;
+          field.setAttribute('data-axyp-category-disabled', 'true');
+        }
+      } else if (field.hasAttribute('data-axyp-category-disabled')) {
+        field.disabled = false;
+        field.removeAttribute('data-axyp-category-disabled');
+      }
+    });
     updateSummary();
   }
 
