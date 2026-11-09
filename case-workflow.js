@@ -318,11 +318,11 @@ import { evaluateDossierCompleteness } from './dossier-completeness.js';
     // Firefox validates required controls inside hidden category sections unless
     // they are disabled. Keep inactive categories out of native form validation
     // without changing their values or their saved-data mapping.
-    setCategoryControlsDisabled(commerce, selected !== 'commerce');
-    setCategoryControlsDisabled(narcoticsReleaseFields, selected !== 'narcotics');
-    setCategoryControlsDisabled(noiseFields, selected !== 'noise');
-    setCategoryControlsDisabled(campingFields, selected !== 'camping');
-    setCategoryControlsDisabled(generalFieldset, selected === 'commerce');
+    // Apply this to every category fieldset, including categories whose
+    // visibility is controlled by their own renderer rather than this function.
+    Array.prototype.forEach.call(form.querySelectorAll('fieldset.offender-section'), function (section) {
+      setCategoryControlsDisabled(section, !!(section.hidden || section.closest('#case-category-fields[hidden]')));
+    });
     var categoryFields = $('case-category-fields');
     setCategoryControlsDisabled(categoryFields, !!(categoryFields && categoryFields.hidden));
     updateSummary();
