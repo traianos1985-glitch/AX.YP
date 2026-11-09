@@ -647,6 +647,7 @@ export function valueFor(path, item) {
     'service.name': serviceProfile.name,
     'service.directorate': serviceProfile.directorate || '',
     'service.address': serviceProfile.address,
+    'service.location': serviceProfile.location,
     'service.phone': serviceProfile.phone,
     'service.email': serviceProfile.email,
     'service.prosecutor': serviceProfile.prosecutor,
