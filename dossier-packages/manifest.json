@@ -1,4 +1,9 @@
 {
   "schemaVersion": 1,
-  "packages": []
+  "packages": [
+    {
+      "id": "narcotics-v2",
+      "file": "narcotics-v2.axyp.pack.json"
+    }
+  ]
 }

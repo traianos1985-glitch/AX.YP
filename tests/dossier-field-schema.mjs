@@ -47,6 +47,14 @@ assert.equal(dormantEntities.entities.vehicles[0].registration, 'TEST-001');
 assert.throws(() => appendRepeatableEntry(dormantEntities, 'offenders', 'invalid'), /Η εγγραφή/);
 assert.throws(() => appendRepeatableEntry(dormantEntities, 'unknown', {}), /Άγνωστη/);
 
+const narcoticsFields = getDossierFieldDefinitions('narcotics');
+assert.ok(narcoticsFields.some((field) => field.path === 'narcotics.policeWitness.fullName'));
+assert.ok(narcoticsFields.some((field) => field.path === 'narcotics.apprehendingOfficer.fullName'));
+assert.ok(narcoticsFields.some((field) => field.path === 'narcotics.exhibits.cannabis.quantity' && field.type === 'number' && field.step === '0.01' && field.min === 0));
+assert.ok(narcoticsFields.some((field) => field.path === 'narcotics.exhibits.cigarette.quantity' && field.type === 'number' && field.step === '1' && field.min === 0));
+assert.ok(narcoticsFields.some((field) => field.path === 'narcotics.offender.statement' && field.type === 'textarea'));
+assert.equal(new Set(narcoticsFields.map((field) => field.path)).size, narcoticsFields.length);
+
 const kokFields = getDossierFieldDefinitions('kok');
 assert.equal(kokFields.length, 1, 'KOK currently exposes only the verified single-vehicle registration field');
 const registration = kokFields[0];

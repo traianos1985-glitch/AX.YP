@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { unzipSync, zipSync, strFromU8, strToU8 } from '../vendor/fflate.js';
 import { DEFAULT_NARCOTICS_TEMPLATES } from '../template-data/narcotics.js';
-import { ensureDefaultTemplates, initializeDefaultTemplates, getTemplateParts, computeTimeline, replaceInXml } from '../template-library.js';
+import { ensureDefaultTemplates, initializeDefaultTemplates, getTemplateParts, computeTimeline, replaceInXml, migrateLegacyNarcoticsTemplates } from '../template-library.js';
 
 console.log('--- Starting Narcotics Templates & Auto-loader Test Suite ---');
 
@@ -219,5 +219,24 @@ for (const tpl of DEFAULT_NARCOTICS_TEMPLATES) {
   assert.ok(reopened['word/document.xml'], `Reopened docx for ${tpl.name} must be valid`);
   console.log(`  ✓ ${tpl.name}: successfully verified (${tpl.fields.length} placeholders).`);
 }
+
+
+const migrationCases = [
+  { id: 'narcotics-01', category: 'narcotics', builtin: true, name: 'legacy official template' },
+  { id: 'narcotics-10', category: 'narcotics', builtin: true, name: 'legacy official template 10' },
+  { id: 'my-custom-narcotics', category: 'narcotics', source: 'user-uploaded', name: 'custom narcotics template' },
+  { id: 'custom-traffic', category: 'traffic', builtin: true, name: 'unrelated category' }
+];
+const migrationStorage = createMockStorage({
+  'axyp-docx-templates': JSON.stringify(migrationCases),
+  'axyp-hypotheses': JSON.stringify([{ id: 'saved-case', snapshots: [{ id: 'snapshot-1' }] }])
+});
+assert.equal(migrateLegacyNarcoticsTemplates(migrationStorage), true);
+const migratedCatalog = JSON.parse(migrationStorage.getItem('axyp-docx-templates'));
+assert.deepEqual(migratedCatalog.map((entry) => entry.id), ['my-custom-narcotics', 'custom-traffic']);
+assert.equal(migrationStorage.getItem('axyp-narcotics-package-migrated-v2'), 'true');
+assert.deepEqual(JSON.parse(migrationStorage.getItem('axyp-hypotheses')), [{ id: 'saved-case', snapshots: [{ id: 'snapshot-1' }] }], 'Existing saved dossiers and snapshots must remain untouched');
+assert.equal(migrateLegacyNarcoticsTemplates(migrationStorage), false, 'Migration must be idempotent');
+console.log('✓ Narcotics package migration removes legacy official templates and preserves custom templates and saved dossiers.');
 
 console.log('\nAll 5 required test suites passed with 100% success!');
