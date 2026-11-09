@@ -554,8 +554,16 @@ const FIELD_OPTIONS = [
   { path: 'timeline.release.startTime', label: 'Απόλυση · Ώρα' }
 ];
 
+function requiredTemplateFields(template) {
+  const fields = Array.isArray(template && template.fields) ? [...template.fields] : [];
+  if (template && template.category === 'sudden-death' && template.id === 'sudden-death-03') {
+    fields.push('officerB.residence', 'suddenDeath.witness.residence', 'suddenDeath.interpreter.city', 'suddenDeath.event.lastSeenLocation');
+  }
+  return [...new Set(fields)];
+}
+
 export function getMissingTemplateFields(template, item) {
-  const fields = Array.isArray(template && template.fields) ? template.fields : [];
+  const fields = requiredTemplateFields(template);
   return fields.flatMap((field) => {
     const mapped = mappingFor(template, field);
     if (!mapped) return [{ field, reason: 'δεν έχει αντιστοιχιστεί' }];
@@ -571,6 +579,7 @@ function mappingFor(template, field) {
   if (template.mappings && template.mappings[field]) return template.mappings[field];
   if (field === 'officerB.service') return field;
   if (FIELD_OPTIONS.some((option) => option.path === field)) return field;
+  if (field.startsWith('suddenDeath.')) return field;
   if (field.startsWith('offender.')) {
     const candidate = field.replace('offender.', 'person.');
     if (FIELD_OPTIONS.some((o) => o.path === candidate)) return candidate;
@@ -638,6 +647,7 @@ export function valueFor(path, item) {
     'service.name': serviceProfile.name,
     'service.directorate': serviceProfile.directorate || '',
     'service.address': serviceProfile.address,
+    'service.location': serviceProfile.location,
     'service.phone': serviceProfile.phone,
     'service.email': serviceProfile.email,
     'service.prosecutor': serviceProfile.prosecutor,
@@ -842,7 +852,11 @@ export function replaceInXml(xml, template, item, options = {}) {
   return xml.replace(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu, (placeholder, path) => {
     const mapped = mappingFor(template, path);
     const raw = mapped ? valueFor(mapped, item) : `{{${path}}}`;
-    if (!raw || raw === '—') return options.preserveMissing ? placeholder : '—';
+    if (!raw || raw === '—') {
+      const required = new Set(Array.isArray(template.fields) ? template.fields : []);
+      const optionalMappedPlaceholder = Boolean(mapped) && !required.has(path) && !required.has(mapped);
+      return options.preserveMissing && !optionalMappedPlaceholder ? placeholder : '';
+    }
     const lines = String(raw).split(/\r?\n/);
     return lines.map((line) => esc(line)).join('</w:t><w:br/><w:t xml:space="preserve">');
   });

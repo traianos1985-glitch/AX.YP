@@ -4,7 +4,7 @@ import { DOSSIER_CATEGORIES } from '../dossier-categories.js';
 import { DOSSIER_COMPLETENESS_RULES, evaluateDossierCompleteness } from '../dossier-completeness.js';
 
 const categoryIds = DOSSIER_CATEGORIES.map((category) => category.id);
-assert.equal(categoryIds.length, 13);
+assert.equal(categoryIds.length, 14);
 assert.equal(new Set(categoryIds).size, categoryIds.length);
 assert.deepEqual(Object.keys(DOSSIER_COMPLETENESS_RULES).sort(),
   ['camping','commerce','counterfeit','environment','health','narcotics','noise'].sort());

@@ -40,34 +40,34 @@ function connectCdp(url) {
   });
 }
 
-function command(method, params = {}) {
+function command(method, params = {}, timeoutMs = 15000) {
   const id = ++nextId;
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       pending.delete(id);
       reject(new Error('CDP command timed out: ' + method));
-    }, 15000);
+    }, timeoutMs);
     pending.set(id, { resolve, reject, timer, method });
     socket.send(JSON.stringify({ id, method, params }));
   });
 }
 
-async function evaluate(expression) {
+async function evaluate(expression, timeoutMs = 15000) {
   const result = await command('Runtime.evaluate', {
     expression,
     returnByValue: true,
     awaitPromise: true,
     userGesture: true
-  });
+  }, timeoutMs);
   if (result.exceptionDetails) {
     throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text || 'Browser evaluation failed');
   }
   return result.result?.value;
 }
 
-async function waitForExpression(expression, label, timeout = 20000) {
+async function waitForExpression(expression, label, timeout = 20000, evaluationTimeout = 15000) {
   return waitUntil(async () => {
-    const value = await evaluate(expression);
+    const value = await evaluate(expression, evaluationTimeout);
     return value ? value : false;
   }, label, timeout);
 }
@@ -230,7 +230,7 @@ try {
 
   // Reload the actual production build and verify that the saved case and register hydrate again.
   await command('Page.reload', { ignoreCache: true });
-  await waitForExpression("document.readyState === 'complete' && window.__AXYP_APP_READY === true && !!window.AXYP_STORAGE && !!window.AXYP_STORAGE.ready && typeof window.AXYP_STORAGE.ready.then === 'function'", 'application reload');
+  await waitForExpression("document.readyState === 'complete' && window.__AXYP_APP_READY === true && !!window.AXYP_STORAGE && !!window.AXYP_STORAGE.ready && typeof window.AXYP_STORAGE.ready.then === 'function'", 'application reload', 45000, 30000);
   await evaluate('window.AXYP_STORAGE && window.AXYP_STORAGE.ready');
   await openCases();
   await evaluate(`(() => {

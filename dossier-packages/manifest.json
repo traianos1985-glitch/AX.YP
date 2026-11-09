@@ -4,6 +4,10 @@
     {
       "id": "narcotics-v2",
       "file": "narcotics-v2.axyp.pack.json"
+    },
+    {
+      "id": "sudden-death-v1",
+      "file": "sudden-death-v1.axyp.pack.json"
     }
   ]
 }
