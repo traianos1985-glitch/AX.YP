@@ -195,7 +195,7 @@ export async function loadPublishedDossierPackages() {
         if (!parts['word/document.xml']) throw new Error('Published DOCX is missing its main document: ' + document.name);
         if (manifest.category === 'violence') {
           const xml = strFromU8(parts['word/document.xml']);
-          parts['word/document.xml'] = strToU8(sanitizeViolenceTemplateXml(xml));
+          parts['word/document.xml'] = strToU8(sanitizeViolenceTemplateXml(xml).replace(/(\\{\\{violence\\.investigators\\.witnessAExaminerSurnameUpper\\}\\}) \\{\\{violence\\.witnessA\\.fatherNameGenitive\\}\\}/gu, '$1 {{violence.investigators.witnessAExaminerGivenNameGenitive}}'));
         }
         loaded.push({
           id: String(document.id || entry.id + '-' + loaded.length),
@@ -204,8 +204,22 @@ export async function loadPublishedDossierPackages() {
           categoryLabel: 'Επίσημο πακέτο εφαρμογής',
           source: 'published-package',
           fidelityMode: 'placeholder-only',
-          fields: Array.isArray(document.fields) ? document.fields : [],
-          mappings: document.mappings && typeof document.mappings === 'object' ? document.mappings : {},
+          fields: manifest.category === 'violence'
+            ? [...new Set([...(Array.isArray(document.fields) ? document.fields : []),
+              'violence.accused.residenceInExamination', 'violence.accused.residencePostalCode',
+              'violence.apprehendingOfficer.fullName', 'violence.case.dateLong', 'violence.case.weekday',
+              'violence.accused.taxOffice'])]
+            : (Array.isArray(document.fields) ? document.fields : []),
+          mappings: manifest.category === 'violence'
+            ? { ...(document.mappings && typeof document.mappings === 'object' ? document.mappings : {}),
+              'violence.accused.residenceInExamination': 'violence.accused.residenceInExamination',
+              'violence.accused.residencePostalCode': 'violence.accused.residencePostalCode',
+              'violence.apprehendingOfficer.fullName': 'violence.apprehendingOfficer.fullName',
+              'violence.case.dateLong': 'violence.case.dateLong',
+              'violence.case.weekday': 'violence.case.weekday',
+              'violence.accused.taxOffice': 'violence.accused.taxOffice',
+              'violence.investigators.witnessAExaminerGivenNameGenitive': 'violence.investigators.witnessAExaminerGivenNameGenitive' }
+            : (document.mappings && typeof document.mappings === 'object' ? document.mappings : {}),
           mappingConfirmedAt: manifest.publishedAt || manifest.createdAt || 'published',
           files: Object.fromEntries(Object.entries(parts).map(([name, bytes]) => [name, Array.from(bytes)]))
         });
