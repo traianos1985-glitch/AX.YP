@@ -40,7 +40,7 @@ const profile = {
   name: 'TEST-SERVICE-NAME',
   directorate: 'TEST-SERVICE-DIRECTORATE',
   address: 'TEST-SERVICE-ADDRESS',
-  phone: '0000000000',
+  phone: 'TEST-SERVICE-PHONE',
   email: 'test-service@example.invalid',
   location: 'TEST-SERVICE-LOCATION',
   locationUpper: 'TEST-SERVICE-LOCATION-UPPER',
@@ -129,7 +129,7 @@ for (const document of packed.documents) {
     if (name.startsWith('word/') && (name.endsWith('.xml') || name.endsWith('.rels'))) {
       const source = new TextDecoder().decode(bytes);
       for (const match of source.matchAll(/\{\{\s*([\w.-]+)\s*\}\}/gu)) placeholders.add(match[1]);
-      for (const pattern of forbidden) assert.doesNotMatch(source, pattern, document.name + ' must not retain source personal identifiers');
+      for (const pattern of forbiddenSource) assert.doesNotMatch(source, pattern, document.name + ' must not retain source personal identifiers');
     }
     return [name, bytes];
   }));
@@ -179,7 +179,9 @@ try {
       if (!name.startsWith('word/') || !(name.endsWith('.xml') || name.endsWith('.rels'))) continue;
       const xml = new TextDecoder().decode(bytes);
       assert.doesNotMatch(xml, /\{\{\s*[\w.-]+\s*\}\}/u, template.name + ' must not retain unresolved placeholders in ' + name);
-      for (const pattern of forbidden) assert.doesNotMatch(xml, pattern, template.name + ' generated output must remain free of personal identifiers');
+      for (const pattern of forbiddenGenerated) assert.doesNotMatch(xml, pattern, template.name + ' generated output must remain free of personal identifiers');
+      const generatedEmails = xml.match(new RegExp(emailPattern.source, 'giu')) || [];
+      for (const email of generatedEmails) assert.equal(email, profile.email, template.name + ' may contain only the configured synthetic service email');
     }
   }
 
