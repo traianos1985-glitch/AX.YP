@@ -115,6 +115,11 @@ for (const document of manifest.documents) {
     part.encoding === 'utf8' ? strToU8(part.data) : base64ToUint8(part.data)
   ]));
   assert.ok(docxParts['word/document.xml'], document.name + ' must be a valid DOCX');
+  assert.ok(docxParts['docProps/core.xml'], document.name + ' must include reviewed core metadata');
+  const coreXml = new TextDecoder().decode(docxParts['docProps/core.xml']);
+  assert.match(coreXml, /<dc:creator>AX\\.YP<\\/dc:creator>/u, document.name + ' must not retain the source document author');
+  assert.match(coreXml, /<cp:lastModifiedBy>AX\\.YP<\\/cp:lastModifiedBy>/u, document.name + ' must not retain the source Word user identifier');
+  assert.doesNotMatch(coreXml, /<dcterms:(?:created|modified)>/u, document.name + ' must not expose original document timestamps');
   const sourceXml = Object.entries(docxParts).filter(([name]) => name.startsWith('word/') && (name.endsWith('.xml') || name.endsWith('.rels')));
   const sourceText = sourceXml.map(([, bytes]) => new TextDecoder().decode(bytes)).join('\n');
   const placeholders = [...sourceText.matchAll(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu)].map((match) => match[1]);
