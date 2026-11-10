@@ -21,7 +21,7 @@ assert.equal(manifest.documents.length, 6, 'The official package must contain al
 const definitions = getDossierFieldDefinitions('violence');
 const definedPaths = new Set(definitions.map((field) => field.path));
 assert.ok(DOSSIER_CATEGORY_FIELDS.violence);
-for (const path of ['violence.accused.residenceInExamination', 'violence.accused.residencePostalCode', 'violence.apprehendingOfficer.fullName', 'violence.case.dateLong', 'violence.case.weekday', 'violence.investigators.witnessBExaminerGivenNameGenitive']) assert.ok(definedPaths.has(path), 'Missing privacy field: ' + path);
+for (const path of ['violence.accused.residenceInExamination', 'violence.accused.residencePostalCode', 'violence.accused.surname', 'violence.accused.fullNameGenitive', 'violence.apprehendingOfficer.fullName', 'violence.case.dateLong', 'violence.case.weekday', 'violence.investigators.witnessBExaminerGivenNameGenitive']) assert.ok(definedPaths.has(path), 'Missing privacy field: ' + path);
 const sanitizedSample = sanitizeViolenceTemplateXml('ΜΕΛΙΓΑΛΑ 24002 Αθήνα Σκάλα Οιχαλίας Καλαμάτας 13-09-2026 Κυριακή');
 assert.doesNotMatch(sanitizedSample, /ΜΕΛΙΓΑΛΑ|24002|Αθήνα|Σκάλα Οιχαλίας|Καλαμάτας|13-09-2026|Κυριακή/u);
 assert.match(sanitizedSample, /violence\.accused\.residencePostalCode/u);
