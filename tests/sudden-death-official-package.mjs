@@ -65,8 +65,8 @@ const forbidden = [
   /\b\d{9}\b/u,
   /\b\d{10,13}\b/u,
   emailPattern,
-  /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\s*\d{6,8}(?!\d)/iu,
-  /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{2,3}[- ]?\d{3,4}(?!\d)/iu
+  /(?<![A-Za-z0-9\u0370-\u03ff])[A-Z\u0391-\u03a9]{1,2}\s*\d{6,8}(?![A-Za-z0-9\u0370-\u03ff])/u,
+  /(?<![A-Za-z0-9\u0370-\u03ff])[A-Z\u0391-\u03a9]{2,3}[- ]\d{3,4}(?![A-Za-z0-9\u0370-\u03ff])/u
 ];
 
 for (const document of manifest.documents) {

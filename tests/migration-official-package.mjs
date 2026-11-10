@@ -44,7 +44,7 @@ const profile = {
   regionalDirectorate: 'ΓΕΝΙΚΗ ΠΕΡΙΦΕΡΕΙΑΚΗ ΑΣΤΥΝΟΜΙΚΗ ΔΙΕΥΘΥΝΣΗ',
   regionalDirectoratePrefix: 'ΓΕΝΙΚΗ ΠΕΡΙΦΕΡΕΙΑΚΗ ΑΣΤΥΝΟΜΙΚΗ',
   address: 'Οδός Παραδείγματος 1',
-  phone: '2100000000',
+  phone: 'TEST-SERVICE-PHONE',
   email: 'service@example.police.gr',
   location: 'Παράδειγμα',
   locationUpper: 'ΠΑΡΑΔΕΙΓΜΑ',
@@ -100,7 +100,7 @@ const syntheticCase = {
     birthPlace: 'Αλβανία',
     residence: 'Αγρίλη',
     nationalityGenitive: 'Αλβανίας',
-    idNumber: 'AB1234567',
+    idNumber: 'TEST-OFFENDER-IDNUMBER',
     idDate: '2024-01-10',
     idService: 'Αρχές Αλβανίας'
   },
@@ -124,12 +124,13 @@ const syntheticCase = {
   categoryData
 };
 
+const emailPattern = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu;
 const forbidden = [
   /\b\d{9}\b/u,
   /\b\d{10,13}\b/u,
-  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu,
-  /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\s*\d{6,8}(?!\d)/iu,
-  /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{2,3}[- ]?\d{3,4}(?!\d)/iu
+  emailPattern,
+  /(?<![A-Za-z0-9\u0370-\u03ff])[A-Z\u0391-\u03a9]{1,2}\s*\d{6,8}(?![A-Za-z0-9\u0370-\u03ff])/u,
+  /(?<![A-Za-z0-9\u0370-\u03ff])[A-Z\u0391-\u03a9]{2,3}[- ]\d{3,4}(?![A-Za-z0-9\u0370-\u03ff])/u
 ];
 
 for (const document of manifest.documents) {
@@ -167,7 +168,14 @@ for (const document of manifest.documents) {
     if (!name.startsWith('word/') || !(name.endsWith('.xml') || name.endsWith('.rels'))) continue;
     const xml = new TextDecoder().decode(bytes);
     assert.doesNotMatch(xml, /\{\{\s*[\w.-]+\s*\}\}/u, document.name + ' must not retain unresolved placeholders in ' + name);
-    for (const pattern of forbidden) assert.doesNotMatch(xml, pattern, document.name + ' generated output must remain anonymized');
+    const generatedEmails = xml.match(new RegExp(emailPattern.source, 'giu')) || [];
+    for (const email of generatedEmails) {
+      assert.equal(email, profile.email, document.name + ' may contain only the explicitly configured synthetic service-profile email, never an email from the source dossier');
+    }
+    for (const pattern of forbidden) {
+      if (pattern === emailPattern) continue;
+      assert.doesNotMatch(xml, pattern, document.name + ' generated output must remain anonymized');
+    }
 
     // xmllint check
     const xmllint = spawnSync('xmllint', ['--noout', '-'], { input: Buffer.from(bytes) });
