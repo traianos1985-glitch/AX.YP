@@ -128,7 +128,7 @@ const forbiddenGenerated = [
 
 for (const document of packed.documents) {
   assert.ok(Array.isArray(document.fields) && document.fields.length, document.name + ' must declare its placeholders');
-  assert.deepEqual(Object.keys(document.mappings).sort(), [...document.fields].sort(), document.name + ' must map every declared placeholder exactly once');
+  assert.ok(document.fields.every((field) => document.mappings[field]), document.name + ' must map every required placeholder');
   const placeholders = new Set();
   const parts = Object.fromEntries(Object.entries(document.parts).map(([name, part]) => {
     const bytes = part.encoding === 'utf8' ? new TextEncoder().encode(part.data) : base64ToUint8(part.data);
@@ -139,7 +139,7 @@ for (const document of packed.documents) {
     }
     return [name, bytes];
   }));
-  assert.deepEqual([...placeholders].sort(), [...document.fields].sort(), document.name + ' placeholders and declared fields must match');
+  assert.deepEqual([...placeholders].sort(), Object.keys(document.mappings).sort(), document.name + ' every placeholder must have exactly one mapping');
   assert.ok(parts['word/document.xml'], document.name + ' must contain the main Word document');
   assert.ok(parts['docProps/core.xml'], document.name + ' must contain sanitized document properties');
   const coreXml = new TextDecoder().decode(parts['docProps/core.xml']);
@@ -178,9 +178,16 @@ try {
   assert.equal(gokTemplates.length, 5, 'The published loader must expose all five GOK documents');
   assert.deepEqual(gokTemplates.map((template) => template.name), packed.documents.map((doc) => doc.name));
 
+  const optionalCase = structuredClone(syntheticCase);
+  setPath(optionalCase.categoryData, 'gok.case.complainantFullName', '');
+  setPath(optionalCase.categoryData, 'gok.policeWitness.religion', '');
+  setPath(optionalCase.categoryData, 'gok.service.fax', '');
+  setPath(optionalCase.categoryData, 'gok.case.hearingDate', 'TEST-HEARING-DATE');
+
   for (const template of gokTemplates) {
-    assert.deepEqual(getMissingTemplateFields(template, syntheticCase), [], template.name + ' must have all mapped synthetic fields populated');
-    const generated = unzipSync(buildDocx(template, syntheticCase));
+    assert.deepEqual(getMissingTemplateFields(template, syntheticCase), [], template.name + ' must have all required synthetic fields populated');
+    assert.deepEqual(getMissingTemplateFields(template, optionalCase), [], template.name + ' must not require optional category fields');
+    const generated = unzipSync(buildDocx(template, optionalCase));
     for (const [name, bytes] of Object.entries(generated)) {
       if (!name.startsWith('word/') || !(name.endsWith('.xml') || name.endsWith('.rels'))) continue;
       const xml = new TextDecoder().decode(bytes);
