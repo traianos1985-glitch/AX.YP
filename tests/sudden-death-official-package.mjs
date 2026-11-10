@@ -70,13 +70,6 @@ const forbidden = [
 ];
 
 for (const document of manifest.documents) {
-  /\b\d{9}\b/u,
-  /\b\d{10,13}\b/u,
-  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu,
-  /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\s*\d{6,8}(?!\d)/iu,
-  /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{2,3}[- ]?\d{3,4}(?!\d)/iu
-];
-
 for (const document of manifest.documents) {
   const placeholders = new Set();
   const parts = Object.fromEntries(Object.entries(document.parts).map(([name, part]) => {
