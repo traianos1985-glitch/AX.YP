@@ -184,6 +184,7 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('violence.accused.fatherName', 'Κατηγορούμενος', 'Πατρώνυμο κατηγορουμένου', 'text', false),
     defineDossierField('violence.accused.fatherNameUpper', 'Κατηγορούμενος', 'Πατρώνυμο κατηγορουμένου (κεφαλαία)', 'text', false),
     defineDossierField('violence.accused.fullNameGenitive', 'Κατηγορούμενος', 'Ονοματεπώνυμο κατηγορουμένου (γενική)', 'text', false),
+    defineDossierField('violence.accused.givenName', 'Κατηγορούμενος', 'Όνομα κατηγορουμένου', 'text', false),
     defineDossierField('violence.accused.givenNameUpper', 'Κατηγορούμενος', 'Όνομα κατηγορουμένου (κεφαλαία)', 'text', false),
     defineDossierField('violence.accused.idDate', 'Κατηγορούμενος', 'Ημερομηνία έκδοσης ταυτότητας', 'date', false),
     defineDossierField('violence.accused.idNumber', 'Κατηγορούμενος', 'Αριθμός ταυτότητας κατηγορουμένου', 'text', false),
