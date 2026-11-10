@@ -35,6 +35,11 @@ export const DOSSIER_COMPLETENESS_RULES = {
     { label: 'Αλλοδαπός / κατηγορούμενος', fields: [['offender-surname','Επώνυμο'],['offender-name','Όνομα'],['offender-id-number','Αριθμός διαβατηρίου / ταυτότητας']] },
     { label: 'Μάρτυρας και εξέταση', fields: [['timeline-witness-start','Έναρξη εξέτασης αστυνομικού μάρτυρα'],['timeline-examination-start','Έναρξη εξέτασης κατηγορουμένου']] }
   ] },
+  violence: { label: 'Βία κατά υπαλλήλων και δικαστικών προσώπων και Απείθεια', guidance: 'Έλεγξε χωριστά τα στοιχεία των δύο αστυνομικών μαρτύρων, του συλλαβόντος αστυνομικού και των ανακριτικών υπαλλήλων. Οι ρόλοι και οι τυχόν διαφορετικές καταγραφές ανά έγγραφο δεν συγχωνεύονται αυτόματα.', groups: [
+    { label: 'Περιστατικό και σύλληψη', fields: [['case-location','Τόπος'],['case-incident-date','Ημερομηνία περιστατικού'],['case-incident-time','Ώρα περιστατικού'],['timeline-arrest-start','Έναρξη έκθεσης σύλληψης']] },
+    { label: 'Κατηγορούμενος', fields: [['offender-surname','Επώνυμο'],['offender-name','Όνομα'],['offender-id-number','Αριθμός ταυτότητας']] },
+    { label: 'Αστυνομικοί μάρτυρες και εξέταση', fields: [['timeline-witness-start','Έναρξη εξέτασης μάρτυρα'],['timeline-examination-start','Έναρξη εξέτασης κατηγορουμένου']] }
+  ] },
   commerce: { label: 'Παρεμπόριο', guidance: 'Έλεγξε χωριστά τα στοιχεία κάθε εμπλεκομένου και την καταγραφή των αντικειμένων / εμπορευμάτων.', groups: [
     { label: 'Πρώτο εμπλεκόμενο πρόσωπο', fields: [['commerce-offender-a-full-name','Ονοματεπώνυμο'],['commerce-offender-a-id','Αριθμός ταυτότητας'],['commerce-offender-a-address','Διεύθυνση']] },
     { label: 'Δεύτερο εμπλεκόμενο πρόσωπο', fields: [['commerce-offender-b-full-name','Ονοματεπώνυμο'],['commerce-offender-b-id','Αριθμός ταυτότητας'],['commerce-offender-b-address','Διεύθυνση']] },
