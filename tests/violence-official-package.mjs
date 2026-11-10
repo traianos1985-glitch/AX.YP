@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { unzipSync } from '../vendor/fflate.js';
 import { DOSSIER_CATEGORY_FIELDS, getDossierFieldDefinitions, setDossierFieldValue } from '../dossier-fields.js';
-import { buildCategoryArchive, loadPublishedDossierPackages, sanitizeViolenceTemplateXml } from '../template-library.js';
+import { buildCategoryArchive, getMissingTemplateFields, loadPublishedDossierPackages, sanitizeViolenceTemplateXml } from '../template-library.js';
 
 const catalog = JSON.parse(await readFile(new URL('../dossier-packages/manifest.json', import.meta.url), 'utf8'));
 const catalogEntry = catalog.packages.find((entry) => entry.id === 'violence-v1');
@@ -91,6 +91,10 @@ try {
     location: 'TEST LOCATION',
     categoryData
   };
+  for (const template of violenceTemplates) {
+    const missing = getMissingTemplateFields(template, item);
+    assert.deepEqual(missing, [], template.name + ' must have all declared mapped values populated: ' + JSON.stringify(missing));
+  }
   const archive = unzipSync(buildCategoryArchive(violenceTemplates, item));
   assert.equal(Object.keys(archive).length, 6, 'The category export must generate six Word documents');
   for (const [name, bytes] of Object.entries(archive)) {
