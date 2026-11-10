@@ -21,7 +21,7 @@ assert.equal(manifest.documents.length, 6, 'The official package must contain al
 const definitions = getDossierFieldDefinitions('violence');
 const definedPaths = new Set(definitions.map((field) => field.path));
 assert.ok(DOSSIER_CATEGORY_FIELDS.violence);
-for (const path of ['violence.accused.residenceLocality', 'violence.accused.birthPlace', 'violence.accused.residenceInExamination', 'violence.accused.residencePostalCode', 'violence.accused.surname', 'violence.accused.fullNameGenitive', 'violence.accused.givenName', 'violence.apprehendingOfficer.fullName', 'violence.apprehendingOfficer.rank', 'violence.case.dateLong', 'violence.case.weekday', 'violence.investigators.witnessBExaminerGivenNameGenitive']) assert.ok(definedPaths.has(path), 'Missing privacy field: ' + path);
+for (const path of ['violence.accused.residenceLocality', 'violence.accused.birthPlace', 'violence.accused.residenceInExamination', 'violence.accused.residencePostalCode', 'violence.accused.surname', 'violence.accused.fullNameGenitive', 'violence.accused.givenName', 'violence.apprehendingOfficer.fullName', 'violence.apprehendingOfficer.rank', 'violence.case.dateLong', 'violence.case.weekday', 'violence.case.geeDocumentNumber', 'violence.investigators.witnessBExaminerGivenNameGenitive']) assert.ok(definedPaths.has(path), 'Missing privacy field: ' + path);
 assert.ok(definitions.every((field) => field.required === false),
   'Source-specific fields must remain optional until the operator confirms them');
 const commonPaths = new Set(['case.location', 'case.dateGreek', 'service.name', 'service.phone']);
@@ -57,6 +57,9 @@ for (const document of manifest.documents) {
   const xml = new TextDecoder().decode(docxParts['word/document.xml']);
   if (document.name.startsWith('04_')) {
     assert.ok(xml.includes('{{violence.investigators.witnessBExaminerGivenNameGenitive}}'), 'accused examination must map the B investigator given name');
+  }
+  if (document.name.startsWith('06_')) {
+    assert.ok(xml.includes('{{violence.case.geeDocumentNumber}}'), 'forwarding document must map the G.E.E. document number');
   }
   if (document.name.startsWith('05_')) {
     assert.ok(xml.includes('{{violence.investigators.witnessAExaminerGivenNameGenitive}}'), 'arrest report must map the A investigator given name');

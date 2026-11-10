@@ -200,6 +200,7 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('violence.apprehendingOfficer.fullName', 'Συλλαβών αστυνομικός', 'Ονοματεπώνυμο συλλαβόντος', 'text', false),
     defineDossierField('violence.case.dateLong', 'Περιστατικό', 'Ημερομηνία σε μορφή εγγράφου', 'text', false),
     defineDossierField('violence.case.weekday', 'Περιστατικό', 'Ημέρα εβδομάδας', 'text', false),
+    defineDossierField('violence.case.geeDocumentNumber', 'Έγγραφα / συνημμένα', 'Αριθμός εγγράφου Γ.Ε.Ε.', 'text', false),
     defineDossierField('violence.accused.surname', 'Κατηγορούμενος', 'Επώνυμο κατηγορουμένου', 'text', false),
     defineDossierField('violence.accused.taxId', 'Κατηγορούμενος', 'Α.Φ.Μ. κατηγορουμένου', 'text', false),
     defineDossierField('violence.accused.taxOffice', 'Κατηγορούμενος', 'Δ.Ο.Υ. κατηγορουμένου', 'text', false),
