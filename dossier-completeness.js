@@ -30,6 +30,11 @@ export const DOSSIER_COMPLETENESS_RULES = {
     { label: 'Κατασκήνωση / οχήματα', fields: [['camping-outdoor-items','Εξωτερικά αντικείμενα'],['camping-no-designated-site','Στοιχεία μη ύπαρξης καθορισμένου χώρου'],['camping-vehicle-type','Τύπος οχήματος'],['camping-vehicle-registration','Αριθμός κυκλοφορίας']] },
     { label: 'Πρόσωπο / διερμηνεία', fields: [['offender-surname','Επώνυμο εμπλεκομένου'],['offender-name','Όνομα εμπλεκομένου'],['camping-interpreter-full-name','Ονοματεπώνυμο διερμηνέα'],['camping-interpreter-language','Γλώσσα διερμηνείας']] }
   ] },
+  migration: { label: 'Απελάσεις αλλοδαπών', guidance: 'Έλεγξε τα στοιχεία ταυτοποίησης του αλλοδαπού, τα ταξιδιωτικά έγγραφα, τα στοιχεία διερμηνείας, την παράνομη είσοδο και παραμονή, τον αστυνομικό μάρτυρα, τη σύλληψη και τις πραγματικές ώρες ενεργειών.', groups: [
+    { label: 'Περιστατικό και σύλληψη', fields: [['case-location','Τόπος'],['case-incident-date','Ημερομηνία περιστατικού'],['case-incident-time','Ώρα περιστατικού'],['timeline-arrest-start','Έναρξη έκθεσης σύλληψης']] },
+    { label: 'Αλλοδαπός / κατηγορούμενος', fields: [['offender-surname','Επώνυμο'],['offender-name','Όνομα'],['offender-id-number','Αριθμός διαβατηρίου / ταυτότητας']] },
+    { label: 'Μάρτυρας και εξέταση', fields: [['timeline-witness-start','Έναρξη εξέτασης αστυνομικού μάρτυρα'],['timeline-examination-start','Έναρξη εξέτασης κατηγορουμένου']] }
+  ] },
   commerce: { label: 'Παρεμπόριο', guidance: 'Έλεγξε χωριστά τα στοιχεία κάθε εμπλεκομένου και την καταγραφή των αντικειμένων / εμπορευμάτων.', groups: [
     { label: 'Πρώτο εμπλεκόμενο πρόσωπο', fields: [['commerce-offender-a-full-name','Ονοματεπώνυμο'],['commerce-offender-a-id','Αριθμός ταυτότητας'],['commerce-offender-a-address','Διεύθυνση']] },
     { label: 'Δεύτερο εμπλεκόμενο πρόσωπο', fields: [['commerce-offender-b-full-name','Ονοματεπώνυμο'],['commerce-offender-b-id','Αριθμός ταυτότητας'],['commerce-offender-b-address','Διεύθυνση']] },
@@ -39,7 +44,6 @@ export const DOSSIER_COMPLETENESS_RULES = {
 
 const GENERIC_LABELS = {
   domestic: 'Ενδοοικογενειακή βία',
-  migration: 'Απελάσεις αλλοδαπών',
   traffic: 'Τροχαία ατυχήματα',
   kok: 'Παραβάσεις Κ.Ο.Κ.',
   animal: 'Προστασία ζώων',

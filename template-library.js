@@ -80,6 +80,15 @@ const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
 const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } catch (_) { return []; } };
 
+// Keep the published package's historical internal label compatible while presenting
+// the exact source-document title in the generated file list and download name.
+export function resolvePublishedDocumentName(category, name) {
+  if (category === 'migration' && name === '05_ΕΓΓΡΑΦΟ_ΔΙΑΛΟΓΗΣ_ΑΣΥΛΟΥ.docx') {
+    return '05_ΕΓΓΡΑΦΟ_ΓΙΑ_ΑΛΛΟΔΑΠΟ_ΠΟΥ_ΔΕΝ_ΕΧΕΙ_ΣΥΛΛΗΦΘΕΙ_ΞΑΝΑ.docx';
+  }
+  return name;
+}
+
 export async function loadPublishedDossierPackages() {
   if (publishedPackagesPromise) return publishedPackagesPromise;
   publishedPackagesPromise = (async () => {
@@ -139,7 +148,7 @@ export async function loadPublishedDossierPackages() {
           if (!parts['word/document.xml']) throw new Error('Published DOCX is missing its main document: ' + document.name);
           loaded.push({
             id: String(document.id || entry.id + '-' + loaded.length),
-            name: String(document.name || 'Έντυπο Word'),
+            name: resolvePublishedDocumentName(packed.category, String(document.name || 'Έντυπο Word')),
             category: packed.category,
             categoryLabel: 'Επίσημο πακέτο εφαρμογής',
             source: 'published-package',
@@ -652,6 +661,12 @@ export function valueFor(path, item) {
     'service.email': serviceProfile.email,
     'service.prosecutor': serviceProfile.prosecutor,
     'service.chemicalService': serviceProfile.chemicalService,
+    'service.locationUpper': serviceProfile.locationUpper || (serviceProfile.location ? String(serviceProfile.location).toLocaleUpperCase('el-GR') : ''),
+    'service.postalCode': serviceProfile.postalCode || '',
+    'service.regionalDirectorate': serviceProfile.regionalDirectorate || '',
+    'service.regionalDirectoratePrefix': serviceProfile.regionalDirectoratePrefix || '',
+    'service.commanderFullName': serviceProfile.commanderFullName || '',
+    'service.commanderRank': serviceProfile.commanderRank || '',
     'case.title': item.title,
     'case.protocolNumber': item.protocolNumber,
     'case.offence': item.offence,
@@ -665,7 +680,7 @@ export function valueFor(path, item) {
     'case.time': item.time,
 'incident.date': formatDateToGreekNumeric((item.incident && item.incident.date) || item.incidentDate || item.date),
   'incident.time': (item.incident && item.incident.time) || item.incidentTime || item.time,
-  'incident.location': (item.incident && item.incident.location) || '',
+  'incident.location': (item.incident && item.incident.location) || item.incidentLocation || '',
   'case.location': item.location || serviceProfile.location || '',
     'case.prosecutor': item.prosecutor,
     'case.notes': item.notes,
@@ -767,18 +782,18 @@ export function valueFor(path, item) {
     'counterfeit.depositor.taxId': depositor.taxId,
     'counterfeit.depositor.phone': depositor.phone,
     'counterfeit.depositor.email': depositor.email,
-    'timeline.witness.startTime': getTime('witnessStartTime'),
-    'timeline.witness.endTime': getTime('witnessEndTime'),
-    'timeline.arrest.startTime': getTime('arrestStartTime'),
-    'timeline.arrest.endTime': getTime('arrestEndTime'),
-    'timeline.seizure.startTime': getTime('seizureStartTime'),
-    'timeline.seizure.endTime': getTime('seizureEndTime'),
-    'timeline.notification.startTime': getTime('notificationStartTime'),
-    'timeline.notification.endTime': getTime('notificationEndTime'),
-    'timeline.weighing.startTime': getTime('weighingStartTime'),
-    'timeline.weighing.endTime': getTime('weighingEndTime'),
-    'timeline.examination.startTime': getTime('examinationStartTime'),
-    'timeline.examination.endTime': getTime('examinationEndTime'),
+    'timeline.witness.startTime': (timeline.witness && timeline.witness.startTime) || getTime('witnessStartTime'),
+    'timeline.witness.endTime': (timeline.witness && timeline.witness.endTime) || getTime('witnessEndTime'),
+    'timeline.arrest.startTime': (timeline.arrest && timeline.arrest.startTime) || getTime('arrestStartTime'),
+    'timeline.arrest.endTime': (timeline.arrest && timeline.arrest.endTime) || getTime('arrestEndTime'),
+    'timeline.seizure.startTime': (timeline.seizure && timeline.seizure.startTime) || getTime('seizureStartTime'),
+    'timeline.seizure.endTime': (timeline.seizure && timeline.seizure.endTime) || getTime('seizureEndTime'),
+    'timeline.notification.startTime': (timeline.notification && timeline.notification.startTime) || getTime('notificationStartTime'),
+    'timeline.notification.endTime': (timeline.notification && timeline.notification.endTime) || getTime('notificationEndTime'),
+    'timeline.weighing.startTime': (timeline.weighing && timeline.weighing.startTime) || getTime('weighingStartTime'),
+    'timeline.weighing.endTime': (timeline.weighing && timeline.weighing.endTime) || getTime('weighingEndTime'),
+    'timeline.examination.startTime': (timeline.examination && timeline.examination.startTime) || getTime('examinationStartTime'),
+    'timeline.examination.endTime': (timeline.examination && timeline.examination.endTime) || getTime('examinationEndTime'),
     'timeline.release.startTime': getTime('releaseStartTime'),
     'case.witnessStartTime': getTime('witnessStartTime'),
     'case.witnessEndTime': getTime('witnessEndTime'),
@@ -818,6 +833,8 @@ export function valueFor(path, item) {
     'offender.birthPlace': offender.birthPlace,
     'offender.city': offender.city,
     'offender.address': offender.address,
+    'offender.residence': offender.residence || offender.address || offender.city || '',
+    'offender.nationalityGenitive': offender.nationalityGenitive || offender.nationality || '',
     'offender.idNumber': offender.idNumber,
     'offender.idDate': formatDateToGreekNumeric(offender.idDate),
     'offender.idService': offender.idService,
