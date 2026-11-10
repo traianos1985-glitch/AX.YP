@@ -96,7 +96,7 @@ for (const path of [
   'violence.accused.residenceLocality',
   'violence.investigators.accusedExaminerSurname',
   'violence.investigators.witnessAExaminerSurname',
-  'violence.investigators.witnessBExaminerSurname',
+  'violence.investigators.witnessBExaminerSurnameUpper',
   'violence.service.areaGenitive',
   'violence.service.directorateGenitive'
 ]) assert.ok(violencePaths.includes(path), 'Violence dossier must expose ' + path);
