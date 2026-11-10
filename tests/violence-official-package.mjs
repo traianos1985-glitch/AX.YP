@@ -55,6 +55,13 @@ for (const document of manifest.documents) {
     assert.doesNotMatch(partXml, /(?<!\d)\d{1,2}[./-]\d{1,2}[./-](?:19|20)\d{2}(?!\d)/u, document.name + ' must not retain fixed case dates in ' + partName);
   }
   const xml = new TextDecoder().decode(docxParts['word/document.xml']);
+  if (document.name.startsWith('04_')) {
+    assert.ok(xml.includes('{{violence.investigators.witnessBExaminerGivenNameGenitive}}'), 'accused examination must map the B investigator given name');
+  }
+  if (document.name.startsWith('05_')) {
+    assert.ok(xml.includes('{{violence.investigators.witnessAExaminerGivenNameGenitive}}'), 'arrest report must map the A investigator given name');
+    assert.ok(xml.includes('{{violence.investigators.witnessBExaminerGivenNameGenitive}}'), 'arrest report must map the B investigator given name');
+  }
   const placeholders = [...new Set([...xml.matchAll(/\{\{([^{}]+)\}\}/gu)].map((match) => match[1]))];
   for (const placeholder of placeholders) {
     assert.ok(Object.hasOwn(document.mappings, placeholder),
