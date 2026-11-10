@@ -80,6 +80,15 @@ const $ = (id) => document.getElementById(id);
 const storage = () => window.AXYP_STORAGE || localStorage;
 const read = () => { try { return JSON.parse(storage().getItem(KEY) || '[]'); } catch (_) { return []; } };
 
+// Keep the published package's historical internal label compatible while presenting
+// the exact source-document title in the generated file list and download name.
+export function resolvePublishedDocumentName(category, name) {
+  if (category === 'migration' && name === '05_ΕΓΓΡΑΦΟ_ΔΙΑΛΟΓΗΣ_ΑΣΥΛΟΥ.docx') {
+    return '05_ΕΓΓΡΑΦΟ_ΓΙΑ_ΑΛΛΟΔΑΠΟ_ΠΟΥ_ΔΕΝ_ΕΧΕΙ_ΣΥΛΛΗΦΘΕΙ_ΞΑΝΑ.docx';
+  }
+  return name;
+}
+
 export async function loadPublishedDossierPackages() {
   if (publishedPackagesPromise) return publishedPackagesPromise;
   publishedPackagesPromise = (async () => {
@@ -139,7 +148,7 @@ export async function loadPublishedDossierPackages() {
           if (!parts['word/document.xml']) throw new Error('Published DOCX is missing its main document: ' + document.name);
           loaded.push({
             id: String(document.id || entry.id + '-' + loaded.length),
-            name: String(document.name || 'Έντυπο Word'),
+            name: resolvePublishedDocumentName(packed.category, String(document.name || 'Έντυπο Word')),
             category: packed.category,
             categoryLabel: 'Επίσημο πακέτο εφαρμογής',
             source: 'published-package',

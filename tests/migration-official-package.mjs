@@ -4,6 +4,8 @@ import { spawnSync } from 'node:child_process';
 import { unzipSync, unzlibSync, strFromU8 } from '../vendor/fflate.js';
 import { base64ToUint8, buildDocx, getMissingTemplateFields } from '../template-library.js';
 import { getDossierFieldDefinitions } from '../dossier-fields.js';
+import { evaluateDossierCompleteness } from '../dossier-completeness.js';
+import { resolvePublishedDocumentName } from '../template-library.js';
 
 const catalog = JSON.parse(await readFile(new URL('../dossier-packages/manifest.json', import.meta.url), 'utf8'));
 const entry = catalog.packages.find((item) => item.id === 'migration-v1');
@@ -21,14 +23,20 @@ const manifest = JSON.parse(strFromU8(unzlibSync(packageBytes)));
 assert.equal(manifest.schemaVersion, 1);
 assert.equal(manifest.category, 'migration');
 assert.equal(manifest.documents.length, 6);
-assert.deepEqual(manifest.documents.map((doc) => doc.name), [
+assert.deepEqual(manifest.documents.map((doc) => resolvePublishedDocumentName('migration', doc.name)), [
   '01_ΚΑΤΑΘΕΣΗ_ΑΣΤΥΝΟΜΙΚΟΥ.docx',
   '02_ΕΚΘΕΣΗ_ΣΥΛΛΗΨΗΣ.docx',
   '03_ΕΚΘΕΣΗ_ΕΞΕΤΑΣΗΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ_ΜΕ_ΔΙΕΡΜΗΝΕΑ.docx',
   '04_ΔΕΛΤΙΟ_ΣΤΟΙΧΕΙΩΝ_ΤΑΥΤΟΤΗΤΑΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ.docx',
   '05_ΕΓΓΡΑΦΟ_ΔΙΑΛΟΓΗΣ_ΑΣΥΛΟΥ.docx',
   '06_ΥΠΟΒΟΛΗ_ΔΙΚΟΓΡΑΦΙΑΣ.docx'
-]);
+ ]);
+assert.equal(resolvePublishedDocumentName('migration', '05_ΕΓΓΡΑΦΟ_ΔΙΑΛΟΓΗΣ_ΑΣΥΛΟΥ.docx'), '05_ΕΓΓΡΑΦΟ_ΓΙΑ_ΑΛΛΟΔΑΠΟ_ΠΟΥ_ΔΕΝ_ΕΧΕΙ_ΣΥΛΛΗΦΘΕΙ_ΞΑΝΑ.docx');
+const migrationChecklist = evaluateDossierCompleteness('migration', {}, () => '');
+assert.equal(migrationChecklist.hasCategoryChecklist, true, 'Migration must have a category-specific completeness checklist');
+assert.equal(migrationChecklist.categoryLabel, 'Απελάσεις αλλοδαπών');
+assert.ok(migrationChecklist.groups.length >= 3, 'Migration checklist must expose its category groups');
+assert.ok(migrationChecklist.groups.every((group) => group.total > 0), 'Migration checklist groups must contain fields');
 
 const profile = {
   name: 'ΑΣΤΥΝΟΜΙΚΟ ΤΜΗΜΑ ΠΑΡΑΔΕΙΓΜΑΤΟΣ',
