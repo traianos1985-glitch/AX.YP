@@ -2,11 +2,11 @@ export const SERVICE_PROFILE_STORAGE_KEY = 'axyp-service-profile-v1';
 const KEY = SERVICE_PROFILE_STORAGE_KEY;
 export const SERVICE_PROFILE_FIELDS = Object.freeze(['name', 'directorate', 'address', 'phone', 'email', 'prosecutor', 'chemicalService', 'location', 'operator', 'operatorDocument', 'secondOfficer', 'secondOfficerDocument']);
 export const DEFAULT_SERVICE_PROFILE = Object.freeze({
-  name: 'Αστυνομικό Τμήμα Τριφυλίας',
-  location: 'Κυπαρισσία',
-  operator: "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός",
+  name: '',
+  location: '',
+  operator: '',
   operatorDocument: '',
-  secondOfficer: 'Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος',
+  secondOfficer: '',
   secondOfficerDocument: ''
 });
 const clean = (value) => String(value ?? '').trim();
