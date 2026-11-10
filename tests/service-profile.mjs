@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS, SERVICE_PROFILE_STORAGE_KEY, getServiceProfileBackupValue, getServiceProfileRestoreEntry, toGreekGenitiveFullName, getServiceProfileOperatorIdentity } from '../service-profile.js';
 
 assert.equal(SERVICE_PROFILE_STORAGE_KEY, 'axyp-service-profile-v1');
-assert.equal(toGreekGenitiveFullName("Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός"), "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού");
-assert.equal(toGreekGenitiveFullName('Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος'), 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου');
-assert.deepEqual(getServiceProfileOperatorIdentity({ operator: "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός", name: 'Αστυνομικό Τμήμα Τριφυλίας' }), { fullName: "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός", documentFullName: "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού", rank: "Υπαστυνόμος Β'", surname: 'ΓΙΟΥΡΟΥΚΗΣ', name: 'Τραϊανός', service: 'Αστυνομικό Τμήμα Τριφυλίας', residence: 'Αστυνομικό Τμήμα Τριφυλίας' });
+assert.equal(toGreekGenitiveFullName("Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος"), "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού");
+assert.equal(toGreekGenitiveFullName('Αρχιφύλακας ΔΟΚΙΜΗΣ Γεώργιος'), 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου');
+assert.deepEqual(getServiceProfileOperatorIdentity({ operator: "Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος", name: 'Αστυνομικό Τμήμα Δοκιμής' }), { fullName: "Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος", documentFullName: "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού", rank: "Υπαστυνόμος Β'", surname: 'ΔΟΚΙΜΗΣ', name: 'Αλέξανδρος', service: 'Αστυνομικό Τμήμα Δοκιμής', residence: 'Αστυνομικό Τμήμα Δοκιμής' });
 const values = new Map();
 const storage = {
   getItem(key) { return values.has(key) ? values.get(key) : null; },
@@ -12,13 +12,13 @@ const storage = {
 };
 const empty = readServiceProfile(storage);
 assert.deepEqual(Object.keys(empty), [...SERVICE_PROFILE_FIELDS]);
-assert.equal(empty.name, 'Αστυνομικό Τμήμα Τριφυλίας');
-assert.equal(empty.location, 'Κυπαρισσία');
-assert.equal(empty.operator, "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός");
+assert.equal(empty.name, '');
+assert.equal(empty.location, '');
+assert.equal(empty.operator, '');
 assert.equal(empty.operatorDocument, '');
-assert.equal(empty.secondOfficer, 'Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος');
+assert.equal(empty.secondOfficer, '');
 assert.equal(empty.secondOfficerDocument, '');
-assert.ok(Object.entries(empty).filter(([field]) => !['name', 'location', 'operator', 'operatorDocument', 'secondOfficer', 'secondOfficerDocument'].includes(field)).every(([, value]) => value === ''));
+assert.ok(Object.values(empty).every((value) => value === ''), 'A fresh installation must not inherit another service or officer identity');
 assert.equal(getServiceProfileBackupValue(storage), JSON.stringify(empty), 'An empty profile must also be backed up to prevent stale cross-installation values');
 
 const saved = writeServiceProfile(storage, {
@@ -38,8 +38,8 @@ const saved = writeServiceProfile(storage, {
 assert.equal(saved.name, 'Αστυνομικό Τμήμα Δοκιμής');
 assert.equal(saved.chemicalService, 'Χημική Υπηρεσία Δοκιμής');
 assert.equal(saved.operator, 'Υπαστυνόμος Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος');
-const exactOperator = writeServiceProfile(storage, { operator: '  Υ/Β΄ ΓΙΟΥΡΟΥΚΗΣ Τραϊανός  ' });
-assert.equal(exactOperator.operator, '  Υ/Β΄ ΓΙΟΥΡΟΥΚΗΣ Τραϊανός  ', 'Operator display text must be preserved verbatim');
+const exactOperator = writeServiceProfile(storage, { operator: '  Υ/Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος  ' });
+assert.equal(exactOperator.operator, '  Υ/Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος  ', 'Operator display text must be preserved verbatim');
 writeServiceProfile(storage, saved);
 assert.ok(!Object.hasOwn(saved, 'ignored'));
 assert.deepEqual(readServiceProfile(storage), saved);
@@ -58,7 +58,7 @@ assert.equal(valueFor('case.location', { title: 'CASE-ONLY-DATA' }), 'Δοκιμ
 assert.match(valueFor('case.date', { title: 'CASE-ONLY-DATA' }), /^\d{2}\/\d{2}\/\d{4}$/u);
 assert.equal(valueFor('case.date.weekdayName', { date: '2026-11-07' }), 'Σάββατο');
 const legacyDateXml = replaceLegacyFixedDateText(
-  'Στην Κυπαρισσία σήμερα την 01 του μηνός Ιανουαρίου του έτους 2000 ημέρα της εβδομάδος Σάββατο',
+  'Στην Δοκιμαστική πόλη σήμερα την 01 του μηνός Ιανουαρίου του έτους 2000 ημέρα της εβδομάδος Σάββατο',
   { title: 'LEGACY-CASE-WITHOUT-DATE' }
 );
 assert.match(legacyDateXml, /Στην Δοκιμαστική πόλη σήμερα την \d{1,2} του μηνός [\p{L}]+ του έτους \d{4} ημέρα της εβδομάδος [\p{L}]+/u,
@@ -102,7 +102,7 @@ const legacyStorage = {
   getItem() { return JSON.stringify({ name: 'Αστυνομικό Τμήμα Παλαιάς Εγκατάστασης', operator: '' }); },
   setItem() {}
 };
-assert.equal(readServiceProfile(legacyStorage).operator, "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός", 'Existing installations with an empty legacy operator receive the new default');
+assert.equal(readServiceProfile(legacyStorage).operator, '', 'Legacy profiles must not inherit a hardcoded officer identity');
 const legacyCustomStorage = {
   getItem() { return JSON.stringify({ name: 'Αστυνομικό Τμήμα Άλλης Υπηρεσίας', operator: 'Αστυνόμος ΔΟΚΙΜΗΣ Νίκος' }); },
   setItem() {}
@@ -112,11 +112,11 @@ assert.equal(readServiceProfile(legacyCustomStorage).operatorDocument, '', 'A le
 assert.equal(toGreekGenitiveFullName(readServiceProfile(legacyCustomStorage).operator), 'Αστυνόμου ΔΟΚΙΜΗ Νίκου');
 
 const malformed = { getItem: () => '{invalid', setItem() {} };
-assert.equal(readServiceProfile(malformed).name, 'Αστυνομικό Τμήμα Τριφυλίας', 'Malformed stored data must fall back to the installation default service name');
-assert.equal(readServiceProfile(malformed).location, 'Κυπαρισσία');
-assert.equal(readServiceProfile(malformed).operator, "Υπαστυνόμος Β' ΓΙΟΥΡΟΥΚΗΣ Τραϊανός");
-assert.equal(readServiceProfile(malformed).secondOfficer, 'Αρχιφύλακας ΒΟΥΤΥΡΙΤΣΑΣ Γεώργιος', 'Malformed stored data must fall back to installation defaults');
-const whitespaceOperator = '  Υ/Β΄ ΓΙΟΥΡΟΥΚΗΣ Τραϊανός  ';
+assert.equal(readServiceProfile(malformed).name, '', 'Malformed stored data must fall back to neutral defaults');
+assert.equal(readServiceProfile(malformed).location, '');
+assert.equal(readServiceProfile(malformed).operator, '');
+assert.equal(readServiceProfile(malformed).secondOfficer, '', 'Malformed stored data must not inherit officer identity');
+const whitespaceOperator = '  Υ/Β΄ ΔΟΚΙΜΗΣ Αλέξανδρος  ';
 const restoredWhitespace = getServiceProfileRestoreEntry({ serviceProfile: JSON.stringify({ operator: whitespaceOperator }) });
 assert.equal(JSON.parse(restoredWhitespace[1]).operator, whitespaceOperator, 'Backup restore must preserve the operator value verbatim');
 const legacyRestored = JSON.parse(getServiceProfileRestoreEntry({ serviceProfile: JSON.stringify({ operator: 'Αστυνόμος ΔΟΚΙΜΗΣ Νίκος' }) })[1]);
