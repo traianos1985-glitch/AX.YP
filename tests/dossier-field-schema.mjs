@@ -86,3 +86,19 @@ assert.match(serviceWorker, /\.\/dossier-fields\.js/);
 assert.ok(packageJson.scripts.test.includes('tests/dossier-field-schema.mjs'));
 
 console.log('Schema-driven category field tests passed: category registry, safe nested storage, leading-zero values, and DOCX lookup.');
+
+const violencePaths = getDossierFieldDefinitions('violence').map((field) => field.path);
+for (const path of [
+  'violence.witnessA.surname',
+  'violence.witnessA.idNumber',
+  'violence.witnessB.surname',
+  'violence.witnessB.idNumber',
+  'violence.accused.residenceLocality',
+  'violence.investigators.accusedExaminerSurname',
+  'violence.investigators.witnessAExaminerSurname',
+  'violence.investigators.witnessBExaminerSurnameUpper',
+  'violence.service.areaGenitive',
+  'violence.service.directorateGenitive'
+]) assert.ok(violencePaths.includes(path), 'Violence dossier must expose ' + path);
+assert.ok(getDossierFieldDefinitions('violence').every((field) => field.required === false),
+  'Violence source-specific values must remain optional until the operator confirms the document');

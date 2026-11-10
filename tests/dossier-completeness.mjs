@@ -4,10 +4,10 @@ import { DOSSIER_CATEGORIES } from '../dossier-categories.js';
 import { DOSSIER_COMPLETENESS_RULES, evaluateDossierCompleteness } from '../dossier-completeness.js';
 
 const categoryIds = DOSSIER_CATEGORIES.map((category) => category.id);
-assert.equal(categoryIds.length, 14);
+assert.equal(categoryIds.length, 15);
 assert.equal(new Set(categoryIds).size, categoryIds.length);
 assert.deepEqual(Object.keys(DOSSIER_COMPLETENESS_RULES).sort(),
-  ['camping','commerce','counterfeit','environment','health','migration','narcotics','noise'].sort());
+  ['camping','commerce','counterfeit','environment','health','migration','narcotics','noise','violence'].sort());
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 // Some category-specific controls are created dynamically when a case is opened.

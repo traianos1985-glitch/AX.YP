@@ -12,6 +12,10 @@
     {
       "id": "migration-v1",
       "file": "migration-v1.axyp.pack.json"
+    },
+    {
+      "id": "violence-v1",
+      "file": "violence-v1.axyp.zip"
     }
   ]
 }
