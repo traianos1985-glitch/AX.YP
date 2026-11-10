@@ -209,6 +209,7 @@ export async function loadPublishedDossierPackages() {
           fields: manifest.category === 'violence'
             ? [...new Set([...(Array.isArray(document.fields) ? document.fields : []),
               'violence.accused.residenceInExamination', 'violence.accused.residencePostalCode',
+              'violence.accused.surname', 'violence.accused.fullNameGenitive',
               'violence.apprehendingOfficer.fullName', 'violence.case.dateLong', 'violence.case.weekday',
               'violence.accused.taxOffice', 'violence.investigators.witnessAExaminerGivenNameGenitive',
               'violence.investigators.witnessBExaminerGivenNameGenitive', 'case.dateGreek'])]
@@ -217,6 +218,8 @@ export async function loadPublishedDossierPackages() {
             ? { ...(document.mappings && typeof document.mappings === 'object' ? document.mappings : {}),
               'violence.accused.residenceInExamination': 'violence.accused.residenceInExamination',
               'violence.accused.residencePostalCode': 'violence.accused.residencePostalCode',
+              'violence.accused.surname': 'violence.accused.surname',
+              'violence.accused.fullNameGenitive': 'violence.accused.fullNameGenitive',
               'violence.apprehendingOfficer.fullName': 'violence.apprehendingOfficer.fullName',
               'violence.case.dateLong': 'violence.case.dateLong',
               'violence.case.weekday': 'violence.case.weekday',
