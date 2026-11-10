@@ -195,7 +195,7 @@ export async function loadPublishedDossierPackages() {
         if (!parts['word/document.xml']) throw new Error('Published DOCX is missing its main document: ' + document.name);
         if (manifest.category === 'violence') {
           const xml = strFromU8(parts['word/document.xml']);
-          parts['word/document.xml'] = strToU8(sanitizeViolenceTemplateXml(xml).replace(/(\\{\\{violence\\.investigators\\.witnessAExaminerSurnameUpper\\}\\}) \\{\\{violence\\.witnessA\\.fatherNameGenitive\\}\\}/gu, '$1 {{violence.investigators.witnessAExaminerGivenNameGenitive}}'));
+          parts['word/document.xml'] = strToU8(sanitizeViolenceTemplateXml(xml).replace(/(\{\{violence\.investigators\.witnessAExaminerSurnameUpper\}\}) \{\{violence\.witnessA\.fatherNameGenitive\}\}/gu, '$1 {{violence.investigators.witnessAExaminerGivenNameGenitive}}'));
         }
         loaded.push({
           id: String(document.id || entry.id + '-' + loaded.length),
