@@ -7,7 +7,7 @@ const categoryIds = DOSSIER_CATEGORIES.map((category) => category.id);
 assert.equal(categoryIds.length, 14);
 assert.equal(new Set(categoryIds).size, categoryIds.length);
 assert.deepEqual(Object.keys(DOSSIER_COMPLETENESS_RULES).sort(),
-  ['camping','commerce','counterfeit','environment','health','narcotics','noise'].sort());
+  ['camping','commerce','counterfeit','environment','health','migration','narcotics','noise'].sort());
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 // Some category-specific controls are created dynamically when a case is opened.
@@ -50,11 +50,11 @@ assert.deepEqual(unknown.register, { persons: 0, evidence: 0, actions: 2 });
 assert.equal(unknown.groups.length, 0);
 
 // The review is wired into the guided workflow and remains advisory.
-assert.match(workflow, /evaluateDossierCompleteness\(profile/);
+assert.match(workflow, /evaluateDossierCompleteness\\(profile/);
 assert.match(workflow, /Δεν αποτελούν νομικό έλεγχο/);
 assert.match(workflow, /δεν χαρακτηρίζουν πεδία ως υποχρεωτικά/);
 assert.match(workflow, /δεν εμποδίζουν την αποθήκευση/i);
-assert.match(serviceWorker, /\.\/dossier-completeness\.js/);
-assert.match(workflow, /import \{ evaluateDossierCompleteness \}/);
+assert.match(serviceWorker, /\\.\\/dossier-completeness\\.js/);
+assert.match(workflow, /import \\{ evaluateDossierCompleteness \\}/);
 
 console.log('Dossier completeness tests passed: all categories, field IDs, legacy/unknown profiles, safe advisory behavior.');
