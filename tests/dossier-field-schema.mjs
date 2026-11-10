@@ -97,6 +97,7 @@ for (const path of [
   'violence.accused.residenceInExamination',
   'violence.accused.residencePostalCode',
   'violence.apprehendingOfficer.fullName',
+  'violence.apprehendingOfficer.rank',
   'violence.investigators.accusedExaminerSurname',
   'violence.investigators.witnessAExaminerSurname',
   'violence.investigators.witnessBExaminerSurnameUpper',
