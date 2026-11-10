@@ -38,7 +38,7 @@ for (const document of manifest.documents) {
   const docxParts = unzipSync(packageParts[document.path]);
   assert.ok(docxParts['word/document.xml'], document.name + ' must be a valid DOCX with a main document');
   const xml = new TextDecoder().decode(docxParts['word/document.xml']);
-  const placeholders = [...new Set([...xml.matchAll(/\\{\\{([^{}]+)\\}\\}/gu)].map((match) => match[1]))];
+  const placeholders = [...new Set([...xml.matchAll(/\{\{([^{}]+)\}\}/gu)].map((match) => match[1]))];
   for (const placeholder of placeholders) {
     assert.ok(Object.hasOwn(document.mappings, placeholder),
       document.name + ' contains an unmapped placeholder: ' + placeholder);
@@ -90,11 +90,11 @@ try {
   const archive = unzipSync(buildCategoryArchive(violenceTemplates, item));
   assert.equal(Object.keys(archive).length, 6, 'The category export must generate six Word documents');
   for (const [name, bytes] of Object.entries(archive)) {
-    assert.match(name, /^\\d{2}-/u);
+    assert.match(name, /^\d{2}-/u);
     const parts = unzipSync(bytes);
     assert.ok(parts['word/document.xml'], name + ' must remain a valid DOCX');
     const xml = new TextDecoder().decode(parts['word/document.xml']);
-    assert.doesNotMatch(xml, /\\{\\{[^{}]+\\}\\}/u, name + ' must not contain unresolved placeholders');
+    assert.doesNotMatch(xml, /\{\{[^{}]+\}\}/u, name + ' must not contain unresolved placeholders');
   }
 } finally {
   globalThis.fetch = originalFetch;
