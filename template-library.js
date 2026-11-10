@@ -208,7 +208,7 @@ export async function loadPublishedDossierPackages() {
             ? [...new Set([...(Array.isArray(document.fields) ? document.fields : []),
               'violence.accused.residenceInExamination', 'violence.accused.residencePostalCode',
               'violence.apprehendingOfficer.fullName', 'violence.case.dateLong', 'violence.case.weekday',
-              'violence.accused.taxOffice', 'violence.investigators.witnessAExaminerGivenNameGenitive'])]
+              'violence.accused.taxOffice', 'violence.investigators.witnessAExaminerGivenNameGenitive', 'case.dateGreek'])]
             : (Array.isArray(document.fields) ? document.fields : []),
           mappings: manifest.category === 'violence'
             ? { ...(document.mappings && typeof document.mappings === 'object' ? document.mappings : {}),
@@ -218,7 +218,8 @@ export async function loadPublishedDossierPackages() {
               'violence.case.dateLong': 'violence.case.dateLong',
               'violence.case.weekday': 'violence.case.weekday',
               'violence.accused.taxOffice': 'violence.accused.taxOffice',
-              'violence.investigators.witnessAExaminerGivenNameGenitive': 'violence.investigators.witnessAExaminerGivenNameGenitive' }
+              'violence.investigators.witnessAExaminerGivenNameGenitive': 'violence.investigators.witnessAExaminerGivenNameGenitive',
+              'case.dateGreek': 'case.dateGreek' }
             : (document.mappings && typeof document.mappings === 'object' ? document.mappings : {}),
           mappingConfirmedAt: manifest.publishedAt || manifest.createdAt || 'published',
           files: Object.fromEntries(Object.entries(parts).map(([name, bytes]) => [name, Array.from(bytes)]))
