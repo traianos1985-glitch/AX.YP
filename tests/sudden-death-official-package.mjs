@@ -83,6 +83,12 @@ for (const document of manifest.documents) {
     assert.ok(document.mappings[path], document.name + ' must map ' + path);
   }
   assert.ok(parts['word/document.xml'], document.name + ' must contain the main Word document');
+  if (parts['docProps/core.xml']) {
+    const coreXml = new TextDecoder().decode(parts['docProps/core.xml']);
+    assert.ok(coreXml.includes('<dc:creator>AX.YP</dc:creator>'), document.name + ' must not expose the source document author');
+    assert.ok(coreXml.includes('<cp:lastModifiedBy>AX.YP</cp:lastModifiedBy>'), document.name + ' must not expose the source Word user identifier');
+    assert.doesNotMatch(coreXml, /<dcterms:(?:created|modified)>/u, document.name + ' must not expose original document timestamps');
+  }
   const template = {
     ...document, category: 'sudden-death', source: 'published-package',
     files: Object.fromEntries(Object.entries(parts).map(([name, bytes]) => [name, Array.from(bytes)]))
