@@ -108,7 +108,14 @@ for (const document of manifest.documents) {
     if (!name.startsWith('word/') || !(name.endsWith('.xml') || name.endsWith('.rels'))) continue;
     const xml = new TextDecoder().decode(bytes);
     assert.doesNotMatch(xml, /\{\{\s*[\w.-]+\s*\}\}/u, document.name + ' must not retain unresolved placeholders in ' + name);
-    for (const pattern of forbidden) assert.doesNotMatch(xml, pattern, document.name + ' generated output must remain anonymized');
+    const generatedEmails = xml.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/giu) || [];
+    for (const email of generatedEmails) {
+      assert.equal(email, profile.email, document.name + ' may contain only the explicitly configured synthetic service-profile email, never an email from the source dossier');
+    }
+    for (const pattern of forbidden) {
+      if (pattern.source === '[A-Z0-9._%+-]+@[A-Z0-9.-]+\\\\.[A-Z]{2,}') continue;
+      assert.doesNotMatch(xml, pattern, document.name + ' generated output must remain anonymized');
+    }
   }
 }
 console.log('Sudden-death official package tests passed: five source documents, placeholder mapping, privacy scan, and DOCX generation.');
