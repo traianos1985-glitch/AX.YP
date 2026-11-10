@@ -269,6 +269,7 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('gok.case.streetAddress', 'Περιστατικό · τοποθεσία', 'Οδός και αριθμός', 'text', false),
     defineDossierField('gok.case.weekday', 'Περιστατικό · ημερομηνία', 'Ημέρα εβδομάδας όπως αναγράφεται στο έντυπο', 'text', false),
     defineDossierField('gok.case.workDescription', 'Οικοδομικές εργασίες', 'Περιγραφή οικοδομικής εργασίας', 'textarea', false, { rows: 3 }),
+    defineDossierField('gok.case.workDescriptionWitness', 'Οικοδομικές εργασίες', 'Σύντομη περιγραφή εργασίας στην κατάθεση μάρτυρα', 'text', false),
     defineDossierField('gok.case.workDimensions', 'Οικοδομικές εργασίες', 'Διαστάσεις εργασίας', 'text', false),
     defineDossierField('gok.case.workMethod', 'Οικοδομικές εργασίες', 'Τρόπος εκτέλεσης / περιγραφή εργασιών', 'textarea', false, { rows: 3 }),
 
@@ -281,6 +282,7 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('gok.prosecutor.locationGenitive', 'Εισαγγελική αρχή', 'Τόπος εισαγγελικής αρχής (γενική)', 'text', false),
     defineDossierField('gok.prosecutor.locationUpper', 'Εισαγγελική αρχή', 'Τόπος εισαγγελικής αρχής (κεφαλαία)', 'text', false),
     defineDossierField('gok.prosecutor.office', 'Εισαγγελική αρχή', 'Εισαγγελία / αρμόδιο δικαστήριο', 'text', false),
+    defineDossierField('gok.prosecutor.prosecutorOfficeGenitive', 'Εισαγγελική αρχή', 'Εισαγγελική αρχή (γενική, για έκθεση σύλληψης)', 'text', false),
     defineDossierField('gok.prosecutor.postalCode', 'Εισαγγελική αρχή', 'Ταχυδρομικός κώδικας εισαγγελικής αρχής', 'text', false),
     defineDossierField('gok.prosecutor.title', 'Εισαγγελική αρχή', 'Ιδιότητα εισαγγελικού λειτουργού', 'text', false),
 
