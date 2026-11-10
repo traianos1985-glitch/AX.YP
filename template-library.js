@@ -90,8 +90,6 @@ export function resolvePublishedDocumentName(category, name) {
 }
 
 
-// Replace case-specific identity/location/date residue in the legacy violence DOCX
-// package before the templates are exposed to document generation.
 export async function loadPublishedDossierPackages() {
   if (publishedPackagesPromise) return publishedPackagesPromise;
   publishedPackagesPromise = (async () => {
