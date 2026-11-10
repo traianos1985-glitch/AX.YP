@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { unzipSync } from '../vendor/fflate.js';
 import { DOSSIER_CATEGORY_FIELDS, getDossierFieldDefinitions, setDossierFieldValue } from '../dossier-fields.js';
-import { buildCategoryArchive, getMissingTemplateFields, loadPublishedDossierPackages, sanitizeViolenceTemplateXml } from '../template-library.js';
+import { buildCategoryArchive, getMissingTemplateFields, loadPublishedDossierPackages } from '../template-library.js';
 
 const catalog = JSON.parse(await readFile(new URL('../dossier-packages/manifest.json', import.meta.url), 'utf8'));
 const catalogEntry = catalog.packages.find((entry) => entry.id === 'violence-v1');
@@ -21,10 +21,7 @@ assert.equal(manifest.documents.length, 6, 'The official package must contain al
 const definitions = getDossierFieldDefinitions('violence');
 const definedPaths = new Set(definitions.map((field) => field.path));
 assert.ok(DOSSIER_CATEGORY_FIELDS.violence);
-for (const path of ['violence.accused.residenceInExamination', 'violence.accused.residencePostalCode', 'violence.accused.surname', 'violence.accused.fullNameGenitive', 'violence.apprehendingOfficer.fullName', 'violence.apprehendingOfficer.rank', 'violence.case.dateLong', 'violence.case.weekday', 'violence.investigators.witnessBExaminerGivenNameGenitive']) assert.ok(definedPaths.has(path), 'Missing privacy field: ' + path);
-const sanitizedSample = sanitizeViolenceTemplateXml('ΜΕΛΙΓΑΛΑ 24002 Αθήνα Σκάλα Οιχαλίας Καλαμάτας 13-09-2026 Κυριακή');
-assert.doesNotMatch(sanitizedSample, /ΜΕΛΙΓΑΛΑ|24002|Αθήνα|Σκάλα Οιχαλίας|Καλαμάτας|13-09-2026|Κυριακή/u);
-assert.match(sanitizedSample, /violence\.accused\.residencePostalCode/u);
+for (const path of ['violence.accused.residenceInExamination', 'violence.accused.residencePostalCode', 'violence.accused.surname', 'violence.accused.fullNameGenitive', 'violence.accused.givenName', 'violence.apprehendingOfficer.fullName', 'violence.apprehendingOfficer.rank', 'violence.case.dateLong', 'violence.case.weekday', 'violence.investigators.witnessBExaminerGivenNameGenitive']) assert.ok(definedPaths.has(path), 'Missing privacy field: ' + path);
 assert.ok(definitions.every((field) => field.required === false),
   'Source-specific fields must remain optional until the operator confirms them');
 const commonPaths = new Set(['case.location', 'case.dateGreek', 'service.name', 'service.phone']);
@@ -48,6 +45,15 @@ for (const document of manifest.documents) {
   assert.doesNotMatch(coreXml, /<dcterms:(?:created|modified)>/u, document.name + ' must not expose original document timestamps');
   const appXml = new TextDecoder().decode(docxParts['docProps/app.xml']);
   assert.ok(appXml.includes('<Template>AX.YP</Template>'), document.name + ' must not expose the original template path');
+  const xmlParts = Object.entries(docxParts).filter(([partName]) => partName.endsWith('.xml') || partName.endsWith('.rels'));
+  for (const [partName, bytes] of xmlParts) {
+    const partXml = new TextDecoder().decode(bytes);
+    assert.doesNotMatch(partXml, /\\b\\d{9}\\b/u, document.name + ' must not retain nine-digit personal identifiers in ' + partName);
+    assert.doesNotMatch(partXml, /\\b\\d{10,13}\\b/u, document.name + ' must not retain phone-like identifiers in ' + partName);
+    assert.doesNotMatch(partXml, /[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/iu, document.name + ' must not retain email addresses in ' + partName);
+    assert.doesNotMatch(partXml, /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\\d{6,8}(?!\\d)/iu, document.name + ' must not retain identity/passport-like identifiers in ' + partName);
+    assert.doesNotMatch(partXml, /(?<!\\d)\\d{1,2}[./-]\\d{1,2}[./-](?:19|20)\\d{2}(?!\\d)/u, document.name + ' must not retain fixed case dates in ' + partName);
+  }
   const xml = new TextDecoder().decode(docxParts['word/document.xml']);
   const placeholders = [...new Set([...xml.matchAll(/\{\{([^{}]+)\}\}/gu)].map((match) => match[1]))];
   for (const placeholder of placeholders) {
