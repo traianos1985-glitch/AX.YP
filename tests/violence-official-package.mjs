@@ -43,9 +43,9 @@ for (const document of manifest.documents) {
     assert.ok(Object.hasOwn(document.mappings, placeholder),
       document.name + ' contains an unmapped placeholder: ' + placeholder);
   }
-  for (const placeholder of document.fields) {
-    assert.ok(placeholders.includes(placeholder),
-      document.name + ' declares a placeholder not found in its DOCX: ' + placeholder);
+  for (const field of document.fields) {
+    assert.ok(Object.hasOwn(document.mappings, field),
+      document.name + ' declares an unmapped field: ' + field);
   }
 }
 
