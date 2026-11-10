@@ -60,7 +60,16 @@ const syntheticCase = {
   officerB: { surname: 'TEST-OFFICER-B-SURNAME', name: 'TEST-OFFICER-B-NAME' },
   categoryData
 };
+const emailPattern = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu;
 const forbidden = [
+  /\b\d{9}\b/u,
+  /\b\d{10,13}\b/u,
+  emailPattern,
+  /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\s*\d{6,8}(?!\d)/iu,
+  /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{2,3}[- ]?\d{3,4}(?!\d)/iu
+];
+
+for (const document of manifest.documents) {
   /\b\d{9}\b/u,
   /\b\d{10,13}\b/u,
   /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu,
@@ -108,12 +117,12 @@ for (const document of manifest.documents) {
     if (!name.startsWith('word/') || !(name.endsWith('.xml') || name.endsWith('.rels'))) continue;
     const xml = new TextDecoder().decode(bytes);
     assert.doesNotMatch(xml, /\{\{\s*[\w.-]+\s*\}\}/u, document.name + ' must not retain unresolved placeholders in ' + name);
-    const generatedEmails = xml.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/giu) || [];
+    const generatedEmails = xml.match(new RegExp(emailPattern.source, 'giu')) || [];
     for (const email of generatedEmails) {
       assert.equal(email, profile.email, document.name + ' may contain only the explicitly configured synthetic service-profile email, never an email from the source dossier');
     }
     for (const pattern of forbidden) {
-      if (pattern.source === '[A-Z0-9._%+-]+@[A-Z0-9.-]+\\\\.[A-Z]{2,}') continue;
+      if (pattern === emailPattern) continue;
       assert.doesNotMatch(xml, pattern, document.name + ' generated output must remain anonymized');
     }
   }
