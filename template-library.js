@@ -106,7 +106,7 @@ export function sanitizeViolenceTemplateXml(xml) {
     .replace(/([Α-ΩΆΈΉΊΌΎΏ]+)\s+\(ον\)\s+([Α-ΩΆΈΉΊΌΎΏα-ωάέήίόύώ]+)/gu,
       '{{violence.accused.surname}} (ον) {{violence.accused.fullNameGenitive}}')
     .replace(/Αρχιφύλακα\s+[Α-ΩΆΈΉΊΌΎΏ]+\s+[Α-ΩΆΈΉΊΌΎΏα-ωάέήίόύώ]+/gu,
-      'Αρχιφύλακα {{violence.apprehendingOfficer.fullName}}');
+      '{{violence.apprehendingOfficer.rank}} {{violence.apprehendingOfficer.fullName}}');
 }
 
 export async function loadPublishedDossierPackages() {
@@ -210,7 +210,7 @@ export async function loadPublishedDossierPackages() {
             ? [...new Set([...(Array.isArray(document.fields) ? document.fields : []),
               'violence.accused.residenceLocality', 'violence.accused.residenceInExamination', 'violence.accused.residencePostalCode',
               'violence.accused.surname', 'violence.accused.fullNameGenitive',
-              'violence.apprehendingOfficer.fullName', 'violence.case.dateLong', 'violence.case.weekday',
+              'violence.apprehendingOfficer.fullName', 'violence.apprehendingOfficer.rank', 'violence.case.dateLong', 'violence.case.weekday',
               'violence.accused.taxOffice', 'violence.investigators.witnessAExaminerGivenNameGenitive',
               'violence.investigators.witnessBExaminerGivenNameGenitive', 'case.dateGreek'])]
             : (Array.isArray(document.fields) ? document.fields : []),
@@ -222,6 +222,7 @@ export async function loadPublishedDossierPackages() {
               'violence.accused.surname': 'violence.accused.surname',
               'violence.accused.fullNameGenitive': 'violence.accused.fullNameGenitive',
               'violence.apprehendingOfficer.fullName': 'violence.apprehendingOfficer.fullName',
+              'violence.apprehendingOfficer.rank': 'violence.apprehendingOfficer.rank',
               'violence.case.dateLong': 'violence.case.dateLong',
               'violence.case.weekday': 'violence.case.weekday',
               'violence.accused.taxOffice': 'violence.accused.taxOffice',
