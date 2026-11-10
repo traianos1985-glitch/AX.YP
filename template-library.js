@@ -208,7 +208,7 @@ export async function loadPublishedDossierPackages() {
             ? [...new Set([...(Array.isArray(document.fields) ? document.fields : []),
               'violence.accused.residenceInExamination', 'violence.accused.residencePostalCode',
               'violence.apprehendingOfficer.fullName', 'violence.case.dateLong', 'violence.case.weekday',
-              'violence.accused.taxOffice'])]
+              'violence.accused.taxOffice', 'violence.investigators.witnessAExaminerGivenNameGenitive'])]
             : (Array.isArray(document.fields) ? document.fields : []),
           mappings: manifest.category === 'violence'
             ? { ...(document.mappings && typeof document.mappings === 'object' ? document.mappings : {}),
