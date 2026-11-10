@@ -55,6 +55,18 @@ for (const document of manifest.documents) {
     assert.doesNotMatch(partXml, /(?<!\d)\d{1,2}[./-]\d{1,2}[./-](?:19|20)\d{2}(?!\d)/u, document.name + ' must not retain fixed case dates in ' + partName);
   }
   const xml = new TextDecoder().decode(docxParts['word/document.xml']);
+  if (document.name.startsWith('01_') || document.name.startsWith('02_')) {
+    assert.ok(xml.includes('{{violence.accused.residenceLocality}}'),
+      'police witness statements must use the accused residence placeholder, not a fixed case locality');
+  }
+  if (document.name.startsWith('03_')) {
+    assert.ok(xml.includes('{{violence.accused.residencePostalCode}}'),
+      'accused identity card must use a dynamic postal-code placeholder');
+  }
+  if (document.name.startsWith('05_')) {
+    assert.ok(xml.includes('{{violence.apprehendingOfficer.rank}}'),
+      'arrest report must use the distinct apprehending-officer rank field');
+  }
   if (document.name.startsWith('04_')) {
     assert.ok(xml.includes('{{violence.investigators.witnessBExaminerGivenNameGenitive}}'), 'accused examination must map the B investigator given name');
   }
