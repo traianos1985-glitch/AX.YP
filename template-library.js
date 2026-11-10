@@ -672,6 +672,7 @@ export function valueFor(path, item) {
     'case.offence': item.offence,
     'case.status': item.status,
     'case.date': formatDateToGreekNumeric(effectiveDate),
+    'case.dateGreek': formatDateToGreekNumeric(effectiveDate),
     'case.date.day': dateParts.day,
     'case.date.monthName': dateParts.month,
     'case.date.year': dateParts.year,
