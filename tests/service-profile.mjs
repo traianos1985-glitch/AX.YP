@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS, SERVICE_PROFILE_STORAGE_KEY, getServiceProfileBackupValue, getServiceProfileRestoreEntry, toGreekGenitiveFullName, getServiceProfileOperatorIdentity } from '../service-profile.js';
 
 assert.equal(SERVICE_PROFILE_STORAGE_KEY, 'axyp-service-profile-v1');
-assert.equal(toGreekGenitiveFullName("Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος"), "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού");
-assert.equal(toGreekGenitiveFullName('Αρχιφύλακας ΔΟΚΙΜΗΣ Γεώργιος'), 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου');
-assert.deepEqual(getServiceProfileOperatorIdentity({ operator: "Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος", name: 'Αστυνομικό Τμήμα Δοκιμής' }), { fullName: "Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος", documentFullName: "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού", rank: "Υπαστυνόμος Β'", surname: 'ΔΟΚΙΜΗΣ', name: 'Αλέξανδρος', service: 'Αστυνομικό Τμήμα Δοκιμής', residence: 'Αστυνομικό Τμήμα Δοκιμής' });
+assert.equal(toGreekGenitiveFullName("Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος"), "Υπαστυνόμου Β' ΔΟΚΙΜΗ Αλεξάνδρου");
+assert.equal(toGreekGenitiveFullName('Αρχιφύλακας ΔΟΚΙΜΗΣ Γεώργιος'), 'Αρχιφύλακα ΔΟΚΙΜΗ Γεωργίου');
+assert.deepEqual(getServiceProfileOperatorIdentity({ operator: "Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος", name: 'Αστυνομικό Τμήμα Δοκιμής' }), { fullName: "Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος", documentFullName: "Υπαστυνόμου Β' ΔΟΚΙΜΗ Αλεξάνδρου", rank: "Υπαστυνόμος Β'", surname: 'ΔΟΚΙΜΗΣ', name: 'Αλέξανδρος', service: 'Αστυνομικό Τμήμα Δοκιμής', residence: 'Αστυνομικό Τμήμα Δοκιμής' });
 const values = new Map();
 const storage = {
   getItem(key) { return values.has(key) ? values.get(key) : null; },
@@ -90,8 +90,8 @@ assert.equal(valueFor('officerB.nominativeFullName', { title: 'CASE-ONLY-DATA' }
 assert.equal(valueFor('officerB.service', { title: 'CASE-ONLY-DATA' }), 'Νέα Υπηρεσία', 'A case without a saved second-investigator service uses the current installation service profile');
 assert.equal(valueFor('officerB.residence', { title: 'CASE-ONLY-DATA' }), 'Νέα Υπηρεσία', 'A case without a saved second-investigator residence uses the current installation service profile');
 globalThis.window.AXYP_SERVICE_PROFILE.get = () => empty;
-assert.equal(valueFor('officerA.fullName', { title: 'DEFAULT-PROFILE' }), "Υπαστυνόμου Β' ΓΙΟΥΡΟΥΚΗ Τραϊανού");
-assert.equal(valueFor('officerB.fullName', { title: 'DEFAULT-PROFILE' }), 'Αρχιφύλακα ΒΟΥΤΥΡΙΤΣΑ Γεώργιου');
+assert.equal(valueFor('officerA.fullName', { title: 'DEFAULT-PROFILE' }), '');
+assert.equal(valueFor('officerB.fullName', { title: 'DEFAULT-PROFILE' }), '');
 globalThis.window.AXYP_SERVICE_PROFILE.get = () => saved;
 assert.equal(valueFor('service.chemicalService', { title: 'CASE-ONLY-DATA' }), 'Χημική Υπηρεσία Δοκιμής');
 assert.equal(valueFor('service.prosecutor', { title: 'CASE-ONLY-DATA' }), 'Εισαγγελία Πρωτοδικών Δοκιμής');
