@@ -48,11 +48,11 @@ for (const document of manifest.documents) {
   const xmlParts = Object.entries(docxParts).filter(([partName]) => partName.endsWith('.xml') || partName.endsWith('.rels'));
   for (const [partName, bytes] of xmlParts) {
     const partXml = new TextDecoder().decode(bytes);
-    assert.doesNotMatch(partXml, /\\b\\d{9}\\b/u, document.name + ' must not retain nine-digit personal identifiers in ' + partName);
-    assert.doesNotMatch(partXml, /\\b\\d{10,13}\\b/u, document.name + ' must not retain phone-like identifiers in ' + partName);
-    assert.doesNotMatch(partXml, /[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/iu, document.name + ' must not retain email addresses in ' + partName);
-    assert.doesNotMatch(partXml, /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\\d{6,8}(?!\\d)/iu, document.name + ' must not retain identity/passport-like identifiers in ' + partName);
-    assert.doesNotMatch(partXml, /(?<!\\d)\\d{1,2}[./-]\\d{1,2}[./-](?:19|20)\\d{2}(?!\\d)/u, document.name + ' must not retain fixed case dates in ' + partName);
+    assert.doesNotMatch(partXml, /\b\d{9}\b/u, document.name + ' must not retain nine-digit personal identifiers in ' + partName);
+    assert.doesNotMatch(partXml, /\b\d{10,13}\b/u, document.name + ' must not retain phone-like identifiers in ' + partName);
+    assert.doesNotMatch(partXml, /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu, document.name + ' must not retain email addresses in ' + partName);
+    assert.doesNotMatch(partXml, /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\d{6,8}(?!\d)/iu, document.name + ' must not retain identity/passport-like identifiers in ' + partName);
+    assert.doesNotMatch(partXml, /(?<!\d)\d{1,2}[./-]\d{1,2}[./-](?:19|20)\d{2}(?!\d)/u, document.name + ' must not retain fixed case dates in ' + partName);
   }
   const xml = new TextDecoder().decode(docxParts['word/document.xml']);
   const placeholders = [...new Set([...xml.matchAll(/\{\{([^{}]+)\}\}/gu)].map((match) => match[1]))];
