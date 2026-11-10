@@ -102,7 +102,8 @@ try {
     const parts = unzipSync(bytes);
     assert.ok(parts['word/document.xml'], name + ' must remain a valid DOCX');
     const xml = new TextDecoder().decode(parts['word/document.xml']);
-    assert.doesNotMatch(xml, /\{\{[^{}]+\}\}/u, name + ' must not contain unresolved placeholders');
+    const unresolved = [...xml.matchAll(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu)].map((match) => match[1]);
+    assert.deepEqual(unresolved, [], name + ' must not contain unresolved placeholders: ' + unresolved.join(', '));
   }
 } finally {
   globalThis.fetch = originalFetch;
