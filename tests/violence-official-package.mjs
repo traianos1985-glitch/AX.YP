@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { unzipSync } from '../vendor/fflate.js';
 import { DOSSIER_CATEGORY_FIELDS, getDossierFieldDefinitions, setDossierFieldValue } from '../dossier-fields.js';
-import { buildCategoryArchive, loadPublishedDossierPackages } from '../template-library.js';
+import { buildCategoryArchive, loadPublishedDossierPackages, sanitizeViolenceTemplateXml } from '../template-library.js';
 
 const catalog = JSON.parse(await readFile(new URL('../dossier-packages/manifest.json', import.meta.url), 'utf8'));
 const catalogEntry = catalog.packages.find((entry) => entry.id === 'violence-v1');
@@ -20,7 +20,7 @@ assert.equal(manifest.documents.length, 6, 'The official package must contain al
 
 const definitions = getDossierFieldDefinitions('violence');
 const definedPaths = new Set(definitions.map((field) => field.path));
-assert.ok(DOSSIER_CATEGORY_FIELDS.violence);
+assert.ok(DOSSIER_CATEGORY_FIELDS.violence);\nfor (const path of ['violence.accused.residenceInExamination', 'violence.accused.residencePostalCode', 'violence.apprehendingOfficer.fullName', 'violence.case.dateLong', 'violence.case.weekday']) assert.ok(definedPaths.has(path), 'Missing privacy field: ' + path);\nconst sanitizedSample = sanitizeViolenceTemplateXml('ΜΕΛΙΓΑΛΑ 24002 Αθήνα Σκάλα Οιχαλίας Καλαμάτας 13-09-2026 Κυριακή');\nassert.doesNotMatch(sanitizedSample, /ΜΕΛΙΓΑΛΑ|24002|Αθήνα|Σκάλα Οιχαλίας|Καλαμάτας|13-09-2026|Κυριακή/u);\nassert.match(sanitizedSample, /violence\\.accused\\.residencePostalCode/u);
 assert.ok(definitions.every((field) => field.required === false),
   'Source-specific fields must remain optional until the operator confirms them');
 const commonPaths = new Set(['case.location', 'case.dateGreek', 'service.name', 'service.phone']);
