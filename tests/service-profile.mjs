@@ -4,7 +4,7 @@ import { readServiceProfile, writeServiceProfile, SERVICE_PROFILE_FIELDS, SERVIC
 assert.equal(SERVICE_PROFILE_STORAGE_KEY, 'axyp-service-profile-v1');
 assert.equal(toGreekGenitiveFullName("Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος"), "Υπαστυνόμου Β' ΔΟΚΙΜΗ Αλέξανδρου");
 assert.equal(toGreekGenitiveFullName('Αρχιφύλακας ΔΟΚΙΜΗΣ Γεώργιος'), 'Αρχιφύλακα ΔΟΚΙΜΗ Γεώργιου');
-assert.deepEqual(getServiceProfileOperatorIdentity({ operator: "Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος", name: 'Αστυνομικό Τμήμα Δοκιμής' }), { fullName: "Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος", documentFullName: "Υπαστυνόμου Β' ΔΟΚΙΜΗ Αλεξάνδρου", rank: "Υπαστυνόμος Β'", surname: 'ΔΟΚΙΜΗΣ', name: 'Αλέξανδρος', service: 'Αστυνομικό Τμήμα Δοκιμής', residence: 'Αστυνομικό Τμήμα Δοκιμής' });
+assert.deepEqual(getServiceProfileOperatorIdentity({ operator: "Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος", name: 'Αστυνομικό Τμήμα Δοκιμής' }), { fullName: "Υπαστυνόμος Β' ΔΟΚΙΜΗΣ Αλέξανδρος", documentFullName: "Υπαστυνόμου Β' ΔΟΚΙΜΗ Αλέξανδρου", rank: "Υπαστυνόμος Β'", surname: 'ΔΟΚΙΜΗΣ', name: 'Αλέξανδρος', service: 'Αστυνομικό Τμήμα Δοκιμής', residence: 'Αστυνομικό Τμήμα Δοκιμής' });
 const values = new Map();
 const storage = {
   getItem(key) { return values.has(key) ? values.get(key) : null; },
