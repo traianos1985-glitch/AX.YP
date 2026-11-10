@@ -89,6 +89,26 @@ export function resolvePublishedDocumentName(category, name) {
   return name;
 }
 
+
+// Replace case-specific identity/location/date residue in the legacy violence DOCX
+// package before the templates are exposed to document generation.
+export function sanitizeViolenceTemplateXml(xml) {
+  return String(xml)
+    .replace(/ΜΕΛΙΓΑΛΑ/gu, '{{violence.accused.residenceLocality}}')
+    .replace(/24002/gu, '{{violence.accused.residencePostalCode}}')
+    .replace(/Σκάλα Οιχαλίας/gu, '{{violence.accused.residenceInExamination}}')
+    .replace(/Αθήνα/gu, '{{violence.accused.birthPlace}}')
+    .replace(/(?:ΔΟΥ\s*)?Καλαμάτας/gu, 'ΔΟΥ {{violence.accused.taxOffice}}')
+    .replace(/13-09-2026/gu, '{{case.dateGreek}}')
+    .replace(/13\s+του μήνα Σεπτεμβρίου\s+του έτους 2026/gu, '{{violence.case.dateLong}}')
+    .replace(/13\s+Σεπτεμβρίου\s+2026/gu, '{{violence.case.dateLong}}')
+    .replace(/Κυριακή/gu, '{{violence.case.weekday}}')
+    .replace(/([Α-ΩΆΈΉΊΌΎΏ]+)\s+\(ον\)\s+([Α-ΩΆΈΉΊΌΎΏα-ωάέήίόύώ]+)/gu,
+      '{{violence.accused.surname}} (ον) {{violence.accused.fullNameGenitive}}')
+    .replace(/Αρχιφύλακα\s+[Α-ΩΆΈΉΊΌΎΏ]+\s+[Α-ΩΆΈΉΊΌΎΏα-ωάέήίόύώ]+/gu,
+      'Αρχιφύλακα {{violence.apprehendingOfficer.fullName}}');
+}
+
 export async function loadPublishedDossierPackages() {
   if (publishedPackagesPromise) return publishedPackagesPromise;
   publishedPackagesPromise = (async () => {
@@ -173,6 +193,10 @@ export async function loadPublishedDossierPackages() {
         }
         const parts = unzipSync(packageParts[document.path]);
         if (!parts['word/document.xml']) throw new Error('Published DOCX is missing its main document: ' + document.name);
+        if (manifest.category === 'violence') {
+          const xml = strFromU8(parts['word/document.xml']);
+          parts['word/document.xml'] = strToU8(sanitizeViolenceTemplateXml(xml));
+        }
         loaded.push({
           id: String(document.id || entry.id + '-' + loaded.length),
           name: String(document.name || 'Έντυπο Word'),
