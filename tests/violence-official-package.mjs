@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { unzipSync } from '../vendor/fflate.js';
 import { DOSSIER_CATEGORY_FIELDS, getDossierFieldDefinitions, setDossierFieldValue } from '../dossier-fields.js';
-import { buildCategoryArchive, loadPublishedDossierPackages } from '../template-library.js';
+import { buildCategoryArchive, getMissingTemplateFields, loadPublishedDossierPackages } from '../template-library.js';
 
 const catalog = JSON.parse(await readFile(new URL('../dossier-packages/manifest.json', import.meta.url), 'utf8'));
 const catalogEntry = catalog.packages.find((entry) => entry.id === 'violence-v1');
@@ -21,6 +21,7 @@ assert.equal(manifest.documents.length, 6, 'The official package must contain al
 const definitions = getDossierFieldDefinitions('violence');
 const definedPaths = new Set(definitions.map((field) => field.path));
 assert.ok(DOSSIER_CATEGORY_FIELDS.violence);
+for (const path of ['violence.accused.residenceLocality', 'violence.accused.birthPlace', 'violence.accused.residenceInExamination', 'violence.accused.residencePostalCode', 'violence.accused.surname', 'violence.accused.fullNameGenitive', 'violence.accused.givenName', 'violence.apprehendingOfficer.fullName', 'violence.apprehendingOfficer.rank', 'violence.case.dateLong', 'violence.case.weekday', 'violence.case.geeDocumentNumber', 'violence.investigators.witnessBExaminerGivenNameGenitive']) assert.ok(definedPaths.has(path), 'Missing privacy field: ' + path);
 assert.ok(definitions.every((field) => field.required === false),
   'Source-specific fields must remain optional until the operator confirms them');
 const commonPaths = new Set(['case.location', 'case.dateGreek', 'service.name', 'service.phone']);
@@ -37,7 +38,45 @@ for (const document of manifest.documents) {
   }
   const docxParts = unzipSync(packageParts[document.path]);
   assert.ok(docxParts['word/document.xml'], document.name + ' must be a valid DOCX with a main document');
+  assert.ok(docxParts['docProps/core.xml'], document.name + ' must include anonymized core metadata');
+  const coreXml = new TextDecoder().decode(docxParts['docProps/core.xml']);
+  assert.ok(coreXml.includes('<dc:creator>AX.YP</dc:creator>'), document.name + ' must not retain the source document author');
+  assert.ok(coreXml.includes('<cp:lastModifiedBy>AX.YP</cp:lastModifiedBy>'), document.name + ' must not retain the source Word user identifier');
+  assert.doesNotMatch(coreXml, /<dcterms:(?:created|modified)>/u, document.name + ' must not expose original document timestamps');
+  const appXml = new TextDecoder().decode(docxParts['docProps/app.xml']);
+  assert.ok(appXml.includes('<Template>AX.YP</Template>'), document.name + ' must not expose the original template path');
+  const xmlParts = Object.entries(docxParts).filter(([partName]) => partName.endsWith('.xml') || partName.endsWith('.rels'));
+  for (const [partName, bytes] of xmlParts) {
+    const partXml = new TextDecoder().decode(bytes);
+    assert.doesNotMatch(partXml, /\b\d{9}\b/u, document.name + ' must not retain nine-digit personal identifiers in ' + partName);
+    assert.doesNotMatch(partXml, /\b\d{10,13}\b/u, document.name + ' must not retain phone-like identifiers in ' + partName);
+    assert.doesNotMatch(partXml, /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu, document.name + ' must not retain email addresses in ' + partName);
+    assert.doesNotMatch(partXml, /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\d{6,8}(?!\d)/iu, document.name + ' must not retain identity/passport-like identifiers in ' + partName);
+    assert.doesNotMatch(partXml, /(?<!\d)\d{1,2}[./-]\d{1,2}[./-](?:19|20)\d{2}(?!\d)/u, document.name + ' must not retain fixed case dates in ' + partName);
+  }
   const xml = new TextDecoder().decode(docxParts['word/document.xml']);
+  if (document.name.startsWith('01_') || document.name.startsWith('02_')) {
+    assert.ok(xml.includes('{{violence.accused.residenceLocality}}'),
+      'police witness statements must use the accused residence placeholder, not a fixed case locality');
+  }
+  if (document.name.startsWith('03_')) {
+    assert.ok(xml.includes('{{violence.accused.residencePostalCode}}'),
+      'accused identity card must use a dynamic postal-code placeholder');
+  }
+  if (document.name.startsWith('05_')) {
+    assert.ok(xml.includes('{{violence.apprehendingOfficer.rank}}'),
+      'arrest report must use the distinct apprehending-officer rank field');
+  }
+  if (document.name.startsWith('04_')) {
+    assert.ok(xml.includes('{{violence.investigators.witnessBExaminerGivenNameGenitive}}'), 'accused examination must map the B investigator given name');
+  }
+  if (document.name.startsWith('06_')) {
+    assert.ok(xml.includes('{{violence.case.geeDocumentNumber}}'), 'forwarding document must map the G.E.E. document number');
+  }
+  if (document.name.startsWith('05_')) {
+    assert.ok(xml.includes('{{violence.investigators.witnessAExaminerGivenNameGenitive}}'), 'arrest report must map the A investigator given name');
+    assert.ok(xml.includes('{{violence.investigators.witnessBExaminerGivenNameGenitive}}'), 'arrest report must map the B investigator given name');
+  }
   const placeholders = [...new Set([...xml.matchAll(/\{\{([^{}]+)\}\}/gu)].map((match) => match[1]))];
   for (const placeholder of placeholders) {
     assert.ok(Object.hasOwn(document.mappings, placeholder),
@@ -87,6 +126,10 @@ try {
     location: 'TEST LOCATION',
     categoryData
   };
+  for (const template of violenceTemplates) {
+    const missing = getMissingTemplateFields(template, item);
+    assert.deepEqual(missing, [], template.name + ' must have all declared mapped values populated: ' + JSON.stringify(missing));
+  }
   const archive = unzipSync(buildCategoryArchive(violenceTemplates, item));
   assert.equal(Object.keys(archive).length, 6, 'The category export must generate six Word documents');
   for (const [name, bytes] of Object.entries(archive)) {
@@ -94,7 +137,8 @@ try {
     const parts = unzipSync(bytes);
     assert.ok(parts['word/document.xml'], name + ' must remain a valid DOCX');
     const xml = new TextDecoder().decode(parts['word/document.xml']);
-    assert.doesNotMatch(xml, /\{\{[^{}]+\}\}/u, name + ' must not contain unresolved placeholders');
+    const unresolved = [...xml.matchAll(/\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu)].map((match) => match[1]);
+    assert.deepEqual(unresolved, [], name + ' must not contain unresolved placeholders: ' + unresolved.join(', '));
   }
 } finally {
   globalThis.fetch = originalFetch;

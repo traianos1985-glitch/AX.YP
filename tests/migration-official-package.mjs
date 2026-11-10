@@ -44,7 +44,7 @@ const profile = {
   regionalDirectorate: 'ΓΕΝΙΚΗ ΠΕΡΙΦΕΡΕΙΑΚΗ ΑΣΤΥΝΟΜΙΚΗ ΔΙΕΥΘΥΝΣΗ',
   regionalDirectoratePrefix: 'ΓΕΝΙΚΗ ΠΕΡΙΦΕΡΕΙΑΚΗ ΑΣΤΥΝΟΜΙΚΗ',
   address: 'Οδός Παραδείγματος 1',
-  phone: '2100000000',
+  phone: 'TEST-SERVICE-PHONE',
   email: 'service@example.police.gr',
   location: 'Παράδειγμα',
   locationUpper: 'ΠΑΡΑΔΕΙΓΜΑ',
@@ -100,7 +100,7 @@ const syntheticCase = {
     birthPlace: 'Αλβανία',
     residence: 'Αγρίλη',
     nationalityGenitive: 'Αλβανίας',
-    idNumber: 'AB1234567',
+    idNumber: 'TEST-OFFENDER-IDNUMBER',
     idDate: '2024-01-10',
     idService: 'Αρχές Αλβανίας'
   },
@@ -124,13 +124,13 @@ const syntheticCase = {
   categoryData
 };
 
+const emailPattern = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu;
 const forbidden = [
-  /GURUNG|UMESH|RARA|SHARI|PA\s*5382775/iu,
-  /ASGHAR|LALA\s*KHAN|SAKINA\s*BIBI|WB1824672/iu,
-  /ΝΤΕΛΗΣ|ΝΤΕΛΗ|281685041/iu,
-  /ΘΕΟΧΑΡΗ|ΜΠΕΛΤΣΟΥ|ΣΤΡΙΓΓΑΣ|ΚΩΣΤΑΚΟΠΟΥΛΟΣ/iu,
-  /2761440980|at\.trifylias@astynomia\.gr/iu,
-  /3798332/iu
+  /\b\d{9}\b/u,
+  /\b\d{10,13}\b/u,
+  emailPattern,
+  /(?<![A-Za-z0-9\u0370-\u03ff])[A-Z\u0391-\u03a9]{1,2}\s*\d{6,8}(?![A-Za-z0-9\u0370-\u03ff])/u,
+  /(?<![A-Za-z0-9\u0370-\u03ff])[A-Z\u0391-\u03a9]{2,3}[- ]\d{3,4}(?![A-Za-z0-9\u0370-\u03ff])/u
 ];
 
 for (const document of manifest.documents) {
@@ -149,6 +149,11 @@ for (const document of manifest.documents) {
     assert.ok(document.mappings[path], document.name + ' must map ' + path);
   }
   assert.ok(parts['word/document.xml'], document.name + ' must contain the main Word document');
+  assert.ok(parts['docProps/core.xml'], document.name + ' must include anonymized core metadata');
+  const coreXml = new TextDecoder().decode(parts['docProps/core.xml']);
+  assert.ok(coreXml.includes('<dc:creator>AXYP</dc:creator>'), document.name + ' must not retain the source document author');
+  assert.ok(coreXml.includes('<cp:lastModifiedBy>AXYP</cp:lastModifiedBy>'), document.name + ' must not retain the source Word user identifier');
+  assert.doesNotMatch(coreXml, /<dcterms:(?:created|modified)>/u, document.name + ' must not expose original document timestamps');
 
   const template = {
     ...document, category: 'migration', source: 'published-package',
@@ -163,7 +168,14 @@ for (const document of manifest.documents) {
     if (!name.startsWith('word/') || !(name.endsWith('.xml') || name.endsWith('.rels'))) continue;
     const xml = new TextDecoder().decode(bytes);
     assert.doesNotMatch(xml, /\{\{\s*[\w.-]+\s*\}\}/u, document.name + ' must not retain unresolved placeholders in ' + name);
-    for (const pattern of forbidden) assert.doesNotMatch(xml, pattern, document.name + ' generated output must remain anonymized');
+    const generatedEmails = xml.match(new RegExp(emailPattern.source, 'giu')) || [];
+    for (const email of generatedEmails) {
+      assert.equal(email, profile.email, document.name + ' may contain only the explicitly configured synthetic service-profile email, never an email from the source dossier');
+    }
+    for (const pattern of forbidden) {
+      if (pattern === emailPattern) continue;
+      assert.doesNotMatch(xml, pattern, document.name + ' generated output must remain anonymized');
+    }
 
     // xmllint check
     const xmllint = spawnSync('xmllint', ['--noout', '-'], { input: Buffer.from(bytes) });

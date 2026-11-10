@@ -60,10 +60,13 @@ const syntheticCase = {
   officerB: { surname: 'TEST-OFFICER-B-SURNAME', name: 'TEST-OFFICER-B-NAME' },
   categoryData
 };
+const emailPattern = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu;
 const forbidden = [
-  /ZORICI|STOLNICIEANU|FOTINOPOULOS|6982168385|0040784610737/iu,
-  /atena\.consul@mae\.ro|at\.trifylias@astynomia\.gr/iu,
-  /RK522065|2761440980|2761440971/iu
+  /\b\d{9}\b/u,
+  /\b\d{10,13}\b/u,
+  emailPattern,
+  /(?<![A-Za-z0-9\u0370-\u03ff])[A-Z\u0391-\u03a9]{1,2}\s*\d{6,8}(?![A-Za-z0-9\u0370-\u03ff])/u,
+  /(?<![A-Za-z0-9\u0370-\u03ff])[A-Z\u0391-\u03a9]{2,3}[- ]\d{3,4}(?![A-Za-z0-9\u0370-\u03ff])/u
 ];
 
 for (const document of manifest.documents) {
@@ -81,6 +84,12 @@ for (const document of manifest.documents) {
     assert.ok(document.mappings[path], document.name + ' must map ' + path);
   }
   assert.ok(parts['word/document.xml'], document.name + ' must contain the main Word document');
+  if (parts['docProps/core.xml']) {
+    const coreXml = new TextDecoder().decode(parts['docProps/core.xml']);
+    assert.ok(coreXml.includes('<dc:creator>AX.YP</dc:creator>'), document.name + ' must not expose the source document author');
+    assert.ok(coreXml.includes('<cp:lastModifiedBy>AX.YP</cp:lastModifiedBy>'), document.name + ' must not expose the source Word user identifier');
+    assert.doesNotMatch(coreXml, /<dcterms:(?:created|modified)>/u, document.name + ' must not expose original document timestamps');
+  }
   const template = {
     ...document, category: 'sudden-death', source: 'published-package',
     files: Object.fromEntries(Object.entries(parts).map(([name, bytes]) => [name, Array.from(bytes)]))
@@ -100,7 +109,14 @@ for (const document of manifest.documents) {
     if (!name.startsWith('word/') || !(name.endsWith('.xml') || name.endsWith('.rels'))) continue;
     const xml = new TextDecoder().decode(bytes);
     assert.doesNotMatch(xml, /\{\{\s*[\w.-]+\s*\}\}/u, document.name + ' must not retain unresolved placeholders in ' + name);
-    for (const pattern of forbidden) assert.doesNotMatch(xml, pattern, document.name + ' generated output must remain anonymized');
+    const generatedEmails = xml.match(new RegExp(emailPattern.source, 'giu')) || [];
+    for (const email of generatedEmails) {
+      assert.equal(email, profile.email, document.name + ' may contain only the explicitly configured synthetic service-profile email, never an email from the source dossier');
+    }
+    for (const pattern of forbidden) {
+      if (pattern === emailPattern) continue;
+      assert.doesNotMatch(xml, pattern, document.name + ' generated output must remain anonymized');
+    }
   }
 }
 console.log('Sudden-death official package tests passed: five source documents, placeholder mapping, privacy scan, and DOCX generation.');
