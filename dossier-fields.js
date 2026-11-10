@@ -122,7 +122,62 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('suddenDeath.witness.residence', 'Μάρτυρας', 'Τόπος κατοικίας μάρτυρα'),
     defineDossierField('suddenDeath.witness.yearsInResidence', 'Μάρτυρας', 'Έτη διαμονής μάρτυρα στην περιοχή', 'number', false, { min: 0, step: '1' })
   ]),
-  migration: Object.freeze([]),
+  migration: Object.freeze([
+    // Κατηγορούμενος / αλλοδαπός (ειδικά στοιχεία εισόδου, παραμονής και δηλώσεων)
+    defineDossierField('migration.offender.entryPoint', 'Κατηγορούμενος · είσοδος & παραμονή', 'Σημείο παράνομης εισόδου στη Χώρα'),
+    defineDossierField('migration.offender.stayDuration', 'Κατηγορούμενος · είσοδος & παραμονή', 'Χρόνος παραμονής στη Χώρα (κατά δήλωσή του)'),
+    defineDossierField('migration.offender.rightsResponse', 'Κατηγορούμενος · δηλώσεις', 'Δήλωση χρήσης δικαιωμάτων', 'textarea', true, { rows: 2 }),
+    defineDossierField('migration.offender.previousHistory', 'Κατηγορούμενος · δηλώσεις', 'Προηγούμενο ποινικό ιστορικό / απάντηση'),
+    defineDossierField('migration.offender.statement', 'Κατηγορούμενος · δηλώσεις', 'Απολογία / δήλωση κατηγορουμένου', 'textarea', true, { rows: 4 }),
+
+    // Διερμηνέας
+    defineDossierField('migration.interpreter.surname', 'Διερμηνέας', 'Επώνυμο διερμηνέα'),
+    defineDossierField('migration.interpreter.name', 'Διερμηνέας', 'Όνομα διερμηνέα'),
+    defineDossierField('migration.interpreter.fatherName', 'Διερμηνέας', 'Πατρώνυμο διερμηνέα'),
+    defineDossierField('migration.interpreter.motherName', 'Διερμηνέας', 'Μητρώνυμο διερμηνέα'),
+    defineDossierField('migration.interpreter.birthDate', 'Διερμηνέας', 'Ημερομηνία γέννησης διερμηνέα', 'date'),
+    defineDossierField('migration.interpreter.birthPlace', 'Διερμηνέας', 'Τόπος γέννησης διερμηνέα'),
+    defineDossierField('migration.interpreter.city', 'Διερμηνέας', 'Τόπος κατοικίας διερμηνέα'),
+    defineDossierField('migration.interpreter.idNumber', 'Διερμηνέας', 'Αριθμός διαβατηρίου / ταυτότητας διερμηνέα'),
+    defineDossierField('migration.interpreter.idDate', 'Διερμηνέας', 'Ημερομηνία έκδοσης διαβατηρίου διερμηνέα', 'date'),
+    defineDossierField('migration.interpreter.idService', 'Διερμηνέας', 'Αρχή έκδοσης διαβατηρίου διερμηνέα'),
+    defineDossierField('migration.interpreter.nationality', 'Διερμηνέας', 'Υπηκοότητα διερμηνέα'),
+    defineDossierField('migration.interpreter.profession', 'Διερμηνέας', 'Επάγγελμα διερμηνέα'),
+    defineDossierField('migration.interpreter.language', 'Διερμηνέας', 'Γλώσσα διερμηνείας'),
+
+    // Αστυνομικός μάρτυρας
+    defineDossierField('migration.policeWitness.fullName', 'Αστυνομικός μάρτυρας', 'Ονοματεπώνυμο αστυνομικού μάρτυρα'),
+    defineDossierField('migration.policeWitness.fatherNameGenitive', 'Αστυνομικός μάρτυρας', 'Πατρώνυμο (γενική)'),
+    defineDossierField('migration.policeWitness.motherNameGenitive', 'Αστυνομικός μάρτυρας', 'Μητρώνυμο (γενική)'),
+    defineDossierField('migration.policeWitness.birthDate', 'Αστυνομικός μάρτυρας', 'Ημερομηνία γέννησης', 'date'),
+    defineDossierField('migration.policeWitness.birthPlace', 'Αστυνομικός μάρτυρας', 'Τόπος γέννησης'),
+    defineDossierField('migration.policeWitness.residence', 'Αστυνομικός μάρτυρας', 'Τόπος κατοικίας'),
+    defineDossierField('migration.policeWitness.idNumber', 'Αστυνομικός μάρτυρας', 'Αριθμός δελτίου ταυτότητας'),
+    defineDossierField('migration.policeWitness.idYear', 'Αστυνομικός μάρτυρας', 'Έτος έκδοσης ταυτότητας'),
+    defineDossierField('migration.policeWitness.idService', 'Αστυνομικός μάρτυρας', 'Αρχή έκδοσης ταυτότητας'),
+    defineDossierField('migration.policeWitness.profession', 'Αστυνομικός μάρτυρας', 'Επάγγελμα / ιδιότητα'),
+    defineDossierField('migration.policeWitness.religion', 'Αστυνομικός μάρτυρας', 'Θρήσκευμα'),
+    defineDossierField('migration.policeWitness.rank', 'Αστυνομικός μάρτυρας', 'Βαθμός'),
+    defineDossierField('migration.policeWitness.unit', 'Αστυνομικός μάρτυρας', 'Υπηρεσία / ομάδα περιπολίας'),
+    defineDossierField('migration.policeWitness.dutyStartTime', 'Αστυνομικός μάρτυρας', 'Ώρα έναρξης υπηρεσίας', 'time'),
+    defineDossierField('migration.policeWitness.dutyEndTime', 'Αστυνομικός μάρτυρας', 'Ώρα λήξης υπηρεσίας', 'time'),
+    defineDossierField('migration.policeWitness.patrolArea', 'Αστυνομικός μάρτυρας', 'Περιοχή εκτέλεσης περιπολίας'),
+
+    // Συλλαβών αστυνομικός
+    defineDossierField('migration.arrestingOfficer.rank', 'Συλλαβών αστυνομικός', 'Βαθμός συλλαβόντος'),
+    defineDossierField('migration.arrestingOfficer.fullName', 'Συλλαβών αστυνομικός', 'Ονοματεπώνυμο συλλαβόντος'),
+    defineDossierField('migration.arrestingOfficer.unit', 'Συλλαβών αστυνομικός', 'Υπηρεσία / ομάδα συλλαβόντος'),
+
+    // Διοικητική διαδικασία & Εισαγγελία
+    defineDossierField('migration.prosecutor.title', 'Εισαγγελική αρχή & εντολή', 'Εισαγγελική αρχή / δικαστικός λειτουργός'),
+    defineDossierField('migration.case.releaseDate', 'Εισαγγελική αρχή & εντολή', 'Ημερομηνία προφορικής εντολής απόλυσης', 'date'),
+    defineDossierField('migration.case.releaseTime', 'Εισαγγελική αρχή & εντολή', 'Ώρα προφορικής εντολής απόλυσης', 'time'),
+    defineDossierField('migration.case.destinationKyt', 'Διοικητική διαδικασία επιστροφής / ασύλου', 'Δομή / Κ.Υ.Τ. προορισμού καταγραφής'),
+    defineDossierField('migration.case.geeDocumentProtocol', 'Διοικητική διαδικασία επιστροφής / ασύλου', 'Αριθμός εγγράφου Γ.Ε.Ε.'),
+    defineDossierField('migration.case.handlingOfficer', 'Διοικητική διαδικασία επιστροφής / ασύλου', 'Αρμόδιος χειριστής εγγράφου'),
+    defineDossierField('migration.recipients.policeDirectorateGaa', 'Αποδέκτες εγγράφων', 'Υπηρεσία αποδέκτης (π.χ. Δ.Α. / Γ.Α.Α.)'),
+    defineDossierField('migration.recipients.prosecution', 'Αποδέκτες εγγράφων', 'Εισαγγελία αποδέκτης υποβολής')
+  ]),
   traffic: Object.freeze([]),
   kok: Object.freeze([
     Object.freeze({

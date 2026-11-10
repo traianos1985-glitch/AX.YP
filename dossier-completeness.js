@@ -39,7 +39,12 @@ export const DOSSIER_COMPLETENESS_RULES = {
 
 const GENERIC_LABELS = {
   domestic: 'Ενδοοικογενειακή βία',
-  migration: 'Απελάσεις αλλοδαπών',
+  migration: { label: 'Απελάσεις αλλοδαπών', guidance: 'Έλεγξε τα στοιχεία ταυτοποίησης αλλοδαπού, τα στοιχεία διερμηνέα, το σημείο/χρόνο εισόδου, τον μάρτυρα και τους χρόνους ενεργειών.', groups: [
+    { label: 'Περιστατικό & σύλληψη', fields: [['case-location','Τόπος'],['case-incident-date','Ημερομηνία περιστατικού'],['case-incident-time','Ώρα περιστατικού'],['migration-arrestingOfficer-fullName','Συλλαβών']] },
+    { label: 'Κατηγορούμενος / αλλοδαπός', fields: [['offender-surname','Επώνυμο'],['offender-name','Όνομα'],['offender-id-number','Αριθμός διαβατηρίου / ταυτότητας'],['offender-nationality','Υπηκοότητα']] },
+    { label: 'Διερμηνέας', fields: [['migration-interpreter-surname','Επώνυμο διερμηνέα'],['migration-interpreter-name','Όνομα διερμηνέα'],['migration-interpreter-language','Γλώσσα']] },
+    { label: 'Χρόνοι ενεργειών', fields: [['timeline-witness-start','Έναρξη εξέτασης μάρτυρα'],['timeline-arrest-start','Έναρξη έκθεσης σύλληψης'],['timeline-examination-start','Έναρξη εξέτασης κατηγορουμένου']] }
+  ] },
   traffic: 'Τροχαία ατυχήματα',
   kok: 'Παραβάσεις Κ.Ο.Κ.',
   animal: 'Προστασία ζώων',

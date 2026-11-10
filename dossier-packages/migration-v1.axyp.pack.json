@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "migration-v1",
+  "category": "migration",
+  "encoding": "base64-chunks",
+  "byteLength": 41879,
+  "parts": [
+    "migration-v1-part-01.b64",
+    "migration-v1-part-02.b64",
+    "migration-v1-part-03.b64",
+    "migration-v1-part-04.b64",
+    "migration-v1-part-05.b64",
+    "migration-v1-part-06.b64",
+    "migration-v1-part-07.b64"
+  ]
+}
