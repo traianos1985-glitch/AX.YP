@@ -276,10 +276,6 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('gok.forwarding.dateGreek', 'Διαβιβαστικό', 'Ημερομηνία διαβιβαστικού (μορφή εγγράφου)', 'text', false),
     defineDossierField('gok.forwarding.responsibleOfficer', 'Διαβιβαστικό', 'Αρμόδιος υπάλληλος διαβιβαστικού', 'text', false),
 
-    // Αστυνομικός μάρτυρας — πρόσθετα στοιχεία
-    defineDossierField('gok.policeWitness.surname', 'Αστυνομικός μάρτυρας', 'Επώνυμο', 'text', false),
-    defineDossierField('gok.policeWitness.givenName', 'Αστυνομικός μάρτυρας', 'Όνομα', 'text', false),
-
     // Εισαγγελική αρχή και στοιχεία αποστολής
     defineDossierField('gok.prosecutor.fullName', 'Εισαγγελική αρχή', 'Ονοματεπώνυμο εισαγγελικού λειτουργού', 'text', false),
     defineDossierField('gok.prosecutor.locationGenitive', 'Εισαγγελική αρχή', 'Τόπος εισαγγελικής αρχής (γενική)', 'text', false),
