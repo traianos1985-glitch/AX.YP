@@ -93,7 +93,7 @@ for (const path of [
   'violence.witnessA.idNumber',
   'violence.witnessB.surname',
   'violence.witnessB.idNumber',
-  'violence.accused.residenceLocality',
+  'violence.accused.residenceLocality',\n  'violence.accused.residenceInExamination',\n  'violence.accused.residencePostalCode',\n  'violence.apprehendingOfficer.fullName',
   'violence.investigators.accusedExaminerSurname',
   'violence.investigators.witnessAExaminerSurname',
   'violence.investigators.witnessBExaminerSurnameUpper',
