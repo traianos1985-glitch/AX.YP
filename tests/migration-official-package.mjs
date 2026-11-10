@@ -148,6 +148,11 @@ for (const document of manifest.documents) {
     assert.ok(document.mappings[path], document.name + ' must map ' + path);
   }
   assert.ok(parts['word/document.xml'], document.name + ' must contain the main Word document');
+  assert.ok(parts['docProps/core.xml'], document.name + ' must include anonymized core metadata');
+  const coreXml = new TextDecoder().decode(parts['docProps/core.xml']);
+  assert.ok(coreXml.includes('<dc:creator>AXYP</dc:creator>'), document.name + ' must not retain the source document author');
+  assert.ok(coreXml.includes('<cp:lastModifiedBy>AXYP</cp:lastModifiedBy>'), document.name + ' must not retain the source Word user identifier');
+  assert.doesNotMatch(coreXml, /<dcterms:(?:created|modified)>/u, document.name + ' must not expose original document timestamps');
 
   const template = {
     ...document, category: 'migration', source: 'published-package',
