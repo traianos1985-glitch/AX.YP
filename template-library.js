@@ -92,23 +92,6 @@ export function resolvePublishedDocumentName(category, name) {
 
 // Replace case-specific identity/location/date residue in the legacy violence DOCX
 // package before the templates are exposed to document generation.
-export function sanitizeViolenceTemplateXml(xml) {
-  return String(xml)
-    .replace(/ΜΕΛΙΓΑΛΑ/gu, '{{violence.accused.residenceLocality}}')
-    .replace(/24002/gu, '{{violence.accused.residencePostalCode}}')
-    .replace(/Σκάλα Οιχαλίας/gu, '{{violence.accused.residenceInExamination}}')
-    .replace(/Αθήνα/gu, '{{violence.accused.birthPlace}}')
-    .replace(/(?:ΔΟΥ\s*)?Καλαμάτας/gu, 'ΔΟΥ {{violence.accused.taxOffice}}')
-    .replace(/13-09-2026/gu, '{{case.dateGreek}}')
-    .replace(/13\s+του μήνα Σεπτεμβρίου\s+του έτους 2026/gu, '{{violence.case.dateLong}}')
-    .replace(/13\s+Σεπτεμβρίου\s+2026/gu, '{{violence.case.dateLong}}')
-    .replace(/Κυριακή/gu, '{{violence.case.weekday}}')
-    .replace(/([Α-ΩΆΈΉΊΌΎΏ]+)\s+\(ον\)\s+([Α-ΩΆΈΉΊΌΎΏα-ωάέήίόύώ]+)/gu,
-      '{{violence.accused.surname}} (ον) {{violence.accused.fullNameGenitive}}')
-    .replace(/Αρχιφύλακα\s+[Α-ΩΆΈΉΊΌΎΏ]+\s+[Α-ΩΆΈΉΊΌΎΏα-ωάέήίόύώ]+/gu,
-      '{{violence.apprehendingOfficer.rank}} {{violence.apprehendingOfficer.fullName}}');
-}
-
 export async function loadPublishedDossierPackages() {
   if (publishedPackagesPromise) return publishedPackagesPromise;
   publishedPackagesPromise = (async () => {
@@ -193,12 +176,6 @@ export async function loadPublishedDossierPackages() {
         }
         const parts = unzipSync(packageParts[document.path]);
         if (!parts['word/document.xml']) throw new Error('Published DOCX is missing its main document: ' + document.name);
-        if (manifest.category === 'violence') {
-          const xml = strFromU8(parts['word/document.xml']);
-          parts['word/document.xml'] = strToU8(sanitizeViolenceTemplateXml(xml)
-            .replace(/(\{\{violence\.investigators\.witnessAExaminerSurnameUpper\}\}) \{\{violence\.witnessA\.fatherNameGenitive\}\}/gu, '$1 {{violence.investigators.witnessAExaminerGivenNameGenitive}}')
-            .replace(/(\{\{violence\.investigators\.witnessBExaminerSurnameUpper\}\}) \{\{violence\.witnessA\.fatherNameGenitive\}\}/gu, '$1 {{violence.investigators.witnessBExaminerGivenNameGenitive}}'));
-        }
         loaded.push({
           id: String(document.id || entry.id + '-' + loaded.length),
           name: String(document.name || 'Έντυπο Word'),
@@ -206,30 +183,8 @@ export async function loadPublishedDossierPackages() {
           categoryLabel: 'Επίσημο πακέτο εφαρμογής',
           source: 'published-package',
           fidelityMode: 'placeholder-only',
-          fields: manifest.category === 'violence'
-            ? [...new Set([...(Array.isArray(document.fields) ? document.fields : []),
-              'violence.accused.residenceLocality', 'violence.accused.residenceInExamination', 'violence.accused.residencePostalCode',
-              'violence.accused.surname', 'violence.accused.fullNameGenitive',
-              'violence.apprehendingOfficer.fullName', 'violence.apprehendingOfficer.rank', 'violence.case.dateLong', 'violence.case.weekday',
-              'violence.accused.taxOffice', 'violence.investigators.witnessAExaminerGivenNameGenitive',
-              'violence.investigators.witnessBExaminerGivenNameGenitive', 'case.dateGreek'])]
-            : (Array.isArray(document.fields) ? document.fields : []),
-          mappings: manifest.category === 'violence'
-            ? { ...(document.mappings && typeof document.mappings === 'object' ? document.mappings : {}),
-              'violence.accused.residenceLocality': 'violence.accused.residenceLocality',
-              'violence.accused.residenceInExamination': 'violence.accused.residenceInExamination',
-              'violence.accused.residencePostalCode': 'violence.accused.residencePostalCode',
-              'violence.accused.surname': 'violence.accused.surname',
-              'violence.accused.fullNameGenitive': 'violence.accused.fullNameGenitive',
-              'violence.apprehendingOfficer.fullName': 'violence.apprehendingOfficer.fullName',
-              'violence.apprehendingOfficer.rank': 'violence.apprehendingOfficer.rank',
-              'violence.case.dateLong': 'violence.case.dateLong',
-              'violence.case.weekday': 'violence.case.weekday',
-              'violence.accused.taxOffice': 'violence.accused.taxOffice',
-              'violence.investigators.witnessAExaminerGivenNameGenitive': 'violence.investigators.witnessAExaminerGivenNameGenitive',
-              'violence.investigators.witnessBExaminerGivenNameGenitive': 'violence.investigators.witnessBExaminerGivenNameGenitive',
-              'case.dateGreek': 'case.dateGreek' }
-            : (document.mappings && typeof document.mappings === 'object' ? document.mappings : {}),
+          fields: Array.isArray(document.fields) ? document.fields : [],
+          mappings: document.mappings && typeof document.mappings === 'object' ? document.mappings : {},
           mappingConfirmedAt: manifest.publishedAt || manifest.createdAt || 'published',
           files: Object.fromEntries(Object.entries(parts).map(([name, bytes]) => [name, Array.from(bytes)]))
         });
