@@ -70,7 +70,6 @@ const forbidden = [
 ];
 
 for (const document of manifest.documents) {
-for (const document of manifest.documents) {
   const placeholders = new Set();
   const parts = Object.fromEntries(Object.entries(document.parts).map(([name, part]) => {
     const bytes = part.encoding === 'utf8' ? new TextEncoder().encode(part.data) : base64ToUint8(part.data);
