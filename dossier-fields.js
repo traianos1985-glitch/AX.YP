@@ -230,6 +230,70 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('violence.service.areaGenitive', 'Στοιχεία υπηρεσίας', 'Περιοχή υπηρεσίας (γενική)', 'text', false),
     defineDossierField('violence.service.directorateGenitive', 'Στοιχεία υπηρεσίας', 'Διεύθυνση Αστυνομίας (γενική)', 'text', false)
   ]),
+  gok: Object.freeze([
+    // Κατηγορούμενος — στοιχεία και δηλώσεις που διαφέρουν ανά υπόθεση
+    defineDossierField('gok.accused.cityGenitive', 'Κατηγορούμενος', 'Τόπος κατοικίας (γενική)', 'text', false),
+    defineDossierField('gok.accused.education', 'Κατηγορούμενος', 'Γραμματικές γνώσεις', 'text', false),
+    defineDossierField('gok.accused.idIssueYear', 'Κατηγορούμενος', 'Έτος έκδοσης ταυτότητας', 'text', false),
+    defineDossierField('gok.accused.maritalStatus', 'Κατηγορούμενος', 'Οικογενειακή κατάσταση', 'text', false),
+    defineDossierField('gok.accused.previousHistory', 'Κατηγορούμενος · δηλώσεις', 'Προηγούμενο ιστορικό / απάντηση', 'textarea', false, { rows: 2 }),
+    defineDossierField('gok.accused.profession', 'Κατηγορούμενος', 'Επάγγελμα', 'text', false),
+    defineDossierField('gok.accused.residence', 'Κατηγορούμενος', 'Τόπος και διεύθυνση κατοικίας (μορφή εγγράφου)', 'text', false),
+    defineDossierField('gok.accused.rightsResponse', 'Κατηγορούμενος · δικαιώματα', 'Απάντηση για τη χρήση δικαιωμάτων', 'textarea', false, { rows: 2 }),
+    defineDossierField('gok.accused.statement', 'Κατηγορούμενος · δηλώσεις', 'Απολογία / δήλωση κατηγορουμένου', 'textarea', false, { rows: 6 }),
+
+    // Διακριτοί υπηρεσιακοί ρόλοι της συγκεκριμένης δικογραφίας
+    defineDossierField('gok.apprehendingOfficer.fullName', 'Συλλαβών αστυνομικός', 'Ονοματεπώνυμο συλλαβόντος', 'text', false),
+    defineDossierField('gok.apprehendingOfficer.rank', 'Συλλαβών αστυνομικός', 'Βαθμός συλλαβόντος', 'text', false),
+    defineDossierField('gok.policeWitness.birthDate', 'Αστυνομικός μάρτυρας', 'Ημερομηνία γέννησης', 'date', false),
+    defineDossierField('gok.policeWitness.birthPlace', 'Αστυνομικός μάρτυρας', 'Τόπος γέννησης', 'text', false),
+    defineDossierField('gok.policeWitness.fatherNameGenitive', 'Αστυνομικός μάρτυρας', 'Πατρώνυμο (γενική)', 'text', false),
+    defineDossierField('gok.policeWitness.givenName', 'Αστυνομικός μάρτυρας', 'Όνομα', 'text', false),
+    defineDossierField('gok.policeWitness.idIssueDate', 'Αστυνομικός μάρτυρας', 'Ημερομηνία έκδοσης υπηρεσιακής ταυτότητας', 'text', false),
+    defineDossierField('gok.policeWitness.idIssuer', 'Αστυνομικός μάρτυρας', 'Αρχή έκδοσης υπηρεσιακής ταυτότητας', 'text', false),
+    defineDossierField('gok.policeWitness.idNumber', 'Αστυνομικός μάρτυρας', 'Αριθμός υπηρεσιακής ταυτότητας', 'text', false),
+    defineDossierField('gok.policeWitness.motherNameGenitive', 'Αστυνομικός μάρτυρας', 'Μητρώνυμο (γενική)', 'text', false),
+    defineDossierField('gok.policeWitness.nationality', 'Αστυνομικός μάρτυρας', 'Υπηκοότητα', 'text', false),
+    defineDossierField('gok.policeWitness.rank', 'Αστυνομικός μάρτυρας', 'Βαθμός / ιδιότητα', 'text', false),
+    defineDossierField('gok.policeWitness.religion', 'Αστυνομικός μάρτυρας', 'Θρήσκευμα (όπου απαιτείται στο έντυπο)', 'text', false),
+    defineDossierField('gok.policeWitness.surname', 'Αστυνομικός μάρτυρας', 'Επώνυμο', 'text', false),
+
+    // Περιστατικό και αυθαίρετες οικοδομικές εργασίες
+    defineDossierField('gok.case.area', 'Περιστατικό · τοποθεσία', 'Περιοχή / τοπωνύμιο', 'text', false),
+    defineDossierField('gok.case.arrestTime', 'Περιστατικό · χρόνοι', 'Ώρα σύλληψης', 'time', false),
+    defineDossierField('gok.case.buildingService', 'Υπηρεσία Δόμησης', 'Αρμόδια Υπηρεσία Δόμησης', 'text', false),
+    defineDossierField('gok.case.complainantFullName', 'Περιστατικό · καταγγελία', 'Δηλωθέν ονοματεπώνυμο καταγγέλλοντος', 'text', false),
+    defineDossierField('gok.case.complaintTime', 'Περιστατικό · χρόνοι', 'Ώρα τηλεφωνικής καταγγελίας', 'time', false),
+    defineDossierField('gok.case.eventTime', 'Περιστατικό · χρόνοι', 'Ώρα διαπίστωσης εργασιών', 'time', false),
+    defineDossierField('gok.case.hearingDate', 'Εισαγγελική εξέλιξη', 'Ημερομηνία ρητής δικασίμου', 'text', false),
+    defineDossierField('gok.case.streetAddress', 'Περιστατικό · τοποθεσία', 'Οδός και αριθμός', 'text', false),
+    defineDossierField('gok.case.weekday', 'Περιστατικό · ημερομηνία', 'Ημέρα εβδομάδας όπως αναγράφεται στο έντυπο', 'text', false),
+    defineDossierField('gok.case.workDescription', 'Οικοδομικές εργασίες', 'Περιγραφή οικοδομικής εργασίας', 'textarea', false, { rows: 3 }),
+    defineDossierField('gok.case.workDimensions', 'Οικοδομικές εργασίες', 'Διαστάσεις εργασίας', 'text', false),
+    defineDossierField('gok.case.workMethod', 'Οικοδομικές εργασίες', 'Τρόπος εκτέλεσης / περιγραφή εργασιών', 'textarea', false, { rows: 3 }),
+
+    // Διαβιβαστικό
+    defineDossierField('gok.forwarding.dateGreek', 'Διαβιβαστικό', 'Ημερομηνία διαβιβαστικού (μορφή εγγράφου)', 'text', false),
+    defineDossierField('gok.forwarding.responsibleOfficer', 'Διαβιβαστικό', 'Αρμόδιος υπάλληλος διαβιβαστικού', 'text', false),
+
+    // Αστυνομικός μάρτυρας — πρόσθετα στοιχεία
+    defineDossierField('gok.policeWitness.surname', 'Αστυνομικός μάρτυρας', 'Επώνυμο', 'text', false),
+    defineDossierField('gok.policeWitness.givenName', 'Αστυνομικός μάρτυρας', 'Όνομα', 'text', false),
+
+    // Εισαγγελική αρχή και στοιχεία αποστολής
+    defineDossierField('gok.prosecutor.fullName', 'Εισαγγελική αρχή', 'Ονοματεπώνυμο εισαγγελικού λειτουργού', 'text', false),
+    defineDossierField('gok.prosecutor.locationGenitive', 'Εισαγγελική αρχή', 'Τόπος εισαγγελικής αρχής (γενική)', 'text', false),
+    defineDossierField('gok.prosecutor.locationUpper', 'Εισαγγελική αρχή', 'Τόπος εισαγγελικής αρχής (κεφαλαία)', 'text', false),
+    defineDossierField('gok.prosecutor.office', 'Εισαγγελική αρχή', 'Εισαγγελία / αρμόδιο δικαστήριο', 'text', false),
+    defineDossierField('gok.prosecutor.postalCode', 'Εισαγγελική αρχή', 'Ταχυδρομικός κώδικας εισαγγελικής αρχής', 'text', false),
+    defineDossierField('gok.prosecutor.title', 'Εισαγγελική αρχή', 'Ιδιότητα εισαγγελικού λειτουργού', 'text', false),
+
+    // Στοιχεία υπηρεσίας που δεν υπάρχουν στο βασικό Service Profile
+    defineDossierField('gok.service.fax', 'Υπηρεσία', 'Fax Server υπηρεσίας', 'text', false),
+    defineDossierField('gok.service.locationGenitive', 'Υπηρεσία', 'Τόπος υπηρεσίας (γενική)', 'text', false),
+    defineDossierField('gok.service.nameGenitive', 'Υπηρεσία', 'Ονομασία υπηρεσίας (γενική)', 'text', false),
+    defineDossierField('gok.service.regionGenitive', 'Υπηρεσία', 'Περιφερειακή ενότητα (γενική)', 'text', false)
+  ]),
   traffic: Object.freeze([]),
   kok: Object.freeze([
     Object.freeze({
