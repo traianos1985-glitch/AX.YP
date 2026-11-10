@@ -41,6 +41,13 @@ for (const document of manifest.documents) {
   }
   const docxParts = unzipSync(packageParts[document.path]);
   assert.ok(docxParts['word/document.xml'], document.name + ' must be a valid DOCX with a main document');
+  assert.ok(docxParts['docProps/core.xml'], document.name + ' must include anonymized core metadata');
+  const coreXml = new TextDecoder().decode(docxParts['docProps/core.xml']);
+  assert.match(coreXml, /<dc:creator>AX\\.YP<\\/dc:creator>/u, document.name + ' must not expose the source author');
+  assert.match(coreXml, /<cp:lastModifiedBy>AX\\.YP<\\/cp:lastModifiedBy>/u, document.name + ' must not expose the source Word user identifier');
+  assert.doesNotMatch(coreXml, /<dcterms:(?:created|modified)>/u, document.name + ' must not expose original document timestamps');
+  const appXml = new TextDecoder().decode(docxParts['docProps/app.xml']);
+  assert.match(appXml, /<Template>AX\\.YP<\\/Template>/u, document.name + ' must not expose the original template path');
   const xml = new TextDecoder().decode(docxParts['word/document.xml']);
   const placeholders = [...new Set([...xml.matchAll(/\{\{([^{}]+)\}\}/gu)].map((match) => match[1]))];
   for (const placeholder of placeholders) {
