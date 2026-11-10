@@ -90,8 +90,8 @@ assert.equal(valueFor('officerB.nominativeFullName', { title: 'CASE-ONLY-DATA' }
 assert.equal(valueFor('officerB.service', { title: 'CASE-ONLY-DATA' }), 'Νέα Υπηρεσία', 'A case without a saved second-investigator service uses the current installation service profile');
 assert.equal(valueFor('officerB.residence', { title: 'CASE-ONLY-DATA' }), 'Νέα Υπηρεσία', 'A case without a saved second-investigator residence uses the current installation service profile');
 globalThis.window.AXYP_SERVICE_PROFILE.get = () => empty;
-assert.equal(valueFor('officerA.fullName', { title: 'DEFAULT-PROFILE' }), '');
-assert.equal(valueFor('officerB.fullName', { title: 'DEFAULT-PROFILE' }), '');
+assert.equal(valueFor('officerA.fullName', { title: 'DEFAULT-PROFILE' }), '—', 'An unconfigured installation displays the neutral empty-value marker, never a seeded officer identity');
+assert.equal(valueFor('officerB.fullName', { title: 'DEFAULT-PROFILE' }), '—', 'An unconfigured installation displays the neutral empty-value marker, never a seeded second-officer identity');
 globalThis.window.AXYP_SERVICE_PROFILE.get = () => saved;
 assert.equal(valueFor('service.chemicalService', { title: 'CASE-ONLY-DATA' }), 'Χημική Υπηρεσία Δοκιμής');
 assert.equal(valueFor('service.prosecutor', { title: 'CASE-ONLY-DATA' }), 'Εισαγγελία Πρωτοδικών Δοκιμής');
