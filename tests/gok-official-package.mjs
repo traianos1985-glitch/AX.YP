@@ -112,12 +112,18 @@ const syntheticCase = {
   categoryData
 };
 
-const forbidden = [
+const emailPattern = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu;
+const forbiddenSource = [
   /\b\d{9}\b/u,
   /\b\d{10,13}\b/u,
-  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu,
+  emailPattern,
   /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\d{6,8}(?!\d)/iu,
   /(?<!\d)\d{1,2}[./-]\d{1,2}[./-](?:19|20)\d{2}(?!\d)/u
+];
+const forbiddenGenerated = [
+  /\b\d{9}\b/u,
+  /\b\d{10,13}\b/u,
+  /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\d{6,8}(?!\d)/iu
 ];
 
 for (const document of packed.documents) {
