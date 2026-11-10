@@ -61,9 +61,11 @@ const syntheticCase = {
   categoryData
 };
 const forbidden = [
-  /ZORICI|STOLNICIEANU|FOTINOPOULOS|6982168385|0040784610737/iu,
-  /atena\.consul@mae\.ro|at\.trifylias@astynomia\.gr/iu,
-  /RK522065|2761440980|2761440971/iu
+  /\b\d{9}\b/u,
+  /\b\d{10,13}\b/u,
+  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu,
+  /\b[A-ZΑ-Ω]{1,2}\d{6,8}\b/u,
+  /\b[A-ZΑ-Ω]{2,3}[- ]?\d{3,4}\b/u
 ];
 
 for (const document of manifest.documents) {
