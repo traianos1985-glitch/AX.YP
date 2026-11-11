@@ -856,7 +856,13 @@ export function valueFor(path, item) {
   };
   if (path === 'narcotics.service.cityUpper') {
     const city = getDossierFieldValue(item.categoryData, 'narcotics.service.city') || item.location || serviceProfile.location || '';
-    return String(city).toLocaleUpperCase('el-GR');
+    return [...String(city).toLocaleUpperCase('el-GR')].join(' ');
+  }
+  if (path === 'narcotics.service.postalCode') {
+    const postalCode = getDossierFieldValue(item.categoryData, path);
+    if (postalCode !== '' && postalCode !== undefined && postalCode !== null) {
+      return [...String(postalCode).replace(/\\s+/gu, '')].join(' ');
+    }
   }
   if (path === 'narcotics.exhibits.cannabis.unit') return 'γραμμαρίων';
   if (path === 'narcotics.exhibits.cigarette.unit') {
@@ -866,7 +872,7 @@ export function valueFor(path, item) {
   const categoryValue = getDossierFieldValue(item.categoryData, path);
   if (categoryValue !== '' && categoryValue !== undefined && categoryValue !== null) {
     if (path === 'narcotics.exhibits.cannabis.quantity') return String(categoryValue).replace('.', ',');
-    if (/\.(?:birthDate|idDate)$/u.test(path)) return formatDateToGreekNumeric(String(categoryValue));
+    if (/\.(?:birthDate|idDate|signalReportDate|chemicalProtocolDate)$/u.test(path)) return formatDateToGreekNumeric(String(categoryValue));
     return display(categoryValue);
   }
   return display(map[path]);
