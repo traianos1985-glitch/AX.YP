@@ -121,6 +121,8 @@ try {
     const xml=Object.entries(generated).filter(([name])=>name.startsWith('word/')&&name.endsWith('.xml'))
       .map(([,value])=>new TextDecoder().decode(value)).join('\n');
     assert.doesNotMatch(xml,/\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/gu);
+    assert.ok(xml.includes('T E S T - S E R V I C E - C I T Y'));
+    assert.ok(xml.includes('Ανθ. ΔΟΚΙΜΑΣΤΙΚΟΣ Γεώργιος'));
   }
 } finally {
   globalThis.fetch=originalFetch;

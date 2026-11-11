@@ -855,13 +855,13 @@ export function valueFor(path, item) {
     'offender.children': offender.children
   };
   if (path === 'narcotics.service.cityUpper') {
-    const city = getDossierFieldValue(item.categoryData, 'narcotics.service.city') || item.location || serviceProfile.location || '';
+    const city = getDossierFieldValue(item.categoryData, 'narcotics.service.city') || serviceProfile.location || '';
     return [...String(city).toLocaleUpperCase('el-GR')].join(' ');
   }
   if (path === 'narcotics.service.postalCode') {
     const postalCode = getDossierFieldValue(item.categoryData, path);
     if (postalCode !== '' && postalCode !== undefined && postalCode !== null) {
-      return [...String(postalCode).replace(/\\s+/gu, '')].join(' ');
+      return [...String(postalCode).replace(/\s+/gu, '')].join(' ');
     }
   }
   if (path === 'narcotics.exhibits.cannabis.unit') return 'γραμμαρίων';
