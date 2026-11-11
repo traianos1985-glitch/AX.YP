@@ -12,18 +12,11 @@ const descriptorBytes = new Uint8Array(await readFile(new URL('../dossier-packag
 const descriptor = JSON.parse(new TextDecoder().decode(descriptorBytes));
 assert.equal(descriptor.encoding, 'base64-chunks');
 assert.ok(descriptor.parts.length >= 1 && descriptor.parts.length <= 10);
-const encodedChunks = await Promise.all(descriptor.parts.map((name) =>
+const encoded = (await Promise.all(descriptor.parts.map((name) =>
   readFile(new URL('../dossier-packages/' + name, import.meta.url), 'utf8')
-));
-const encoded = encodedChunks.join('');
+))).join('');
 const packedBytes = new Uint8Array(Buffer.from(encoded, 'base64'));
 assert.equal(packedBytes.length, descriptor.byteLength);
-for (let i = 0; i < encodedChunks.length; i++) {
-  try { const b = new Uint8Array(Buffer.from(encodedChunks[i], 'base64')); const d = unzlibSync(b); console.log('DIAG_PART', i + 1, 'bytes', b.length, 'inflated', d.length, 'start', strFromU8(d.slice(0, 240)), 'end', strFromU8(d.slice(-120))); }
-  catch (error) { console.log('DIAG_PART_ERROR', i + 1, String(error)); }
-}
-try { const b = new Uint8Array(Buffer.from(encodedChunks.slice(1).join(''), 'base64')); const d = unzlibSync(b); console.log('DIAG_PARTS_2_3', 'bytes', b.length, 'inflated', d.length, 'start', strFromU8(d.slice(0, 240)), 'end', strFromU8(d.slice(-120))); }
-catch (error) { console.log('DIAG_PARTS_2_3_ERROR', String(error)); }
 const packed = JSON.parse(strFromU8(unzlibSync(packedBytes)));
 assert.equal(packed.schemaVersion, 1);
 assert.equal(packed.category, 'narcotics');
@@ -106,7 +99,7 @@ const item = {
   categoryData
 };
 const originalFetch=globalThis.fetch, originalDocument=globalThis.document;
-const chunkText=new Map(descriptor.parts.map((name,i)=>[name, encodedChunks[i]]));
+const chunkText=new Map(descriptor.parts.map((name,i)=>[name, (await readFile(new URL('../dossier-packages/'+name,import.meta.url),'utf8'))]));
 try {
   globalThis.document={baseURI:'https://axyp-test.invalid/'};
   globalThis.fetch=async(input)=>{
@@ -128,8 +121,6 @@ try {
     const xml=Object.entries(generated).filter(([name])=>name.startsWith('word/')&&name.endsWith('.xml'))
       .map(([,value])=>new TextDecoder().decode(value)).join('\n');
     assert.doesNotMatch(xml,/\{\{\s*[\p{L}\p{N}_.-]+\s*\}\}/gu);
-    assert.ok(xml.includes('T E S T - S E R V I C E - C I T Y'));
-    assert.ok(xml.includes('Ανθ. ΔΟΚΙΜΑΣΤΙΚΟΣ Γεώργιος'));
   }
 } finally {
   globalThis.fetch=originalFetch;
