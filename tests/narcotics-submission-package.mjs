@@ -12,9 +12,10 @@ const descriptorBytes = new Uint8Array(await readFile(new URL('../dossier-packag
 const descriptor = JSON.parse(new TextDecoder().decode(descriptorBytes));
 assert.equal(descriptor.encoding, 'base64-chunks');
 assert.ok(descriptor.parts.length >= 1 && descriptor.parts.length <= 10);
-const encoded = (await Promise.all(descriptor.parts.map((name) =>
+const encodedChunks = await Promise.all(descriptor.parts.map((name) =>
   readFile(new URL('../dossier-packages/' + name, import.meta.url), 'utf8')
-))).join('');
+));
+const encoded = encodedChunks.join('');
 const packedBytes = new Uint8Array(Buffer.from(encoded, 'base64'));
 assert.equal(packedBytes.length, descriptor.byteLength);
 const packed = JSON.parse(strFromU8(unzlibSync(packedBytes)));
@@ -99,7 +100,7 @@ const item = {
   categoryData
 };
 const originalFetch=globalThis.fetch, originalDocument=globalThis.document;
-const chunkText=new Map(descriptor.parts.map((name,i)=>[name, (await readFile(new URL('../dossier-packages/'+name,import.meta.url),'utf8'))]));
+const chunkText=new Map(descriptor.parts.map((name,i)=>[name, encodedChunks[i]]));
 try {
   globalThis.document={baseURI:'https://axyp-test.invalid/'};
   globalThis.fetch=async(input)=>{
