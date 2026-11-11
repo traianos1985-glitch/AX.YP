@@ -64,4 +64,8 @@ function copyStaticFiles() {
   };
 }
 
-export default defineConfig({ base: './', plugins: [copyStaticFiles()] });
+export default defineConfig({
+  base: './',
+  server: { allowedHosts: ['sb-7jzskvhmtvu7.vercel.run'] },
+  plugins: [copyStaticFiles()]
+});
