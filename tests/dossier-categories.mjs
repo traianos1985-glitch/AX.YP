@@ -33,6 +33,7 @@ assert.ok(hyp.includes("depositor: $('case-profile').value === 'counterfeit'"));
 assert.ok(templateLibrary.includes('counterfeit.witness.surname'));
 assert.ok(templateLibrary.includes('counterfeit.depositor.surname'));
 assert.equal(html.split('<option value="sudden-death">Αιφνίδιος θάνατος αλλοδαπού αγνώστων στοιχείων</option>').length - 1, 2, 'Sudden-death category must exist in case and bundle selectors');
+assert.equal(html.split('<option value="gok">Αυτόφωρη δικογραφία Γ.Ο.Κ.</option>').length - 1, 2, 'GOK category must exist in case and bundle selectors');
 assert.equal(html.split('<option value="environment">Ρύπανση περιβάλλοντος</option>').length - 1, 2, 'Environment category must exist in case and bundle selectors');
 assert.match(html,/id="case-environment-section"/);
 assert.match(html,/id="environment-description"/);
