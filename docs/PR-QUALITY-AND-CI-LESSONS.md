@@ -67,6 +67,15 @@ Branch: `feat/narcotics-official-package-v2`
    - Run #1379 Chrome failed separately at application reload with `CDP command timed out: Runtime.evaluate` in `tests/browser-case-lifecycle.mjs:233`. Production build and regression job passed. This reload/renderer timeout is not yet root-caused and must be investigated independently; do not conflate it with the Firefox required-field issue.
    - Outcome: `syncStepRequiredState()` is included in the final green head. The later CI run #1383 passed both Chrome and Firefox. The separate Chrome CDP reload timeout did not recur in that successful run; treat it as a transient runner/browser timeout, not as a proven application defect, and investigate from fresh logs if it recurs.
 
+### 11. Compressed published-package payloads must be one stream
+
+- For `.axyp.pack.json` descriptors with `encoding: "base64-chunks"`, every `.b64` part is a **text slice of the same single Base64 encoding** of one complete `zlibSync(...)` payload.
+- Correct generation order: serialize the complete package JSON once; compress the complete JSON once; Base64-encode the compressed bytes once; split that Base64 string into bounded text files without re-compressing individual chunks. Concatenate the text parts in descriptor order before Base64 decoding, then call `unzlibSync` once.
+- Never concatenate independently compressed zlib streams or mix chunks produced by different package-generation attempts. A matching `byteLength` proves only decoded byte count, not stream integrity.
+- Before updating a PR, run the exact package test and verify that the concatenated bytes successfully decompress to valid JSON with the expected `schemaVersion`, `category`, document count, and DOCX parts. Then run the full CI suite; do not use diagnostic-only changes as a substitute for repairing the payload.
+- Reference implementation: the existing `narcotics-v2.axyp.pack.json` / `narcotics-v2-clean.b64` package uses one complete Base64-encoded zlib stream.
+- PR #147 failure mode (2026-11-11): the three submission `.b64` files had the expected combined byte length but did not form one valid compressed stream; `unzlibSync` failed with `invalid distance`. The regression test was not to be weakened.
+
 ## Rules for future dossier/template PRs
 
 1. **Start from the latest green main branch.** Keep each dossier/category in its own focused PR/branch. Do not stack unverified changes from unrelated work.
