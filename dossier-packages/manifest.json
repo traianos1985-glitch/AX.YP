@@ -16,6 +16,10 @@
     {
       "id": "violence-v1",
       "file": "violence-v1.axyp.zip"
+    },
+    {
+      "id": "gok-v1",
+      "file": "gok-v1.axyp.pack.json"
     }
   ]
 }

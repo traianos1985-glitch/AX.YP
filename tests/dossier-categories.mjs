@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { DOSSIER_CATEGORIES } from '../dossier-categories.js';
 const ids=DOSSIER_CATEGORIES.map(x=>x.id);
 assert.equal(new Set(ids).size,ids.length);
-assert.deepEqual(ids,['narcotics','counterfeit','environment','health','noise','camping','domestic','sudden-death','migration','violence','traffic','kok','animal','commerce','generic']);
+assert.deepEqual(ids,['narcotics','counterfeit','environment','health','noise','camping','domestic','sudden-death','migration','violence','traffic','gok','kok','animal','commerce','generic']);
 for(const x of DOSSIER_CATEGORIES) assert.ok(x.label&&x.description&&x.mark);
 const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const hyp=await readFile(new URL('../hypotheses.js',import.meta.url),'utf8');
