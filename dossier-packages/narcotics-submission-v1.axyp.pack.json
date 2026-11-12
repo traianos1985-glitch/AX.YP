@@ -1,7 +1,12 @@
 {
   "encoding": "base64-zip-chunks",
   "parts": [
-    "narcotics-submission-v1-package.zip.b64"
+    "narcotics-submission-v1-package-1.b64",
+    "narcotics-submission-v1-package-2.b64",
+    "narcotics-submission-v1-package-3.b64",
+    "narcotics-submission-v1-package-4.b64",
+    "narcotics-submission-v1-package-5.b64",
+    "narcotics-submission-v1-package-6.b64"
   ],
-  "byteLength": 7500
+  "byteLength": 17107
 }
