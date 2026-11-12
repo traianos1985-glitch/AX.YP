@@ -117,7 +117,7 @@ export async function loadPublishedDossierPackages() {
         }
         const encodedParts = [];
         for (const partName of descriptor.parts) {
-          if (typeof partName !== 'string' || !/^[\\p{L}\\p{N}._-]+\\.b64$/u.test(partName)) {
+          if (typeof partName !== 'string' || !/^[\p{L}\p{N}._-]+\.b64$/u.test(partName)) {
             throw new Error('Invalid compressed package part filename: ' + entry.file);
           }
           const partResponse = await fetch(new URL('dossier-packages/' + partName, document.baseURI));
