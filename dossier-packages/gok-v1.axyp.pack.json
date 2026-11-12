@@ -1,8 +1,9 @@
 {
   "encoding": "base64-chunks",
-  "byteLength": 88166,
+  "byteLength": 98296,
   "parts": [
     "gok-v1-01.b64",
-    "gok-v1-02.b64"
+    "gok-v1-02.b64",
+    "gok-v1-03.b64"
   ]
 }
