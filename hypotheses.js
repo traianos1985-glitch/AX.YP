@@ -538,30 +538,87 @@ function uid() {
   function readTemplates() {
     try { return JSON.parse((window.AXYP_STORAGE || localStorage).getItem('axyp-docx-templates') || '[]'); } catch (e) { return []; }
   }
+  var categoryLibraryPromise = null;
+  var categoryLibraryReady = false;
+  var categoryLibraryFailed = false;
+
+  function normalizeCategorySearch(value) {
+    return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ς/g, 'σ').trim();
+  }
+
   function renderDossierCategories() {
     var root = $('dossier-category-grid'); if (!root) return;
+    var count = $('dossier-category-count');
+    if (!categoryLibraryReady && !categoryLibraryFailed) {
+      if (!categoryLibraryPromise) {
+        categoryLibraryPromise = import('./template-library.js').then(function () { return window.TemplateLibrary.ready; }).then(function () {
+          categoryLibraryReady = true;
+          categoryLibraryPromise = null;
+          renderDossierCategories();
+        }).catch(function () {
+          categoryLibraryPromise = null;
+          categoryLibraryFailed = true;
+          renderDossierCategories();
+        });
+      }
+      root.setAttribute('aria-busy', 'true');
+      root.textContent = 'Έλεγχος διαθέσιμων πακέτων…';
+      if (count) count.textContent = 'Φόρτωση διαθέσιμων εντύπων…';
+      return;
+    }
+    root.removeAttribute('aria-busy');
     root.textContent = '';
     var items = read(), templates = readTemplates();
-    DOSSIER_CATEGORIES.forEach(function (category) {
+    var search = normalizeCategorySearch($('dossier-category-search') && $('dossier-category-search').value);
+    var readyOnly = $('dossier-ready-filter') && $('dossier-ready-filter').getAttribute('aria-pressed') === 'true';
+    var categories = DOSSIER_CATEGORIES.map(function (category) {
       var caseCount = items.filter(function (item) { return (item.profile || 'generic') === category.id; }).length;
       var categoryTemplates = window.TemplateLibrary && window.TemplateLibrary.getCategoryTemplates ? window.TemplateLibrary.getCategoryTemplates(category.id) : templates.filter(function (item) { return item.category === category.id || item.profile === category.id; });
       var officialTemplates = categoryTemplates.filter(function (template) { return template.source === 'user-uploaded' || template.source === 'published-package'; });
-      var templateCount = officialTemplates.length;
+      return { category: category, caseCount: caseCount, templateCount: officialTemplates.length };
+    }).sort(function (a, b) { return Number(b.templateCount > 0) - Number(a.templateCount > 0); });
+    var visible = categories.filter(function (item) {
+      var matchesSearch = !search || normalizeCategorySearch(item.category.label + ' ' + item.category.description).includes(search);
+      return matchesSearch && (!readyOnly || item.templateCount > 0);
+    });
+    count = $('dossier-category-count');
+    if (count) {
+      var readyCount = categories.filter(function (item) { return item.templateCount > 0; }).length;
+      count.textContent = 'Εμφανίζονται ' + visible.length + ' από ' + categories.length + ' κατηγορίες · ' + readyCount + ' με έτοιμα έντυπα';
+    }
+    if (!visible.length) {
+      var empty = document.createElement('p'); empty.className = 'dossier-category-empty';
+      empty.textContent = readyOnly ? 'Δεν βρέθηκε έτοιμη δικογραφία με αυτό το όνομα.' : 'Δεν βρέθηκε κατηγορία. Δοκίμασε διαφορετική αναζήτηση.';
+      root.appendChild(empty);
+      return;
+    }
+    visible.forEach(function (item) {
+      var category = item.category;
       var card = document.createElement('article'); card.className = 'dossier-category';
       var top = document.createElement('div'); top.className = 'dossier-category-top';
       var mark = document.createElement('span'); mark.className = 'dossier-category-mark'; mark.textContent = category.mark;
       var heading = document.createElement('div'), title = document.createElement('h3'), desc = document.createElement('p');
       title.textContent = category.label; desc.textContent = category.description; heading.append(title, desc); top.append(mark, heading);
       var stats = document.createElement('div'); stats.className = 'dossier-category-stats';
-      var count = document.createElement('span'); count.className = 'dossier-stat'; count.textContent = caseCount + (caseCount === 1 ? ' υπόθεση' : ' υποθέσεις');
-      var docs = document.createElement('span'); docs.className = 'dossier-stat'; docs.textContent = templateCount + (templateCount === 1 ? ' πρότυπο Word' : ' πρότυπα Word'); stats.append(count, docs);
-      var note = document.createElement('p'); note.className = 'dossier-category-note'; note.textContent = templateCount ? 'Διαθέσιμα έντυπα για αυτή την κατηγορία.' : 'Δεν έχει δημοσιευθεί ακόμη πακέτο εντύπων για αυτή την κατηγορία.';
+      var caseCount = document.createElement('span'); caseCount.className = 'dossier-stat'; caseCount.textContent = item.caseCount + (item.caseCount === 1 ? ' υπόθεση' : ' υποθέσεις');
+      var docs = document.createElement('span'); docs.className = 'dossier-stat'; docs.textContent = item.templateCount + (item.templateCount === 1 ? ' πρότυπο Word' : ' πρότυπα Word'); stats.append(caseCount, docs);
+      var note = document.createElement('p'); note.className = 'dossier-category-note'; note.textContent = item.templateCount ? 'Έτοιμα έντυπα για αυτή την κατηγορία.' : 'Δεν έχει δημοσιευθεί ακόμη πακέτο εντύπων για αυτή την κατηγορία.';
       var actions = document.createElement('div'); actions.className = 'dossier-category-actions';
-      var open = document.createElement('button'); open.type = 'button'; open.textContent = 'Προβολή'; open.onclick = function () { openCategory(category.id, false); };
+      var open = document.createElement('button'); open.type = 'button'; open.textContent = 'Άνοιγμα'; open.onclick = function () { openCategory(category.id, false); };
       var create = document.createElement('button'); create.type = 'button'; create.className = 'primary'; create.textContent = '+ Νέα υπόθεση'; create.onclick = function () { openCategory(category.id, true); };
       actions.append(open, create); card.append(top, stats, note, actions); root.appendChild(card);
     });
   }
+
+  var categorySearch = $('dossier-category-search');
+  if (categorySearch) categorySearch.addEventListener('input', renderDossierCategories);
+  var readyFilter = $('dossier-ready-filter');
+  if (readyFilter) readyFilter.addEventListener('click', function () {
+    var active = readyFilter.getAttribute('aria-pressed') !== 'true';
+    readyFilter.setAttribute('aria-pressed', String(active));
+    readyFilter.textContent = active ? 'Εμφάνιση όλων των κατηγοριών' : 'Μόνο με έτοιμα έντυπα';
+    renderDossierCategories();
+  });
   async function renderDossierTemplates() {
     var root = $('dossier-template-list');
     if (!root || !activeProfileFilter) return;

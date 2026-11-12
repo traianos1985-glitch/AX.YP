@@ -555,9 +555,17 @@ if (window.AXYP_STORAGE && window.AXYP_STORAGE.ready) await window.AXYP_STORAGE.
       button.onclick = function () { setSearch(button.dataset.query); };
     });
     document.querySelectorAll('[data-home-mode]').forEach(function (button) {
-      button.onclick = function () { showMode(button.dataset.homeMode); };
+      button.onclick = function () {
+        var name = button.dataset.homeMode;
+        showMode(name);
+        if (name === 'cases') {
+          HypothesesView.refresh();
+          if (window.CaseBundles) CaseBundles.refresh();
+        }
+      };
     });
-    document.querySelector('[data-home-focus]').onclick = function () { q.focus(); };
+    var homeFocusButton = document.querySelector('[data-home-focus]');
+    if (homeFocusButton) homeFocusButton.onclick = function () { q.focus(); };
     document.querySelector('[data-home-favorites]').onclick = function () {
       var saved = favorites().map(function (id) { return allEntries().filter(function (row) { return row.item.id === id; })[0]; }).filter(Boolean);
       if (saved.length) setSearch(saved[0].item.title);
