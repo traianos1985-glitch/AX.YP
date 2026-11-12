@@ -80,6 +80,7 @@ async function setValue(selector, value) {
 async function openCases() {
   await click('#cases-mode', 'Cases mode');
   await waitForExpression("!document.getElementById('cases-panel').hidden", 'cases workspace');
+  await waitForExpression("document.querySelectorAll('.dossier-category').length > 0", 'dossier category catalog');
 }
 
 try {

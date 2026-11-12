@@ -99,6 +99,7 @@ async function openCases() {
   await waitForExpression("!!document.getElementById('cases-mode') && !!window.HypothesesView && typeof window.HypothesesView.refresh === 'function'", 'cases mode readiness');
   await click('#cases-mode', 'Cases mode');
   await waitForExpression("!document.getElementById('cases-panel').hidden", 'cases workspace');
+  await waitForExpression("document.querySelectorAll('.dossier-category').length > 0", 'dossier category catalog');
 }
 
 try {
