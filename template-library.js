@@ -109,26 +109,60 @@ export async function loadPublishedDossierPackages() {
       const packageResponse = await fetch(new URL('dossier-packages/' + entry.file, document.baseURI));
       if (!packageResponse.ok) throw new Error('Could not load dossier package: ' + entry.file);
       let packageBytes = new Uint8Array(await packageResponse.arrayBuffer());
-      if (entry.file.endsWith('.axyp.pack') || entry.file.endsWith('.axyp.pack.json')) {
-        if (entry.file.endsWith('.axyp.pack.json')) {
-          const descriptor = JSON.parse(strFromU8(packageBytes));
-          if (descriptor.encoding !== 'base64-chunks' || !Array.isArray(descriptor.parts) || descriptor.parts.length < 1 || descriptor.parts.length > 10) {
-            throw new Error('Invalid compressed package descriptor: ' + entry.file);
-          }
-          const encodedParts = [];
-          for (const partName of descriptor.parts) {
-            if (typeof partName !== 'string' || !/^[\p{L}\p{N}._-]+\.b64$/u.test(partName)) {
-              throw new Error('Invalid compressed package part filename: ' + entry.file);
-            }
-            const partResponse = await fetch(new URL('dossier-packages/' + partName, document.baseURI));
-            if (!partResponse.ok) throw new Error('Could not load compressed package part: ' + partName);
-            encodedParts.push((await partResponse.text()).trim());
-          }
-          packageBytes = base64ToUint8(encodedParts.join(''));
-          if (descriptor.byteLength && packageBytes.length !== descriptor.byteLength) {
-            throw new Error('Compressed package byte length mismatch: ' + entry.file);
-          }
+      if (entry.file.endsWith('.axyp.pack.json')) {
+        const descriptor = JSON.parse(strFromU8(packageBytes));
+        if (!['base64-chunks', 'base64-zip-chunks'].includes(descriptor.encoding) ||
+            !Array.isArray(descriptor.parts) || descriptor.parts.length < 1 || descriptor.parts.length > 10) {
+          throw new Error('Invalid compressed package descriptor: ' + entry.file);
         }
+        const encodedParts = [];
+        for (const partName of descriptor.parts) {
+          if (typeof partName !== 'string' || !/^[\p{L}\p{N}._-]+\.b64$/u.test(partName)) {
+            throw new Error('Invalid compressed package part filename: ' + entry.file);
+          }
+          const partResponse = await fetch(new URL('dossier-packages/' + partName, document.baseURI));
+          if (!partResponse.ok) throw new Error('Could not load compressed package part: ' + partName);
+          encodedParts.push((await partResponse.text()).trim());
+        }
+        packageBytes = base64ToUint8(encodedParts.join(''));
+        if (descriptor.byteLength && packageBytes.length !== descriptor.byteLength) {
+          throw new Error('Compressed package byte length mismatch: ' + entry.file);
+        }
+        if (descriptor.encoding !== 'base64-zip-chunks') {
+          const packed = JSON.parse(strFromU8(unzlibSync(packageBytes)));
+          if (packed.schemaVersion !== 1 || !Array.isArray(packed.documents) || typeof packed.category !== 'string') {
+            throw new Error('Invalid compressed dossier package: ' + entry.file);
+          }
+          for (const document of packed.documents) {
+            if (!document || !document.parts || typeof document.parts !== 'object' || Array.isArray(document.parts)) {
+              throw new Error('Invalid compressed document entry: ' + entry.file);
+            }
+            const parts = {};
+            for (const [name, part] of Object.entries(document.parts)) {
+              if (!name || name.startsWith('/') || name.includes('..') || !part || typeof part.data !== 'string') {
+                throw new Error('Invalid compressed DOCX part: ' + entry.file);
+              }
+              if (part.encoding === 'utf8') parts[name] = strToU8(part.data);
+              else if (part.encoding === 'base64') parts[name] = base64ToUint8(part.data);
+              else throw new Error('Unsupported compressed DOCX part encoding: ' + entry.file);
+            }
+            if (!parts['word/document.xml']) throw new Error('Published DOCX is missing its main document: ' + document.name);
+            loaded.push({
+              id: String(document.id || entry.id + '-' + loaded.length),
+              name: resolvePublishedDocumentName(packed.category, String(document.name || 'Έντυπο Word')),
+              category: packed.category,
+              categoryLabel: 'Επίσημο πακέτο εφαρμογής',
+              source: 'published-package',
+              fidelityMode: 'placeholder-only',
+              fields: Array.isArray(document.fields) ? document.fields : [],
+              mappings: document.mappings && typeof document.mappings === 'object' ? document.mappings : {},
+              mappingConfirmedAt: packed.publishedAt || packed.createdAt || 'published',
+              files: Object.fromEntries(Object.entries(parts).map(([name, bytes]) => [name, Array.from(bytes)]))
+            });
+          }
+          continue;
+        }
+      } else if (entry.file.endsWith('.axyp.pack')) {
         const packed = JSON.parse(strFromU8(unzlibSync(packageBytes)));
         if (packed.schemaVersion !== 1 || !Array.isArray(packed.documents) || typeof packed.category !== 'string') {
           throw new Error('Invalid compressed dossier package: ' + entry.file);
@@ -855,8 +889,14 @@ export function valueFor(path, item) {
     'offender.children': offender.children
   };
   if (path === 'narcotics.service.cityUpper') {
-    const city = getDossierFieldValue(item.categoryData, 'narcotics.service.city') || item.location || serviceProfile.location || '';
-    return String(city).toLocaleUpperCase('el-GR');
+    const city = getDossierFieldValue(item.categoryData, 'narcotics.service.city') || serviceProfile.location || '';
+    return [...String(city).toLocaleUpperCase('el-GR')].join(' ');
+  }
+  if (path === 'narcotics.service.postalCode') {
+    const postalCode = getDossierFieldValue(item.categoryData, path);
+    if (postalCode !== '' && postalCode !== undefined && postalCode !== null) {
+      return [...String(postalCode).replace(/\s+/gu, '')].join(' ');
+    }
   }
   if (path === 'narcotics.exhibits.cannabis.unit') return 'γραμμαρίων';
   if (path === 'narcotics.exhibits.cigarette.unit') {
@@ -866,7 +906,7 @@ export function valueFor(path, item) {
   const categoryValue = getDossierFieldValue(item.categoryData, path);
   if (categoryValue !== '' && categoryValue !== undefined && categoryValue !== null) {
     if (path === 'narcotics.exhibits.cannabis.quantity') return String(categoryValue).replace('.', ',');
-    if (/\.(?:birthDate|idDate)$/u.test(path)) return formatDateToGreekNumeric(String(categoryValue));
+    if (/\.(?:birthDate|idDate|signalReportDate|chemicalProtocolDate)$/u.test(path)) return formatDateToGreekNumeric(String(categoryValue));
     return display(categoryValue);
   }
   return display(map[path]);
