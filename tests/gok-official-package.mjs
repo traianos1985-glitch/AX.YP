@@ -37,7 +37,7 @@ assert.deepEqual(new Set(Object.values(identityTemplate.mappings)), new Set([
   'offender.birthDate', 'offender.birthPlace', 'gok.accused.residence', 'person.postalCode',
   'offender.idNumber', 'offender.idDate', 'offender.idService', 'offender.taxId',
   'offender.taxOffice', 'gok.accused.profession', 'offender.phone', 'case.location',
-  'case.dateGreek', 'gok.policeWitness.surname', 'gok.policeWitness.givenName'
+  'case.dateGreek', 'gok.apprehendingOfficer.fullName', 'gok.apprehendingOfficer.rank'
 ]), 'The GOK identity form must map every placeholder to GOK case data');
 
 assert.ok(DOSSIER_CATEGORIES.some((category) => category.id === 'gok' && category.label.includes('Γ.Ο.Κ.')));
