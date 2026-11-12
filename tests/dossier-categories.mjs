@@ -6,6 +6,7 @@ assert.equal(new Set(ids).size,ids.length);
 assert.deepEqual(ids,['narcotics','counterfeit','environment','health','noise','camping','domestic','sudden-death','migration','violence','traffic','gok','kok','animal','commerce','generic']);
 for(const x of DOSSIER_CATEGORIES) assert.ok(x.label&&x.description&&x.mark);
 const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
+assert.equal(html.split('<option value="gok">Αυτόφωρη δικογραφία Γ.Ο.Κ.</option>').length - 1, 2, 'GOK category must exist in case and bundle selectors');
 const hyp=await readFile(new URL('../hypotheses.js',import.meta.url),'utf8');
 const bundles=await readFile(new URL('../case-bundles.js',import.meta.url),'utf8');
 const templateLibrary=await readFile(new URL('../template-library.js',import.meta.url),'utf8');
