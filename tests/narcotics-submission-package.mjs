@@ -10,14 +10,16 @@ assert.ok(entry);
 assert.equal(entry.file, 'narcotics-submission-v1.axyp.pack.json');
 const descriptorBytes = new Uint8Array(await readFile(new URL('../dossier-packages/' + entry.file, import.meta.url)));
 const descriptor = JSON.parse(new TextDecoder().decode(descriptorBytes));
-assert.equal(descriptor.encoding, 'base64-chunks');
+assert.equal(descriptor.encoding, 'base64-zip-chunks');
 assert.ok(descriptor.parts.length >= 1 && descriptor.parts.length <= 10);
 const encoded = (await Promise.all(descriptor.parts.map((name) =>
   readFile(new URL('../dossier-packages/' + name, import.meta.url), 'utf8')
 ))).join('');
 const packedBytes = new Uint8Array(Buffer.from(encoded, 'base64'));
 assert.equal(packedBytes.length, descriptor.byteLength);
-const packed = JSON.parse(strFromU8(unzlibSync(packedBytes)));
+const packageFiles = unzipSync(packedBytes);
+assert.ok(packageFiles['manifest.json'], 'Submission package must contain its manifest');
+const packed = JSON.parse(strFromU8(packageFiles['manifest.json']));
 assert.equal(packed.schemaVersion, 1);
 assert.equal(packed.category, 'narcotics');
 assert.equal(packed.documents.length, 1);
@@ -46,9 +48,9 @@ const common = new Set([
 for (const [key,target] of Object.entries(document.mappings)) {
   assert.ok(defined.has(target) || common.has(target), 'Undeclared mapping: '+key+' -> '+target);
 }
-const docxParts = Object.fromEntries(Object.entries(document.parts).map(([name,part]) => [
-  name, part.encoding === 'utf8' ? new TextEncoder().encode(part.data) : new Uint8Array(Buffer.from(part.data,'base64'))
-]));
+assert.equal(typeof document.path, 'string');
+assert.ok(document.path.startsWith('documents/'));
+const docxParts = unzipSync(packageFiles[document.path]);
 assert.ok(docxParts['word/document.xml']);
 assert.ok(docxParts['word/media/image1.png'], 'Original official emblem must be retained');
 const xmlParts = Object.entries(docxParts).filter(([name]) => name.endsWith('.xml') || name.endsWith('.rels'));
