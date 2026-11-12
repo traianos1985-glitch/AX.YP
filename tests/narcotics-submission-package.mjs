@@ -99,7 +99,11 @@ const item = {
   categoryData
 };
 const originalFetch=globalThis.fetch, originalDocument=globalThis.document;
-const chunkText=new Map(descriptor.parts.map((name,i)=>[name, (await readFile(new URL('../dossier-packages/'+name,import.meta.url),'utf8'))]));
+const chunkEntries = await Promise.all(descriptor.parts.map(async (name) => [
+  name,
+  await readFile(new URL('../dossier-packages/' + name, import.meta.url), 'utf8')
+]));
+const chunkText = new Map(chunkEntries);
 try {
   globalThis.document={baseURI:'https://axyp-test.invalid/'};
   globalThis.fetch=async(input)=>{
