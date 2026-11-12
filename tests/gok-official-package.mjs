@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { unzipSync, unzlibSync, strFromU8 } from '../vendor/fflate.js';
 import { base64ToUint8, buildCategoryArchive, buildDocx, getMissingTemplateFields, loadPublishedDossierPackages } from '../template-library.js';
@@ -39,6 +40,7 @@ assert.ok(schema.every((field) => field.required === false), 'GOK-specific field
 const profile = {
   name: 'TEST-SERVICE-NAME',
   directorate: 'TEST-SERVICE-DIRECTORATE',
+  regionalDirectorate: 'TEST-SERVICE-REGIONAL-DIRECTORATE',
   address: 'TEST-SERVICE-ADDRESS',
   phone: 'TEST-SERVICE-PHONE',
   email: 'test-service@example.invalid',
@@ -57,6 +59,17 @@ const setPath = (root, path, value) => {
 };
 
 const allMappings = new Set(packed.documents.flatMap((doc) => Object.values(doc.mappings)));
+const requiredDynamicFields = [
+  'gok.case.buildingService', 'gok.case.weekday', 'gok.case.workDimensions',
+  'gok.prosecutor.fullName', 'gok.prosecutor.locationGenitive', 'gok.prosecutor.locationUpper',
+  'gok.prosecutor.office', 'gok.prosecutor.prosecutorOfficeGenitive', 'gok.prosecutor.postalCode',
+  'gok.prosecutor.title', 'gok.service.locationGenitive', 'gok.service.nameGenitive',
+  'gok.service.regionGenitive', 'gok.service.regionalDirectorate'
+];
+for (const path of requiredDynamicFields) {
+  assert.ok(schemaPaths.has(path), 'GOK field schema must include ' + path);
+  assert.ok(allMappings.has(path), 'GOK document package must use ' + path);
+}
 for (const path of allMappings) {
   if (path.startsWith('gok.')) {
     assert.ok(schemaPaths.has(path), 'GOK form must expose mapped field ' + path);
@@ -118,13 +131,32 @@ const forbiddenSource = [
   /\b\d{10,13}\b/u,
   emailPattern,
   /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\d{6,8}(?!\d)/iu,
-  /(?<!\d)\d{1,2}[./-]\d{1,2}[./-](?:19|20)\d{2}(?!\d)/u
+  /(?<!\d)\d{1,2}[./-]\d{1,2}[./-](?:19|20)\d{2}(?!\d)/u,
+  /ΣΤΑΜΑΤΟΠΟΥΛΟΣ|Θεόδωρος|Λεωνίδα/iu,
+  /Κυπαρισσίας|Τριφυλίας|Φιλιατρών|Μεσσηνίας|Πελοποννήσου/iu,
+  /Μ\.\s*Σάββατο|11\/4\/2015|2015-04-11|09:45/iu,
+  /3m\s*χ\s*4m|τριών\s*\(3\)\s*μέτρων\s*επί\s*τεσσάρων\s*\(4\)/iu,
+  /σκαλωσιέ|κατασκευή\s+πλάκας\s+βεράντας/iu
 ];
 const forbiddenGenerated = [
   /\b\d{9}\b/u,
   /\b\d{10,13}\b/u,
-  /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\d{6,8}(?!\d)/iu
+  /(?<![A-ZΑ-Ω0-9])[A-ZΑ-Ω]{1,2}\d{6,8}(?!\d)/iu,
+  ...forbiddenSource.slice(5)
 ];
+const decodeXml = (text) => text.replace(/&apos;/gu, "'").replace(/&quot;/gu, '"').replace(/&gt;/gu, '>').replace(/&lt;/gu, '<').replace(/&amp;/gu, '&');
+const visibleParagraphText = (xml) => [...xml.matchAll(/<w:p\b[^>]*>([\s\S]*?)<\/w:p>/gu)].map((paragraph) =>
+  [...paragraph[1].matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gu)].map((node) => decodeXml(node[1])).join('')
+).join('\n');
+const structureSignature = (xml) => ['p', 'tbl', 'tr', 'tc', 'r', 'rPr', 'pPr', 'sectPr'].map((tag) =>
+  `${tag}:${[...xml.matchAll(new RegExp(`<w:${tag}\\b`, 'gu'))].length}`
+).join('|');
+const xmlParserAvailable = spawnSync('xmllint', ['--version'], { encoding: 'utf8' }).status === 0;
+const assertXmlWellFormed = (xml, label) => {
+  if (!xmlParserAvailable) return;
+  const result = spawnSync('xmllint', ['--noout', '-'], { input: xml, encoding: 'utf8' });
+  assert.equal(result.status, 0, label + ' must be well-formed XML: ' + (result.stderr || result.error?.message || 'xmllint failed'));
+};
 
 for (const document of packed.documents) {
   assert.ok(Array.isArray(document.fields) && document.fields.length, document.name + ' must declare its placeholders');
@@ -132,10 +164,18 @@ for (const document of packed.documents) {
   const placeholders = new Set();
   const parts = Object.fromEntries(Object.entries(document.parts).map(([name, part]) => {
     const bytes = part.encoding === 'utf8' ? new TextEncoder().encode(part.data) : base64ToUint8(part.data);
-    if (name.startsWith('word/') && (name.endsWith('.xml') || name.endsWith('.rels'))) {
+    if (name.endsWith('.xml') || name.endsWith('.rels')) {
       const source = new TextDecoder().decode(bytes);
-      for (const match of source.matchAll(/\{\{\s*([\w.-]+)\s*\}\}/gu)) placeholders.add(match[1]);
-      for (const pattern of forbiddenSource) assert.doesNotMatch(source, pattern, document.name + ' must not retain source personal identifiers');
+      assertXmlWellFormed(source, document.name + ' source ' + name);
+      if (name.startsWith('word/')) {
+        for (const match of source.matchAll(/\{\{\s*([\w.-]+)\s*\}\}/gu)) placeholders.add(match[1]);
+      }
+      for (const pattern of forbiddenSource) {
+        assert.doesNotMatch(source, pattern, document.name + ' must not retain source personal identifiers in ' + name);
+        if (name.startsWith('word/')) assert.doesNotMatch(visibleParagraphText(source), pattern, document.name + ' must not retain identifiers split across Word runs in ' + name);
+      }
+      assert.doesNotMatch(source, /<w:(?:ins|del|commentRangeStart|commentRangeEnd|commentReference)\b/u, document.name + ' must not contain tracked changes or comments');
+      assert.doesNotMatch(source, /<w:(?:vanish|webHidden)\b/u, document.name + ' must not conceal source-case text');
     }
     return [name, bytes];
   }));
@@ -189,13 +229,47 @@ try {
     assert.deepEqual(getMissingTemplateFields(template, optionalCase), [], template.name + ' must not require optional category fields');
     const generated = unzipSync(buildDocx(template, optionalCase));
     for (const [name, bytes] of Object.entries(generated)) {
-      if (!name.startsWith('word/') || !(name.endsWith('.xml') || name.endsWith('.rels'))) continue;
+      if (!(name.endsWith('.xml') || name.endsWith('.rels'))) continue;
       const xml = new TextDecoder().decode(bytes);
+      assertXmlWellFormed(xml, template.name + ' generated ' + name);
       assert.doesNotMatch(xml, /\{\{\s*[\w.-]+\s*\}\}/u, template.name + ' must not retain unresolved placeholders in ' + name);
-      for (const pattern of forbiddenGenerated) assert.doesNotMatch(xml, pattern, template.name + ' generated output must remain free of personal identifiers');
+      for (const pattern of forbiddenGenerated) {
+        assert.doesNotMatch(xml, pattern, template.name + ' generated output must remain free of personal identifiers in ' + name);
+        if (name.startsWith('word/')) assert.doesNotMatch(visibleParagraphText(xml), pattern, template.name + ' must not emit identifiers split across Word runs in ' + name);
+      }
       const generatedEmails = xml.match(new RegExp(emailPattern.source, 'giu')) || [];
       for (const email of generatedEmails) assert.equal(email, profile.email, template.name + ' may contain only the configured synthetic service email');
     }
+    const sourceDocumentPart = packed.documents.find((source) => source.name === template.name).parts['word/document.xml'];
+    const sourceDocumentXml = new TextDecoder().decode(sourceDocumentPart.encoding === 'utf8' ? new TextEncoder().encode(sourceDocumentPart.data) : base64ToUint8(sourceDocumentPart.data));
+    const generatedDocumentXml = new TextDecoder().decode(generated['word/document.xml']);
+    assert.equal(structureSignature(generatedDocumentXml), structureSignature(sourceDocumentXml), template.name + ' must preserve the source paragraph/run/table/formatting structure');
+    const generatedApp = new TextDecoder().decode(generated['docProps/app.xml']);
+    assert.doesNotMatch(generatedApp, /<TotalTime\b/u, template.name + ' generated metadata must not retain template editing duration');
+    const generatedCore = new TextDecoder().decode(generated['docProps/core.xml']);
+    assert.ok(generatedCore.includes('<dc:creator>AX.YP</dc:creator>'), template.name + ' generated metadata must use the application author');
+    assert.ok(generatedCore.includes('<dc:title>' + template.name.replace(/\.docx$/iu, '') + '</dc:title>'), template.name + ' generated metadata title must remain generic: ' + generatedCore.match(/<dc:title>(.*?)<\/dc:title>/u)?.[1]);
+    assert.doesNotMatch(generatedCore, /<(?:dcterms:(?:created|modified)|cp:(?:lastPrinted|revision))\b/u, template.name + ' generated metadata must not retain source timestamps or revisions');
+    assert.doesNotMatch(generatedCore, /<dc:(?:subject|description)>[^<]+</u, template.name + ' generated metadata must not retain source-case descriptions');
+  }
+
+  const storedCaseSnapshot = structuredClone(optionalCase);
+  const oldCaseOutputBefore = new Map(gokTemplates.map((template) => [
+    template.name,
+    new TextDecoder().decode(unzipSync(buildDocx(template, optionalCase))['word/document.xml'])
+  ]));
+  const nextCase = structuredClone(optionalCase);
+  nextCase.offender.name = 'NEW-CASE-ONLY-NAME';
+  nextCase.protocolNumber = 'NEW-CASE-ONLY-PROTOCOL';
+  for (const template of gokTemplates) {
+    const nextOutput = unzipSync(buildDocx(template, nextCase));
+    assert.match(new TextDecoder().decode(nextOutput['word/document.xml']), /NEW-CASE-ONLY-NAME/u, template.name + ' must use the newly selected case data');
+  }
+  assert.deepEqual(optionalCase, storedCaseSnapshot, 'Generating another case must not mutate the previously saved case object');
+  for (const template of gokTemplates) {
+    const oldCaseOutputAfter = new TextDecoder().decode(unzipSync(buildDocx(template, optionalCase))['word/document.xml']);
+    assert.equal(oldCaseOutputAfter, oldCaseOutputBefore.get(template.name), template.name + ' output for a previously saved case must remain unchanged after generating a new case');
+    assert.doesNotMatch(oldCaseOutputAfter, /NEW-CASE-ONLY-(?:NAME|PROTOCOL)/u, template.name + ' must not leak another case into an older saved case');
   }
 
   const archive = unzipSync(buildCategoryArchive(gokTemplates, syntheticCase));

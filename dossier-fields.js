@@ -263,6 +263,7 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('gok.policeWitness.nationality', 'Αστυνομικός μάρτυρας', 'Υπηκοότητα', 'text', false),
     defineDossierField('gok.policeWitness.rank', 'Αστυνομικός μάρτυρας', 'Βαθμός / ιδιότητα', 'text', false),
     defineDossierField('gok.policeWitness.religion', 'Αστυνομικός μάρτυρας', 'Θρήσκευμα (όπου απαιτείται στο έντυπο)', 'text', false),
+    defineDossierField('gok.policeWitness.residence', 'Αστυνομικός μάρτυρας', 'Τόπος κατοικίας', 'text', false),
     defineDossierField('gok.policeWitness.surname', 'Αστυνομικός μάρτυρας', 'Επώνυμο', 'text', false),
 
     // Περιστατικό και αυθαίρετες οικοδομικές εργασίες
@@ -278,6 +279,7 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('gok.case.workDescription', 'Οικοδομικές εργασίες', 'Περιγραφή οικοδομικής εργασίας', 'textarea', false, { rows: 3 }),
     defineDossierField('gok.case.workDescriptionWitness', 'Οικοδομικές εργασίες', 'Σύντομη περιγραφή εργασίας στην κατάθεση μάρτυρα', 'text', false),
     defineDossierField('gok.case.workDimensions', 'Οικοδομικές εργασίες', 'Διαστάσεις εργασίας', 'text', false),
+    defineDossierField('gok.case.workLocation', 'Οικοδομικές εργασίες', 'Σημείο εκτέλεσης εργασιών', 'text', false),
     defineDossierField('gok.case.workMethod', 'Οικοδομικές εργασίες', 'Τρόπος εκτέλεσης / περιγραφή εργασιών', 'textarea', false, { rows: 3 }),
 
     // Διαβιβαστικό
@@ -297,7 +299,8 @@ export const DOSSIER_CATEGORY_FIELDS = Object.freeze({
     defineDossierField('gok.service.fax', 'Υπηρεσία', 'Fax Server υπηρεσίας', 'text', false),
     defineDossierField('gok.service.locationGenitive', 'Υπηρεσία', 'Τόπος υπηρεσίας (γενική)', 'text', false),
     defineDossierField('gok.service.nameGenitive', 'Υπηρεσία', 'Ονομασία υπηρεσίας (γενική)', 'text', false),
-    defineDossierField('gok.service.regionGenitive', 'Υπηρεσία', 'Περιφερειακή ενότητα (γενική)', 'text', false)
+    defineDossierField('gok.service.regionGenitive', 'Υπηρεσία', 'Περιφερειακή ενότητα (γενική)', 'text', false),
+    defineDossierField('gok.service.regionalDirectorate', 'Υπηρεσία', 'Περιφερειακή αστυνομική διεύθυνση', 'text', false)
   ]),
   traffic: Object.freeze([]),
   kok: Object.freeze([
