@@ -109,7 +109,6 @@ export async function loadPublishedDossierPackages() {
       const packageResponse = await fetch(new URL('dossier-packages/' + entry.file, document.baseURI));
       if (!packageResponse.ok) throw new Error('Could not load dossier package: ' + entry.file);
       let packageBytes = new Uint8Array(await packageResponse.arrayBuffer());
-      let zipPackage = false;
       if (entry.file.endsWith('.axyp.pack.json')) {
         const descriptor = JSON.parse(strFromU8(packageBytes));
         if (!['base64-chunks', 'base64-zip-chunks'].includes(descriptor.encoding) ||
@@ -129,9 +128,7 @@ export async function loadPublishedDossierPackages() {
         if (descriptor.byteLength && packageBytes.length !== descriptor.byteLength) {
           throw new Error('Compressed package byte length mismatch: ' + entry.file);
         }
-        if (descriptor.encoding === 'base64-zip-chunks') {
-          zipPackage = true;
-        } else {
+        if (descriptor.encoding !== 'base64-zip-chunks') {
           const packed = JSON.parse(strFromU8(unzlibSync(packageBytes)));
           if (packed.schemaVersion !== 1 || !Array.isArray(packed.documents) || typeof packed.category !== 'string') {
             throw new Error('Invalid compressed dossier package: ' + entry.file);
