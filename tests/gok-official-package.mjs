@@ -20,14 +20,25 @@ assert.equal(packageBytes.length, descriptor.byteLength);
 const packed = JSON.parse(strFromU8(unzlibSync(packageBytes)));
 assert.equal(packed.schemaVersion, 1);
 assert.equal(packed.category, 'gok');
-assert.equal(packed.documents.length, 5);
+assert.equal(packed.documents.length, 6);
 assert.deepEqual(packed.documents.map((doc) => doc.name), [
   'Έκθεση ένορκης εξέτασης μάρτυρα (αστυνομικού)',
   'Έκθεση σύλληψης',
   'Έκθεση εξέτασης κατηγορουμένου',
   'Διαβιβαστικό – Υποβολή δικογραφίας',
-  'Σήμα – ΒΑΣ'
+  'Σήμα – ΒΑΣ',
+  '06_ΔΕΛΤΙΟ_ΣΤΟΙΧΕΙΩΝ_ΤΑΥΤΟΤΗΤΑΣ_ΚΑΤΗΓΟΡΟΥΜΕΝΟΥ.docx'
 ]);
+
+const identityTemplate = packed.documents.find((doc) => doc.id === 'gok-06');
+assert.ok(identityTemplate, 'The GOK dossier must include an accused identity details form');
+assert.deepEqual(new Set(Object.values(identityTemplate.mappings)), new Set([
+  'offender.surname', 'offender.name', 'offender.fatherName', 'offender.motherName',
+  'offender.birthDate', 'offender.birthPlace', 'gok.accused.residence', 'person.postalCode',
+  'offender.idNumber', 'offender.idDate', 'offender.idService', 'offender.taxId',
+  'offender.taxOffice', 'gok.accused.profession', 'offender.phone', 'case.location',
+  'case.dateGreek', 'gok.apprehendingOfficer.fullName', 'gok.apprehendingOfficer.rank'
+]), 'The GOK identity form must map every placeholder to GOK case data');
 
 assert.ok(DOSSIER_CATEGORIES.some((category) => category.id === 'gok' && category.label.includes('Γ.Ο.Κ.')));
 assert.ok(DOSSIER_CATEGORIES.some((category) => category.id === 'kok'), 'The existing KOK category must remain separate');
@@ -112,10 +123,13 @@ const syntheticCase = {
     birthPlace: 'TEST-OFFENDER-BIRTH-PLACE',
     city: 'TEST-OFFENDER-CITY',
     address: 'TEST-OFFENDER-ADDRESS',
+    postalCode: 'TEST-OFFENDER-POSTAL',
     idNumber: 'TEST-OFFENDER-ID',
     idDate: '2015-05-06',
     idService: 'TEST-OFFENDER-ID-SERVICE',
-    taxId: 'TEST-OFFENDER-TAX'
+    taxId: 'TEST-OFFENDER-TAX',
+    taxOffice: 'TEST-OFFENDER-TAX-OFFICE',
+    phone: 'TEST-OFFENDER-PHONE'
   },
   timeline: {
     witness: { startTime: '09:10', endTime: '09:30' },
@@ -215,7 +229,7 @@ try {
 
   const templates = await loadPublishedDossierPackages();
   const gokTemplates = templates.filter((template) => template.category === 'gok');
-  assert.equal(gokTemplates.length, 5, 'The published loader must expose all five GOK documents');
+  assert.equal(gokTemplates.length, 6, 'The published loader must expose all six GOK documents');
   assert.deepEqual(gokTemplates.map((template) => template.name), packed.documents.map((doc) => doc.name));
 
   const optionalCase = structuredClone(syntheticCase);
@@ -274,7 +288,7 @@ try {
 
   const archive = unzipSync(buildCategoryArchive(gokTemplates, syntheticCase));
   const generatedDocx = Object.keys(archive).filter((name) => name.toLowerCase().endsWith('.docx'));
-  assert.equal(generatedDocx.length, 5, 'The batch archive must contain exactly five GOK documents');
+  assert.equal(generatedDocx.length, 6, 'The batch archive must contain exactly six GOK documents');
   assert.ok(generatedDocx.every((name) => !/ΣΤΑΜΑΤ|Φιλιατρ|Καζαντα|2015/u.test(name)), 'Generated filenames must not contain source-case identifiers');
 } finally {
   globalThis.fetch = originalFetch;
@@ -282,4 +296,4 @@ try {
   globalThis.window = originalWindow;
 }
 
-console.log('GOK official package tests passed: five documents, distinct GOK category, anonymization, schema mappings, and synthetic DOCX/ZIP generation.');
+console.log('GOK official package tests passed: six documents, accused identity mappings, distinct GOK category, anonymization, schema mappings, and synthetic DOCX/ZIP generation.');
