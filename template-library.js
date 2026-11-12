@@ -1713,6 +1713,36 @@ function ensureTemplateVersionFooter(files, template) {
   }
 }
 
+function sanitizeGokDocxMetadata(files, template) {
+  const corePath = 'docProps/core.xml';
+  if (!files[corePath]) return;
+  const title = String(template.name || 'Επίσημο έντυπο Γ.Ο.Κ.').replace(/\.docx$/iu, '');
+  let coreXml = new TextDecoder().decode(files[corePath]);
+  const setValue = (tag, value) => {
+    const escaped = esc(value);
+    const pattern = new RegExp(`(<${tag}\\b[^>]*>)[\\s\\S]*?(<\\/${tag}>)`, 'u');
+    const emptyPattern = new RegExp(`<${tag}\\b[^>]*/>`, 'u');
+    if (pattern.test(coreXml)) coreXml = coreXml.replace(pattern, `$1${escaped}$2`);
+    else if (emptyPattern.test(coreXml)) coreXml = coreXml.replace(emptyPattern, `<${tag}>${escaped}</${tag}>`);
+  };
+  setValue('dc:creator', 'AX.YP');
+  setValue('cp:lastModifiedBy', 'AX.YP');
+  setValue('dc:title', title);
+  setValue('dc:subject', '');
+  setValue('dc:description', '');
+  setValue('cp:keywords', '');
+  coreXml = coreXml
+    .replace(/<dcterms:(?:created|modified)\b[^>]*>[\s\S]*?<\/dcterms:(?:created|modified)>/gu, '')
+    .replace(/<cp:(?:lastPrinted|revision)\b[^>]*>[\s\S]*?<\/cp:(?:lastPrinted|revision)>/gu, '');
+  files[corePath] = new TextEncoder().encode(coreXml);
+  const appPath = 'docProps/app.xml';
+  if (files[appPath]) {
+    const appXml = new TextDecoder().decode(files[appPath])
+      .replace(/<TotalTime\b[^>]*>[\s\S]*?<\/TotalTime>/u, '');
+    files[appPath] = new TextEncoder().encode(appXml);
+  }
+}
+
 export function buildDocx(template, item) {
   if (!template || !item) throw new Error('Template and case data are required');
   const files = getTemplateParts(template);
@@ -1739,6 +1769,7 @@ export function buildDocx(template, item) {
     files[filename] = new TextEncoder().encode(normalizeGreekDocxXml(withCurrentDates));
   });
 
+  if (template.category === 'gok') sanitizeGokDocxMetadata(files, template);
   if (!userUploaded) ensureTemplateVersionFooter(files, template);
   return zipSync(files);
 }
