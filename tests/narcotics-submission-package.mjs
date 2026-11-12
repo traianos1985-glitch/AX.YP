@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { unzipSync, unzlibSync, strFromU8 } from '../vendor/fflate.js';
+import { unzipSync, strFromU8 } from '../vendor/fflate.js';
 import { getDossierFieldDefinitions, setDossierFieldValue } from '../dossier-fields.js';
 import { buildCategoryArchive, getMissingTemplateFields, loadPublishedDossierPackages } from '../template-library.js';
 
